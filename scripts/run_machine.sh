@@ -27,10 +27,17 @@ esac
 
 echo $IP
 echo $URL
+echo $C504_IP
+echo $C505_IP
+echo $C506_IP
 
-etcd --name ${NAME} \
-	--initial-advertise-peer-urls http://${IP}:2380 \
-	--listen-peer-urls http://${IP}:2380 \
-	--listen-client-urls http://${IP}:2380 \
-	--advertise-client-urls https://${IP}:2380
+
+#etcd --name ${NAME} \
+#	--initial-advertise-peer-urls http://${IP}:2380 \
+#	--listen-peer-urls http://${IP}:2380 \
+#	--listen-client-urls http://${IP}:2380 \
+#	--advertise-client-urls http://${IP}:2380 \
+#	--initial-cluster-token etcd-cluster-1 \
+#	--initial-cluster C504=http://${C504_IP}:2380,C505=http://${C505_IP}:2380,C506=http://${C506_IP}:2380 \
+#	--initial-cluster-state new
 	

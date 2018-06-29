@@ -1,1 +1,10 @@
+ENV REGISTRY gcr.io/etcd-development/etcd
+	ETCD_VER v3.3.8
+
+FROM ${REGISTRY}:${ETCD_VER}
+
+ARG CLUSTER
+ARG IP
+ARG NAME
+
 

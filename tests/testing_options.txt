@@ -19,5 +19,8 @@ Notes
 	Ensure that all datasets exist are kept off test servers
 	Ensure that all runs are performed on clean hardware (see reload from image)
 	May want to checksum the snapshots to ensure that they are correctly being replicated
+	Cannot user docker network discovery since it uses raft protocol to maintain the network
+		Thus must manually bring each server back online after a simulated failure to prevent delays due
+		to docker's raft protocol.
 
 

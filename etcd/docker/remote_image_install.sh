@@ -9,12 +9,14 @@ build_docker() {
 		--build-arg CLUSTER=${CLUSTER} \
 		--build-arg NAME=${THIS_NAME} \
 		--build-arg IP=${THIS_IP} \
-		--t ${REGISTRY}:${THIS_NAME}.latest \
+		-t ${REGISTRY}:${THIS_NAME}.latest \
 		."
 }
 
-if [$# -eq 3 ]
+if [ $# -eq 3 ]
 then
+	
+
 	ssh $1 "sudo apt-get install docker.io -y"
 	ssh $2 "sudo apt-get install docker.io -y"
 	ssh $3 "sudo apt-get install docker.io -y"
@@ -35,8 +37,12 @@ then
 
 	for NAME in $NAME_1 $NAME_2 $NAME_3
 	do
+		mkdir images
 		docker save -o images/${NAME}.tar.gz $REGISTRY:${NAME}.latest
-		scp images/${NAME}.tar.gz ${NAME}:~/images/docker_image.tar.gz
+		ssh $NAME mkdir ~/images
+		scp ./images/${NAME}.tar.gz ${NAME}:~/images/docker_image.tar.gz
+		ssh $NAME sudo docker load -i ~/images/docker_image.tar.gz
+		ssh $NAME sudo rm -f ~/images/docker_image.tar.gz
 	done
 fi
 

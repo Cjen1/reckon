@@ -29,7 +29,7 @@ then
 	NAME_2=$2
 	NAME_3=$3
 	
-	CLUSTER="${NAME_1}:http://${IP1}:2380,${NAME_2}:http://${IP2}:2380,${NAME_3}:http://${IP3}:2380"
+	CLUSTER="${NAME_1}=http://${IP1}:2380,${NAME_2}=http://${IP2}:2380,${NAME_3}=http://${IP3}:2380"
 
 	$(build_docker $NAME_1 $IP1 $CLUSTER)
 	$(build_docker $NAME_2 $IP2 $CLUSTER)

@@ -8,6 +8,7 @@ Tests
 	Unreliable hosts 	(kill servers randomly)
 	Unreliable links 	(stop links between servers randomly)
 	Conflicting ops 	(send from multiple clients to multiple servers in the worst case writes/reads which are on the same key)
+	Message size        (increase message size)
 	Latency of links 	(artifically increase latency between clusters)
 	Split DataCentre	(have low latency between one subset and high latency between others)
 	Slow machines (?) where read/writes are very expensive to do

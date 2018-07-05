@@ -29,7 +29,6 @@ then
 		echo "screen -d -S etcd_background -m sudo docker run \
 		  -p 2379:2379 \
 		  -p 2380:2380 \
-		  --volume=${DATA_DIR}:/etcd-data \
 		  --name etcd ${REGISTRY}:${ETCD_VERSION} \
 		  /usr/local/bin/etcd \
 		  --data-dir=/etcd-data --name ${THIS_NAME} \
@@ -39,9 +38,15 @@ then
 		  --initial-cluster-state ${CLUSTER_STATE} --initial-cluster-token ${CLUSTER_TOKEN}"
 	}
 
+	echo "----------- start setup node $1 -------------"
 	ssh $1 "sudo docker rm -f etcd; $(run_remote $NAME_1 $IP1)"
+
+	echo "----------- start setup node $2 -------------"
 	ssh $2 "sudo docker rm -f etcd; $(run_remote $NAME_2 $IP2)"
+
+	echo "----------- start setup node $3 -------------"
 	ssh $3 "sudo docker rm -f etcd; $(run_remote $NAME_3 $IP3)" 
+
 else
 	echo "Please enter 3 host names"
 fi

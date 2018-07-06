@@ -6,11 +6,11 @@ import string
 
 #Conflict ratio is the chance that two commands will touch the same key
 def readgen(maxKeyValue, client):
-    key = str(np.random.randint(maxKeyValue))
+    key = str(2**62 + np.random.randint(maxKeyValue))
     return lambda : client.read(key)
 
 def writegen(maxKeyValue, client):
-    key = str(np.random.randint(maxKeyValue))
+    key = str(2**62 + np.random.randint(maxKeyValue))
     value = 2 ** 61 + int(np.random.uniform(0,100))
     return lambda : client.write(key, value)
 

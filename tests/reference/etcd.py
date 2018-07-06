@@ -2,13 +2,17 @@ import socket
 import subprocess
 
 def write(hosts):
+    print "------------ starting reference benchmark: etcd ------------"
     ips = [socket.gethostbyname(host) for host in hosts]
     sIPS = "https://" + str(ips[0]) + ":2379"
     for ip in ips[1:]:
         sIPS += ",https://" + str(ip) + ":2379"
 
+    print sIPS
 
-    ress = subprocess.check_output("benchmark --endpoints=" + sIPS + " --target-leader --conns=1 --clients=1 put --key-space-size=100 --total=100 --val-size=256", shell=True) 
+
+    print "--------- start benchmark ------------------"
+    ress = subprocess.check_output("benchmark --endpoints=" + sIPS + " --target-leader --conns=1 --clients=1 put --key-space-size=100 --total=10000 --val-size=256", shell=True) 
 
     print ress
 

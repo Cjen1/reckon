@@ -11,7 +11,7 @@ def readgen(maxKeyValue, client):
 
 def writegen(maxKeyValue, client):
     key = str(np.random.randint(maxKeyValue))
-    value = np.random.uniform(0,10)
+    value = 2 ** 61 + int(np.random.uniform(0,100))
     return lambda : client.write(key, value)
 
 def keygen(maxKeyValue, client):

@@ -7,6 +7,7 @@ REGISTRY=gcr.io/etcd-development/etcd
 
 if [ $# -eq 3 ]
 then
+	echo "-------- checking docker installed ----------"
 	ssh $1 "sudo apt-get install docker.io -y"
 	ssh $2 "sudo apt-get install docker.io -y"
 	ssh $3 "sudo apt-get install docker.io -y"

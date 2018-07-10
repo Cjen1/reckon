@@ -12,7 +12,7 @@ def write(hosts):
 
 
     print "--------- start benchmark ------------------"
-    ress = subprocess.check_output("benchmark --endpoints=" + sIPS + " --target-leader --conns=1 --clients=1 put --key-space-size=100 --total=10000 --val-size=256", shell=True) 
+    ress = subprocess.check_output("benchmark --endpoints=" + sIPS + " --conns=1 --clients=1 put --key-space-size=100 --total=10000 --val-size=256", shell=True) 
 
     print ress
 

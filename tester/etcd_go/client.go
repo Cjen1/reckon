@@ -9,7 +9,7 @@ import (
 	zmq "github.com/alecthomas/gozmq"
 
 	"github.com/coreos/etcd/client"
-	//TODO import protocol buffers
+	"github.com/golang/protobuf/proto"
 )
 
 func receiveOp(context, port) {

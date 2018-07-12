@@ -1,5 +1,7 @@
 syntax="proto3";
 
+package = "main"
+
 message Operation {
 	oneof op_type {
 		op_setup setup = 1;

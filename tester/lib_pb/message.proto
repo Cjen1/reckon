@@ -1,10 +1,11 @@
-syntax = "proto3";
+syntax="proto3";
 
 message Operation {
 	oneof op_type {
 		op_setup setup = 1;
 		op_put put = 2;
 		op_get get = 3;
+		op_quit quit = 4;
 	}
 
 	message op_setup {
@@ -19,7 +20,17 @@ message Operation {
 	message op_get {
 		uint64 key = 1;
 	}
+
+	message op_quit {
+	}
 }
+
+message Response {
+	double response_time = 1;
+	string err = 2;
+}
+
+	
 
 	
 

@@ -4,122 +4,143 @@ import (
 	"log"
 	"time"
 	"context"
+	"os/exec"
+	"strings"
 
-	"fmt"
-	zmq "github.com/alecthomas/gozmq"
-
-	"github.com/coreos/etcd/client"
+	zmq "github.com/pebbe/zmq4"
+	"github.com/coreos/etcd/clientv3"
 	"github.com/golang/protobuf/proto"
+	"./OpWire"
 )
 
-func receiveOp(context, port) {
-	socket, _ := context.NewSocket(zmq.REP)
-	defer socket.Close()
+var (
+	dialTimeout = 2 * time.Second
+	requestTimeout = 10 * time.Second
+)
 
-	socket.connect("127.0.0.1:" + port)
+func ReceiveOp(socket *zmq.Socket) *OpWire.Operation{
+	payload, _ := socket.Recv(0)
 
-	msg, _ := socket.Recv(0)
-	println("Received ", string(msg))
+	op := &OpWire.Operation{}
 
-	op = &pb.Operation{}
-	if err := proto.Unmarshal(msg, op); err != nil {
+	if err := proto.Unmarshal([]byte(payload), op); err != nil {
 		log.Fatalln("Failed to parse incomming operation")
 	}
 
 	return op
 }
 
-func sendResp(context, port, msg) {
-	socket, _ := context.NewSocket(zmq.REP)
-	defer socket.Close()
+func put(cli *clientv3.Client, op *OpWire.Operation_Put) *OpWire.Response {
+	println("Put Op")
+	// TODO implement options
+	st := time.Now()
+	_, err := cli.Put(context.Background(), string(op.Put.Key), string(op.Put.Value))
+	duration := time.Since(st)
 
-	socket.Connect("127.0.0.1:" + port)
+	resp := &OpWire.Response {
+		ResponseTime: 	duration.Seconds(),
+		Err: 			err.Error(),
+	}
 
-	socket.Send(msg, 0)
+	return resp
 }
 
-//func put(kapi, Op) {
-//	// TODO implement options
-//	st = time.Now()
-//	resp, err := kapi.Set(context.Background(), Op.getKey(), Op.getVal(), nil)
-//	duration = time.Since(st)
-//
-//	// TODO implement response_obj
-//	return response_obj
-//}
-//
-//func get(kapi, Op) {
-//	// Todo implement options
-//	st = time.Now()
-//	resp, err := kapi.Get(context.Background(), Op.getKey(), nil)
-//	duration = time.Since(st)
-//
-//	return response_obj
-//}
-//
-//func setup(Op) {
-//	cmd := exec.Command("/bin/sh", "etcd_start.sh")
-//
-//	cfg := client.Config{
-//		Endpoints: 		Op.getEndpoints(),
-//		Transport:		client.DefaultTransport,
-//		HeaderTimeoutPerRequest: time.Second,
-//	}
-//
-//	c, err := client.New(cfg)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//
-//	kapi := client.NewKeysAPI(c)
-//
-//	return response_obj, cfg, kapi
-//}
+func get(cli clientv3.Client, op *OpWire.Operation_Get) *OpWire.Response {
+	println("Get Op")
+	// Todo implement options
+	st := time.Now()
+	_, err := cli.Get(context.Background(), string(op.Get.Key))
+	duration := time.Since(st)
 
+	resp := &OpWire.Response {
+		ResponseTime: 	duration.Seconds(),
+		Err:			err.Error(),
+	}
+
+	return resp
+}
+
+func setup(op *OpWire.Operation_Setup) *clientv3.Client{
+	println("Setup Op")
+	// get remote servers running
+	cmd := exec.Command("/bin/sh", "etcd_start.sh", strings.Join(op.Setup.Endpoints, " "))
+	stdout, err := cmd.Output()
+	println(string(stdout))
+	if(err != nil) {
+		println(err.Error())
+	}
+
+	cli, _ := clientv3.New(clientv3.Config{
+		DialTimeout: 	dialTimeout,
+		Endpoints: 		op.Setup.Endpoints,
+	})
+
+	return cli
+}
+
+func marshall_response(resp *OpWire.Response) string {
+	payload, err := proto.Marshal(resp)
+	if err != nil {
+		log.Fatalln("Failed to encode response: " + err.Error()) 
+	}
+
+	return string(payload)
+}
+	
 
 func main() {
-	context, _ := zmq.NewContext()
-	defer context.Close()
+	port := "4444"
+	socket, _ := zmq.NewSocket(zmq.REP)
+	defer socket.Close()
+	
+	var cli *clientv3.Client
+
+	println(requestTimeout)
+	defer cli.Close()
+
 	for {
-		Op := receiveOp()
+		binding := "tcp://127.0.0.1:" + port
 
-		switch x := Op.op_type.(type){
-		default:
-			fmt.Printf("%T", x)
-			resp := &pb.Response {
-				response_time: 	1,
-				err : 			"this is now functional",
+		socket.Bind(binding)
+
+		println("Awaiting operation on " + binding)
+		Operation := ReceiveOp(socket)
+
+		println("Got operation")
+
+		switch op := Operation.OpType.(type) {
+		case *OpWire.Operation_Setup:
+			cli = setup(op)
+			resp := &OpWire.Response {
+				ResponseTime: 	0,
+				Err:			"Client set up correctly",
 			}
-			payload, err := proto.Marshal(resp)
-			send(context, port, payload)
-		}
+			payload := marshall_response(resp)
+			socket.Send(payload,0)
 
-//		var resp, cfg, kapi
-//		switch Op.op_type.(type) {
-//		case *Operation.setup:
-//			resp, cfg, kapi = setup(Op, context)
-//		case *Operation.put:
-//			resp, _ := proto.Marshall(put(kapi, Op, context))
-//			send(context, port, resp)
-//		case *Operation.quit:
-//			return
-//		case nil:
-//			fmt.println("Operation not set in incomming packet")
-//		default:
-//			resp = &pb.Response {
-//				response_time:  -1,
-//				err:	 		fmt.Errorf("Operation.op_type is unrecongnised: %T", x)
-//			}
-//			
-//			payload, err := proto.Marshal(resp)
-//			if err != nil {
-//				log.Fatalln("Failed to encode response")
-//			}
-//
-//			send(context, port, payload)
-//
-//			return resp.err
-//		}
+		case *OpWire.Operation_Put:
+			resp := put(cli, op)
+			payload := marshall_response(resp) 
+			socket.Send(payload, 0)
+
+		case *OpWire.Operation_Quit:
+			resp := &OpWire.Response {
+				ResponseTime:	0,
+				Err:			"Endpoint Quitting",
+			}
+			payload := marshall_response(resp)
+			socket.Send(payload, 0)
+			return
+
+		default:
+			resp := &OpWire.Response {
+				ResponseTime:  0,
+				Err: 			"Error: Operation was not found / supported", 
+			}
+			payload := marshall_response(resp)
+			socket.Send(payload, 0)
+			return
+		}
 	}
 }
 	

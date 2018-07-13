@@ -16,10 +16,10 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='lib_pb/message.proto',
-  package='',
+  package='OpWire',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x14lib_pb/message.proto\"\x8b\x02\n\tOperation\x12$\n\x05setup\x18\x01 \x01(\x0b\x32\x13.Operation.op_setupH\x00\x12 \n\x03put\x18\x02 \x01(\x0b\x32\x11.Operation.op_putH\x00\x12 \n\x03get\x18\x03 \x01(\x0b\x32\x11.Operation.op_getH\x00\x12\"\n\x04quit\x18\x04 \x01(\x0b\x32\x12.Operation.op_quitH\x00\x1a\x1d\n\x08op_setup\x12\x11\n\tendpoints\x18\x01 \x03(\t\x1a$\n\x06op_put\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c\x1a\x15\n\x06op_get\x12\x0b\n\x03key\x18\x01 \x01(\x04\x1a\t\n\x07op_quitB\t\n\x07op_type\".\n\x08Response\x12\x15\n\rresponse_time\x18\x01 \x01(\x01\x12\x0b\n\x03\x65rr\x18\x02 \x01(\tb\x06proto3')
+  serialized_pb=_b('\n\x14lib_pb/message.proto\x12\x06OpWire\"\xa7\x02\n\tOperation\x12+\n\x05setup\x18\x01 \x01(\x0b\x32\x1a.OpWire.Operation.op_setupH\x00\x12\'\n\x03put\x18\x02 \x01(\x0b\x32\x18.OpWire.Operation.op_putH\x00\x12\'\n\x03get\x18\x03 \x01(\x0b\x32\x18.OpWire.Operation.op_getH\x00\x12)\n\x04quit\x18\x04 \x01(\x0b\x32\x19.OpWire.Operation.op_quitH\x00\x1a\x1d\n\x08op_setup\x12\x11\n\tendpoints\x18\x01 \x03(\t\x1a$\n\x06op_put\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c\x1a\x15\n\x06op_get\x12\x0b\n\x03key\x18\x01 \x01(\x04\x1a\t\n\x07op_quitB\t\n\x07op_type\".\n\x08Response\x12\x15\n\rresponse_time\x18\x01 \x01(\x01\x12\x0b\n\x03\x65rr\x18\x02 \x01(\tb\x06proto3')
 )
 
 
@@ -27,13 +27,13 @@ DESCRIPTOR = _descriptor.FileDescriptor(
 
 _OPERATION_OP_SETUP = _descriptor.Descriptor(
   name='op_setup',
-  full_name='Operation.op_setup',
+  full_name='OpWire.Operation.op_setup',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='endpoints', full_name='Operation.op_setup.endpoints', index=0,
+      name='endpoints', full_name='OpWire.Operation.op_setup.endpoints', index=0,
       number=1, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -51,26 +51,26 @@ _OPERATION_OP_SETUP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=180,
-  serialized_end=209,
+  serialized_start=216,
+  serialized_end=245,
 )
 
 _OPERATION_OP_PUT = _descriptor.Descriptor(
   name='op_put',
-  full_name='Operation.op_put',
+  full_name='OpWire.Operation.op_put',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='Operation.op_put.key', index=0,
+      name='key', full_name='OpWire.Operation.op_put.key', index=0,
       number=1, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='value', full_name='Operation.op_put.value', index=1,
+      name='value', full_name='OpWire.Operation.op_put.value', index=1,
       number=2, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
@@ -88,19 +88,19 @@ _OPERATION_OP_PUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=211,
-  serialized_end=247,
+  serialized_start=247,
+  serialized_end=283,
 )
 
 _OPERATION_OP_GET = _descriptor.Descriptor(
   name='op_get',
-  full_name='Operation.op_get',
+  full_name='OpWire.Operation.op_get',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='Operation.op_get.key', index=0,
+      name='key', full_name='OpWire.Operation.op_get.key', index=0,
       number=1, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -118,13 +118,13 @@ _OPERATION_OP_GET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=249,
-  serialized_end=270,
+  serialized_start=285,
+  serialized_end=306,
 )
 
 _OPERATION_OP_QUIT = _descriptor.Descriptor(
   name='op_quit',
-  full_name='Operation.op_quit',
+  full_name='OpWire.Operation.op_quit',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
@@ -141,40 +141,40 @@ _OPERATION_OP_QUIT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=272,
-  serialized_end=281,
+  serialized_start=308,
+  serialized_end=317,
 )
 
 _OPERATION = _descriptor.Descriptor(
   name='Operation',
-  full_name='Operation',
+  full_name='OpWire.Operation',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='setup', full_name='Operation.setup', index=0,
+      name='setup', full_name='OpWire.Operation.setup', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='put', full_name='Operation.put', index=1,
+      name='put', full_name='OpWire.Operation.put', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='get', full_name='Operation.get', index=2,
+      name='get', full_name='OpWire.Operation.get', index=2,
       number=3, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='quit', full_name='Operation.quit', index=3,
+      name='quit', full_name='OpWire.Operation.quit', index=3,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -192,30 +192,30 @@ _OPERATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
     _descriptor.OneofDescriptor(
-      name='op_type', full_name='Operation.op_type',
+      name='op_type', full_name='OpWire.Operation.op_type',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=25,
-  serialized_end=292,
+  serialized_start=33,
+  serialized_end=328,
 )
 
 
 _RESPONSE = _descriptor.Descriptor(
   name='Response',
-  full_name='Response',
+  full_name='OpWire.Response',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response_time', full_name='Response.response_time', index=0,
+      name='response_time', full_name='OpWire.Response.response_time', index=0,
       number=1, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='err', full_name='Response.err', index=1,
+      name='err', full_name='OpWire.Response.err', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -233,8 +233,8 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=294,
-  serialized_end=340,
+  serialized_start=330,
+  serialized_end=376,
 )
 
 _OPERATION_OP_SETUP.containing_type = _OPERATION
@@ -266,33 +266,33 @@ Operation = _reflection.GeneratedProtocolMessageType('Operation', (_message.Mess
   op_setup = _reflection.GeneratedProtocolMessageType('op_setup', (_message.Message,), dict(
     DESCRIPTOR = _OPERATION_OP_SETUP,
     __module__ = 'lib_pb.message_pb2'
-    # @@protoc_insertion_point(class_scope:Operation.op_setup)
+    # @@protoc_insertion_point(class_scope:OpWire.Operation.op_setup)
     ))
   ,
 
   op_put = _reflection.GeneratedProtocolMessageType('op_put', (_message.Message,), dict(
     DESCRIPTOR = _OPERATION_OP_PUT,
     __module__ = 'lib_pb.message_pb2'
-    # @@protoc_insertion_point(class_scope:Operation.op_put)
+    # @@protoc_insertion_point(class_scope:OpWire.Operation.op_put)
     ))
   ,
 
   op_get = _reflection.GeneratedProtocolMessageType('op_get', (_message.Message,), dict(
     DESCRIPTOR = _OPERATION_OP_GET,
     __module__ = 'lib_pb.message_pb2'
-    # @@protoc_insertion_point(class_scope:Operation.op_get)
+    # @@protoc_insertion_point(class_scope:OpWire.Operation.op_get)
     ))
   ,
 
   op_quit = _reflection.GeneratedProtocolMessageType('op_quit', (_message.Message,), dict(
     DESCRIPTOR = _OPERATION_OP_QUIT,
     __module__ = 'lib_pb.message_pb2'
-    # @@protoc_insertion_point(class_scope:Operation.op_quit)
+    # @@protoc_insertion_point(class_scope:OpWire.Operation.op_quit)
     ))
   ,
   DESCRIPTOR = _OPERATION,
   __module__ = 'lib_pb.message_pb2'
-  # @@protoc_insertion_point(class_scope:Operation)
+  # @@protoc_insertion_point(class_scope:OpWire.Operation)
   ))
 _sym_db.RegisterMessage(Operation)
 _sym_db.RegisterMessage(Operation.op_setup)
@@ -303,7 +303,7 @@ _sym_db.RegisterMessage(Operation.op_quit)
 Response = _reflection.GeneratedProtocolMessageType('Response', (_message.Message,), dict(
   DESCRIPTOR = _RESPONSE,
   __module__ = 'lib_pb.message_pb2'
-  # @@protoc_insertion_point(class_scope:Response)
+  # @@protoc_insertion_point(class_scope:OpWire.Response)
   ))
 _sym_db.RegisterMessage(Response)
 

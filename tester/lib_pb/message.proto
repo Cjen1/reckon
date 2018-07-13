@@ -1,6 +1,6 @@
 syntax="proto3";
 
-package = "main"
+package OpWire;
 
 message Operation {
 	oneof op_type {

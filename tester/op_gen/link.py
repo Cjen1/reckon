@@ -11,12 +11,12 @@ def send(link_context, message):
     socket = link_context.zmq_context.socket(zmq.REQ)
     binding = "tcp://127.0.0.1:" + link_context.port
 
-    print("Awaiting endpoint connection on " + binding)
+    print("\rAwaiting endpoint connection on " + binding)
     socket.connect(binding)
 
     socket.send(message)
 
-    print("Awaiting response on " + binding)
+    print("\rAwaiting response on " + binding)
     return socket.recv()
 
 def put(link_context, key, value):
@@ -38,7 +38,8 @@ def setup(link_context):
     ips = [socket.gethostbyname(host) for host in hosts]
 
     op = msg_pb.Operation()
-    op.setup.endpoints.extend([ip + ":2379" for ip in ips])
+    op.setup.endpoints.extend(ips)
+    op.setup.hostnames.extend(hosts)
 
     payload = op.SerializeToString()
     rep = send(link_context, payload)

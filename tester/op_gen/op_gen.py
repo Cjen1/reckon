@@ -32,6 +32,5 @@ def sequential_keys(link_context, number_keys, data_size):
 
     return resp_times
 
-link_context = link.gen_context("4444")
-link.setup(link_context)
-print(sequential_keys(link_context, 100,4))
+#link_context = link.gen_context("4444")
+#print(sequential_keys(link_context, 100,4))

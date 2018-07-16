@@ -70,17 +70,30 @@ func get(cli clientv3.Client, op *OpWire.Operation_Get) *OpWire.Response {
 func setup(op *OpWire.Operation_Setup) *clientv3.Client{
 	// get remote servers running
 	//TODO generalise setup
-	stdout, err := exec.Command("sudo", "./etcd_go/etcd_start.sh", strings.Join(op.Setup.Endpoints, " ")).Output()
+	stdout, err := exec.Command("sudo", "./etcd_go/etcd_start.sh", strings.Join(op.Setup.Hostnames, " ")).Output()
+
 	if(err != nil) {
 		fmt.Println("Err:", err)
 		fmt.Println("Stdout:", stdout)
 		fmt.Println("Endpoints:", op.Setup.Endpoints)
+		fmt.Println("Hostnames:", op.Setup.Hostnames)
 	}
+
+	endpoints := make([]string, len(op.Setup.Endpoints))
+	for i := 0; i < len(op.Setup.Endpoints); i++ {
+		endpoints[i] = "http://" + op.Setup.Endpoints[i] + ":2379"
+	}
+
+	fmt.Println("Formatted Endpoints: ", endpoints)
 
 	cli, _ := clientv3.New(clientv3.Config{
 		DialTimeout: 	dialTimeout,
-		Endpoints: 		op.Setup.Endpoints,
+		Endpoints: 		endpoints,
 	})
+
+	if(cli == nil){
+		print("ERROR cli = nil")
+	}
 
 	return cli
 }
@@ -151,4 +164,3 @@ func main() {
 		}
 	}
 }
-	

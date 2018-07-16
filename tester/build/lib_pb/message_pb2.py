@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='OpWire',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x14lib_pb/message.proto\x12\x06OpWire\"\xb4\x02\n\tOperation\x12+\n\x05setup\x18\x01 \x01(\x0b\x32\x1a.OpWire.Operation.op_setupH\x00\x12\'\n\x03put\x18\x02 \x01(\x0b\x32\x18.OpWire.Operation.op_putH\x00\x12\'\n\x03get\x18\x03 \x01(\x0b\x32\x18.OpWire.Operation.op_getH\x00\x12)\n\x04quit\x18\x04 \x01(\x0b\x32\x19.OpWire.Operation.op_quitH\x00\x1a\x1d\n\x08op_setup\x12\x11\n\tendpoints\x18\x01 \x03(\t\x1a$\n\x06op_put\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c\x1a\x15\n\x06op_get\x12\x0b\n\x03key\x18\x01 \x01(\x04\x1a\x16\n\x07op_quit\x12\x0b\n\x03msg\x18\x01 \x01(\tB\t\n\x07op_type\";\n\x08Response\x12\x15\n\rresponse_time\x18\x01 \x01(\x01\x12\x0b\n\x03\x65rr\x18\x02 \x01(\t\x12\x0b\n\x03msg\x18\x03 \x01(\tb\x06proto3')
+  serialized_pb=_b('\n\x14lib_pb/message.proto\x12\x06OpWire\"\xc7\x02\n\tOperation\x12+\n\x05setup\x18\x01 \x01(\x0b\x32\x1a.OpWire.Operation.op_setupH\x00\x12\'\n\x03put\x18\x02 \x01(\x0b\x32\x18.OpWire.Operation.op_putH\x00\x12\'\n\x03get\x18\x03 \x01(\x0b\x32\x18.OpWire.Operation.op_getH\x00\x12)\n\x04quit\x18\x04 \x01(\x0b\x32\x19.OpWire.Operation.op_quitH\x00\x1a\x30\n\x08op_setup\x12\x11\n\tendpoints\x18\x01 \x03(\t\x12\x11\n\thostnames\x18\x02 \x03(\t\x1a$\n\x06op_put\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c\x1a\x15\n\x06op_get\x12\x0b\n\x03key\x18\x01 \x01(\x04\x1a\x16\n\x07op_quit\x12\x0b\n\x03msg\x18\x01 \x01(\tB\t\n\x07op_type\";\n\x08Response\x12\x15\n\rresponse_time\x18\x01 \x01(\x01\x12\x0b\n\x03\x65rr\x18\x02 \x01(\t\x12\x0b\n\x03msg\x18\x03 \x01(\tb\x06proto3')
 )
 
 
@@ -39,6 +39,13 @@ _OPERATION_OP_SETUP = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='hostnames', full_name='OpWire.Operation.op_setup.hostnames', index=1,
+      number=2, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -52,7 +59,7 @@ _OPERATION_OP_SETUP = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=216,
-  serialized_end=245,
+  serialized_end=264,
 )
 
 _OPERATION_OP_PUT = _descriptor.Descriptor(
@@ -88,8 +95,8 @@ _OPERATION_OP_PUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=247,
-  serialized_end=283,
+  serialized_start=266,
+  serialized_end=302,
 )
 
 _OPERATION_OP_GET = _descriptor.Descriptor(
@@ -118,8 +125,8 @@ _OPERATION_OP_GET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=285,
-  serialized_end=306,
+  serialized_start=304,
+  serialized_end=325,
 )
 
 _OPERATION_OP_QUIT = _descriptor.Descriptor(
@@ -148,8 +155,8 @@ _OPERATION_OP_QUIT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=308,
-  serialized_end=330,
+  serialized_start=327,
+  serialized_end=349,
 )
 
 _OPERATION = _descriptor.Descriptor(
@@ -203,7 +210,7 @@ _OPERATION = _descriptor.Descriptor(
       index=0, containing_type=None, fields=[]),
   ],
   serialized_start=33,
-  serialized_end=341,
+  serialized_end=360,
 )
 
 
@@ -247,8 +254,8 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=343,
-  serialized_end=402,
+  serialized_start=362,
+  serialized_end=421,
 )
 
 _OPERATION_OP_SETUP.containing_type = _OPERATION

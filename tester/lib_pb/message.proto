@@ -12,6 +12,7 @@ message Operation {
 
 	message op_setup {
 		repeated string endpoints = 1;
+		repeated string hostnames = 2;
 	}
 
 	message op_put {

@@ -1,10 +1,10 @@
-GC = go
-
 all: op_gen/op_gen.py 
 
 #--------- setup proto files, gen config ----------
 
 config: libzmq4 libsodium
+
+proto: op_gen/message_pb2.py etcd_go/OpWire/message.pb.go
 
 libzmq4: 
 	wget https://github.com/zeromq/libzmq/releases/download/v4.2.3/zeromq-4.2.3.tar.gz -O build/zeromq-4.2.2.tar.gz 

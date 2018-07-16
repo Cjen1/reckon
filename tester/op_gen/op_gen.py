@@ -3,7 +3,8 @@ from numpy import random as rand
 import math
 
 # Number of keys to write, size of data in bytes
-def sequential_keys(link_context, number_keys, data_size):
+def sequential_keys(port, number_keys, data_size):
+    link_context = link.gen_context(str(port))
     # Set up servers etc
     link.setup(link_context)
     if number_keys > 256**4:
@@ -24,13 +25,16 @@ def sequential_keys(link_context, number_keys, data_size):
         resp = link.put(link_context, key, value)
         
         if resp.err != "None":
-            print(resp.err)
+            print("ERROR: " + resp.err)
 
         resp_times.append(resp.response_time)
 
     link.close(link_context)
 
     return resp_times
+
+def linear_keys(link_context, number_keys, data_size):
+    return
 
 #link_context = link.gen_context("4444")
 #print(sequential_keys(link_context, 100,4))

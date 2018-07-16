@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='OpWire',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x14lib_pb/message.proto\x12\x06OpWire\"\xc7\x02\n\tOperation\x12+\n\x05setup\x18\x01 \x01(\x0b\x32\x1a.OpWire.Operation.op_setupH\x00\x12\'\n\x03put\x18\x02 \x01(\x0b\x32\x18.OpWire.Operation.op_putH\x00\x12\'\n\x03get\x18\x03 \x01(\x0b\x32\x18.OpWire.Operation.op_getH\x00\x12)\n\x04quit\x18\x04 \x01(\x0b\x32\x19.OpWire.Operation.op_quitH\x00\x1a\x30\n\x08op_setup\x12\x11\n\tendpoints\x18\x01 \x03(\t\x12\x11\n\thostnames\x18\x02 \x03(\t\x1a$\n\x06op_put\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c\x1a\x15\n\x06op_get\x12\x0b\n\x03key\x18\x01 \x01(\x04\x1a\x16\n\x07op_quit\x12\x0b\n\x03msg\x18\x01 \x01(\tB\t\n\x07op_type\";\n\x08Response\x12\x15\n\rresponse_time\x18\x01 \x01(\x01\x12\x0b\n\x03\x65rr\x18\x02 \x01(\t\x12\x0b\n\x03msg\x18\x03 \x01(\tb\x06proto3')
+  serialized_pb=_b('\n\x14lib_pb/message.proto\x12\x06OpWire\"\xf7\x02\n\tOperation\x12+\n\x05setup\x18\x01 \x01(\x0b\x32\x1a.OpWire.Operation.op_setupH\x00\x12\'\n\x03put\x18\x02 \x01(\x0b\x32\x18.OpWire.Operation.op_putH\x00\x12\'\n\x03get\x18\x03 \x01(\x0b\x32\x18.OpWire.Operation.op_getH\x00\x12)\n\x04quit\x18\x04 \x01(\x0b\x32\x19.OpWire.Operation.op_quitH\x00\x1a\x30\n\x08op_setup\x12\x11\n\tendpoints\x18\x01 \x03(\t\x12\x11\n\thostnames\x18\x02 \x03(\t\x1a$\n\x06op_put\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c\x1a\x15\n\x06op_get\x12\x0b\n\x03key\x18\x01 \x01(\x04\x1a\x16\n\x07op_quit\x12\x0b\n\x03msg\x18\x01 \x01(\t\x1a.\n\x05\x62\x61tch\x12%\n\noperations\x18\x01 \x03(\x0b\x32\x11.OpWire.OperationB\t\n\x07op_type\";\n\x08Response\x12\x15\n\rresponse_time\x18\x01 \x01(\x01\x12\x0b\n\x03\x65rr\x18\x02 \x01(\t\x12\x0b\n\x03msg\x18\x03 \x01(\tb\x06proto3')
 )
 
 
@@ -159,6 +159,36 @@ _OPERATION_OP_QUIT = _descriptor.Descriptor(
   serialized_end=349,
 )
 
+_OPERATION_BATCH = _descriptor.Descriptor(
+  name='batch',
+  full_name='OpWire.Operation.batch',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='operations', full_name='OpWire.Operation.batch.operations', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=351,
+  serialized_end=397,
+)
+
 _OPERATION = _descriptor.Descriptor(
   name='Operation',
   full_name='OpWire.Operation',
@@ -197,7 +227,7 @@ _OPERATION = _descriptor.Descriptor(
   ],
   extensions=[
   ],
-  nested_types=[_OPERATION_OP_SETUP, _OPERATION_OP_PUT, _OPERATION_OP_GET, _OPERATION_OP_QUIT, ],
+  nested_types=[_OPERATION_OP_SETUP, _OPERATION_OP_PUT, _OPERATION_OP_GET, _OPERATION_OP_QUIT, _OPERATION_BATCH, ],
   enum_types=[
   ],
   serialized_options=None,
@@ -210,7 +240,7 @@ _OPERATION = _descriptor.Descriptor(
       index=0, containing_type=None, fields=[]),
   ],
   serialized_start=33,
-  serialized_end=360,
+  serialized_end=408,
 )
 
 
@@ -254,14 +284,16 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=362,
-  serialized_end=421,
+  serialized_start=410,
+  serialized_end=469,
 )
 
 _OPERATION_OP_SETUP.containing_type = _OPERATION
 _OPERATION_OP_PUT.containing_type = _OPERATION
 _OPERATION_OP_GET.containing_type = _OPERATION
 _OPERATION_OP_QUIT.containing_type = _OPERATION
+_OPERATION_BATCH.fields_by_name['operations'].message_type = _OPERATION
+_OPERATION_BATCH.containing_type = _OPERATION
 _OPERATION.fields_by_name['setup'].message_type = _OPERATION_OP_SETUP
 _OPERATION.fields_by_name['put'].message_type = _OPERATION_OP_PUT
 _OPERATION.fields_by_name['get'].message_type = _OPERATION_OP_GET
@@ -311,6 +343,13 @@ Operation = _reflection.GeneratedProtocolMessageType('Operation', (_message.Mess
     # @@protoc_insertion_point(class_scope:OpWire.Operation.op_quit)
     ))
   ,
+
+  batch = _reflection.GeneratedProtocolMessageType('batch', (_message.Message,), dict(
+    DESCRIPTOR = _OPERATION_BATCH,
+    __module__ = 'lib_pb.message_pb2'
+    # @@protoc_insertion_point(class_scope:OpWire.Operation.batch)
+    ))
+  ,
   DESCRIPTOR = _OPERATION,
   __module__ = 'lib_pb.message_pb2'
   # @@protoc_insertion_point(class_scope:OpWire.Operation)
@@ -320,6 +359,7 @@ _sym_db.RegisterMessage(Operation.op_setup)
 _sym_db.RegisterMessage(Operation.op_put)
 _sym_db.RegisterMessage(Operation.op_get)
 _sym_db.RegisterMessage(Operation.op_quit)
+_sym_db.RegisterMessage(Operation.batch)
 
 Response = _reflection.GeneratedProtocolMessageType('Response', (_message.Message,), dict(
   DESCRIPTOR = _RESPONSE,

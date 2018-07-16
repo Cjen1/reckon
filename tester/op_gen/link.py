@@ -11,12 +11,10 @@ def send(link_context, message):
     socket = link_context.zmq_context.socket(zmq.REQ)
     binding = "tcp://127.0.0.1:" + link_context.port
 
-    print("\rAwaiting endpoint connection on " + binding)
     socket.connect(binding)
 
     socket.send(message)
 
-    print("\rAwaiting response on " + binding)
     return socket.recv()
 
 def put(link_context, key, value):

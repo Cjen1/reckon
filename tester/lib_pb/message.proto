@@ -27,6 +27,10 @@ message Operation {
 	message op_quit {
 		string msg = 1;
 	}
+
+	message batch {
+		repeated Operation operations = 1;
+	}
 }
 
 message Response {

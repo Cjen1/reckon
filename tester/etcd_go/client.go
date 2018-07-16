@@ -69,8 +69,8 @@ func get(cli clientv3.Client, op *OpWire.Operation_Get) *OpWire.Response {
 
 func setup(op *OpWire.Operation_Setup) *clientv3.Client{
 	// get remote servers running
-	//TODO generalise setup
-	stdout, err := exec.Command("sudo", "./etcd_go/etcd_start.sh", strings.Join(op.Setup.Hostnames, " ")).Output()
+	//TODO generalise setup to support multiple numbers of hosts
+	stdout, err := exec.Command("./etcd_go/etcd_start.sh", strings.Join(op.Setup.Hostnames, " ")).Output()
 
 	if(err != nil) {
 		fmt.Println("Err:", err)
@@ -84,16 +84,10 @@ func setup(op *OpWire.Operation_Setup) *clientv3.Client{
 		endpoints[i] = "http://" + op.Setup.Endpoints[i] + ":2379"
 	}
 
-	fmt.Println("Formatted Endpoints: ", endpoints)
-
 	cli, _ := clientv3.New(clientv3.Config{
 		DialTimeout: 	dialTimeout,
 		Endpoints: 		endpoints,
 	})
-
-	if(cli == nil){
-		print("ERROR cli = nil")
-	}
 
 	return cli
 }
@@ -131,7 +125,6 @@ func main() {
 
 		socket.Bind(binding)
 
-		fmt.Println("Awaiting operation on", binding)
 		Operation := ReceiveOp(socket)
 
 		switch op := Operation.OpType.(type) {
@@ -151,7 +144,7 @@ func main() {
 
 		case *OpWire.Operation_Quit:
 			quit(op, socket)
-			return
+			break
 
 		default:
 			resp := &OpWire.Response {
@@ -160,7 +153,7 @@ func main() {
 			}
 			payload := marshall_response(resp)
 			socket.Send(payload, 0)
-			return
+			break	
 		}
 	}
 }

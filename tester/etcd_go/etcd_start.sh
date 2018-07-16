@@ -14,8 +14,22 @@ then
 
 	
 	IP1=`dig +short $1`
+	if [ $IP1 -eq ""]
+	then
+		IP1=$1
+	fi
+
 	IP2=`dig +short $2`
+	if [ $IP2 -eq ""]
+	then
+		IP2=$2
+	fi
+
 	IP3=`dig +short $3`
+	if [$IP3 -eq "" ]
+	then
+		IP3=$3
+	fi
 
 	NAME_1=etcd-node-1
 	NAME_2=etcd-node-2

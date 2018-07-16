@@ -4,6 +4,8 @@ import math
 
 # Number of keys to write, size of data in bytes
 def sequential_keys(link_context, number_keys, data_size):
+    # Set up servers etc
+    link.setup(link_context)
     if number_keys > 256**4:
         print("Can't handle that many keys")
         return
@@ -25,6 +27,8 @@ def sequential_keys(link_context, number_keys, data_size):
             print(resp.err)
 
         resp_times.append(resp.response_time)
+
+    link.close(link_context)
 
     return resp_times
 

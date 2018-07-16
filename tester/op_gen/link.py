@@ -38,7 +38,19 @@ def setup(link_context):
     ips = [socket.gethostbyname(host) for host in hosts]
 
     op = msg_pb.Operation()
-    op.setup.endpoints.extend(ips)
+    op.setup.endpoints.extend([ip + ":2379" for ip in ips])
+
+    payload = op.SerializeToString()
+    rep = send(link_context, payload)
+
+    resp = msg_pb.Response()
+    resp.ParseFromString(rep)
+
+    return resp
+
+def close(link_context):
+    op = msg_pb.Operation()
+    op.quit.msg = "Quitting normally"
 
     payload = op.SerializeToString()
     rep = send(link_context, payload)

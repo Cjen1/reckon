@@ -1,10 +1,10 @@
-all: op_gen/op_gen.py 
+all: test.py
 
 #--------- setup proto files, gen config ----------
 
 config: libzmq4 libsodium
 
-proto: op_gen/message_pb2.py etcd_go/OpWire/message.pb.go
+proto: utils/message_pb2.py etcd_go/OpWire/message.pb.go
 
 libzmq4: 
 	wget https://github.com/zeromq/libzmq/releases/download/v4.2.3/zeromq-4.2.3.tar.gz -O build/zeromq-4.2.2.tar.gz 
@@ -25,19 +25,22 @@ libsodium:
 		make && make check; \
 		sudo make install
 
-build/lib_pb/message_pb2.py: lib_pb/message.proto
-	protoc -I=. --python_out=./build lib_pb/message.proto
+build/utils/message_pb2.py: utils/message.proto
+	protoc -I=. --python_out=./build utils/message.proto
 
-build/lib_pb/message.pb.go: lib_pb/message.proto
-	protoc -I . --go_out=./build lib_pb/message.proto
+build/utils/message.pb.go: utils/message.proto
+	protoc -I . --go_out=./build utils/message.proto
+
+#----------- Test Infra prerequisites -------------
+
+test.py: utils/op_gen.py proto
+
 #------------ Generator prerequisites -------------
 
-op_gen/op_gen.py: op_gen/link.py 
+utils/link.py: utils/message_pb2.py
 
-op_gen/link.py: op_gen/message_pb2.py
-
-op_gen/message_pb2.py: build/lib_pb/message_pb2.py
-	cp build/lib_pb/message_pb2.py op_gen/message_pb2.py
+utils/message_pb2.py: build/utils/message_pb2.py
+	cp build/utils/message_pb2.py utils/message_pb2.py
 
 #-------------- etcd golang prereq ----------------
 
@@ -46,8 +49,8 @@ clients/etcd_go_basic: etcd_go/client.go etcd_go/OpWire/message.pb.go etcd_go/et
 	cd etcd_go ; \
 		go build -o ../clients/etcd_go_basic client.go
 
-etcd_go/OpWire/message.pb.go: build/lib_pb/message.pb.go
-	cp build/lib_pb/message.pb.go etcd_go/OpWire
+etcd_go/OpWire/message.pb.go: build/utils/message.pb.go
+	cp build/utils/message.pb.go etcd_go/OpWire
 
 etcd_go/etcd_start.sh: scripts/etcd_start.sh
 	cp scripts/etcd_start.sh etcd_go

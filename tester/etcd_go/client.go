@@ -4,9 +4,8 @@ import (
 	"log"
 	"time"
 	"context"
-	"os/exec"
 	"strings"
-	"fmt"
+	"os"
 
 	zmq "github.com/pebbe/zmq4"
 	"github.com/coreos/etcd/clientv3"
@@ -67,31 +66,6 @@ func get(cli clientv3.Client, op *OpWire.Operation_Get) *OpWire.Response {
 	return resp
 }
 
-func setup(op *OpWire.Operation_Setup) *clientv3.Client{
-	// get remote servers running
-	//TODO generalise setup to support multiple numbers of hosts
-	stdout, err := exec.Command("./etcd_go/etcd_start.sh", strings.Join(op.Setup.Hostnames, " ")).Output()
-
-	if(err != nil) {
-		fmt.Println("Err:", err)
-		fmt.Println("Stdout:", stdout)
-		fmt.Println("Endpoints:", op.Setup.Endpoints)
-		fmt.Println("Hostnames:", op.Setup.Hostnames)
-	}
-
-	endpoints := make([]string, len(op.Setup.Endpoints))
-	for i := 0; i < len(op.Setup.Endpoints); i++ {
-		endpoints[i] = "http://" + op.Setup.Endpoints[i] + ":2379"
-	}
-
-	cli, _ := clientv3.New(clientv3.Config{
-		DialTimeout: 	dialTimeout,
-		Endpoints: 		endpoints,
-	})
-
-	return cli
-}
-
 func quit(op *OpWire.Operation_Quit, socket *zmq.Socket) {
 	resp := &OpWire.Response {
 		ResponseTime:	0,
@@ -113,12 +87,25 @@ func marshall_response(resp *OpWire.Response) string {
 }
 
 func main() {
-	port := "4444"
+	//port := *flag.String("port", "4444", "Local port to use for input")
+	//endpoints := strings.Split(*flag.String("endpoints", "NONE", "Endpoints for client to use, comma delimited. Format: https://<ip>:<client port>"), ",")
+
+	port := os.Args[1]
+	endpoints := strings.Split(os.Args[2], ",")
+
 	socket, _ := zmq.NewSocket(zmq.REP)
 	defer socket.Close()
 	
-	var cli *clientv3.Client
-	defer cli.Close()
+	cli, err := clientv3.New(clientv3.Config{
+		DialTimeout: 	dialTimeout,
+		Endpoints: 		endpoints,
+	})
+ 	defer cli.Close()
+
+	if(err != nil){
+		println(err)
+		return
+	}
 
 	for {
 		binding := "tcp://127.0.0.1:" + port
@@ -128,15 +115,6 @@ func main() {
 		Operation := ReceiveOp(socket)
 
 		switch op := Operation.OpType.(type) {
-		case *OpWire.Operation_Setup:
-			cli = setup(op)
-			resp := &OpWire.Response {
-				ResponseTime: 	0,
-				Err:			"Client set up correctly",
-			}
-			payload := marshall_response(resp)
-			socket.Send(payload,0)
-
 		case *OpWire.Operation_Put:
 			resp := put(cli, op)
 			payload := marshall_response(resp) 

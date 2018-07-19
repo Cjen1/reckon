@@ -44,10 +44,10 @@ utils/message_pb2.py: build/utils/message_pb2.py
 
 #-------------- etcd golang prereq ----------------
 
-clients/etcd_go_basic: etcd_go/client.go etcd_go/OpWire/message.pb.go etcd_go/etcd_start.sh
+clients/etcd_go-basic: etcd_go/client.go etcd_go/OpWire/message.pb.go etcd_go/etcd_start.sh
 	go get github.com/pebbe/zmq4
 	cd etcd_go ; \
-		go build -o ../clients/etcd_go_basic client.go
+		go build -o ../clients/etcd_go-basic client.go
 
 etcd_go/OpWire/message.pb.go: build/utils/message.pb.go
 	cp build/utils/message.pb.go etcd_go/OpWire

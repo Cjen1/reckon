@@ -11,11 +11,14 @@ hostnames = [
 
 endpoints = [ "http://"+socket.gethostbyname(host)+":2379" for host in hostnames]
 
-# tests = [(tag, test, failure_injection), ...]
+# tests = [(tag, test, hostnames, failure_injection), ...]
 tests = [
-        ('Sequential-3S-4B', lambda client: tester.multi_client(client, endpoints[:3], 1, op_gen.sequential_keys(1000, 4)), failure.none),
-        ('Sequential-3S-1KB', lambda client: tester.multi_client(client, endpoints[:3], 1, op_gen.sequential_keys(1000, 1024)), failure.none),
-        ('Sequential-3S-1MB', lambda client: tester.multi_client(client, endpoints[:3], 1, op_gen.sequential_keys(100, 1048576)), failure.none)
+        ('Sequential-3S-4B', 
+            lambda client: tester.multi_client(client, endpoints[:3], 1, op_gen.sequential_keys(10000, 4)), 
+            hostnames[:3], failure.crash(0.5, 0.1, endpoints[:3])),
+        ('Sequential-3S-4B', 
+            lambda client: tester.multi_client(client, endpoints[:3], 1, op_gen.sequential_keys(10000, 4)),
+            hostnames[:3], failure.crash(1, 0.1, endpoints[:3]))
         ]
 
 tester.run_tests(tests)

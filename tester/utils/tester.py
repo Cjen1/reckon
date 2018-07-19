@@ -1,7 +1,7 @@
 from utils import op_gen, link, failure, message_pb2 as msg_pb
 from utils.op_gen import Op
 from os import listdir
-from  subprocess import Popen, PIPE
+from  subprocess import Popen, PIPE, call
 import json
 import time
 from threading import Thread
@@ -77,11 +77,18 @@ def run_tests(tests):
     clients = listdir("clients")
     client_execs = ["clients/" + cl for cl in clients]
 
-    for tag, test, failure in tests:
-        f_start, f_end = failure
+    for tag, test, hosts, failure in tests:
         print("Test: " + tag)
         for name, path in zip(clients, client_execs):
-            killer_thread = f_start(name)
+            service = name[:(name.index('_'))]
+
+            # Set up service 
+            setup = "scripts/" + service + "_setup.py"
+            hostnames = "".join(host + "," for host in hosts)[:-1]
+            call(["python", setup, hostnames], shell=True) 
+
+            f_start, f_end = failure(service)
+            f_start()
 
             # execute test
             data, logs  = test(path)
@@ -93,7 +100,7 @@ def run_tests(tests):
             with open(result_path, "w") as fres:
                 json.dump(["{}-{}".format(tag, name), logs], fres)
 
-            killer_thread.
+            f_end()
 
 
 

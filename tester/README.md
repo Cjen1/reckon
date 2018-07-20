@@ -32,3 +32,17 @@ eg
 	for ectd: name=etcd
 
 
+## Notes on adding tests
+
+Format of a test is (<tag>,<hostname list>,<number of clients>,<operations>,<failure mode>)
+	- tag = the name of the test eg sequential-1S-1C-4K for a 1 server, 1 client sequential test with 4KB keys
+	- hostsname list = a python list of host names
+	- operations = a list of utils.op_gen.Op. Generate with a function in op_gen
+	- failure mode = the failure that is injected: eg crashing clients
+
+## Notes on adding failure tests
+
+Format is a function which when given a service name will return two functions, (start failure, stop failure)
+
+
+

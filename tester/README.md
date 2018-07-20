@@ -20,6 +20,7 @@ The name of the system to set up is the prefix of the client name:
 	<system>_<info about client>
 
 eg
+
 	etcd_go-basic
 
 This allows easy picking up of the correct system to use for a given client without maintianing an explicit database (with lots of replication)
@@ -27,8 +28,11 @@ This allows easy picking up of the correct system to use for a given client with
 ## Notes on names of Docker containers for distributed systems
 
 make the name of the container the name of the service: (similarly to the client)
+
 eg
+
 	for zookeeper: name=zookeeper
+
 	for ectd: name=etcd
 
 

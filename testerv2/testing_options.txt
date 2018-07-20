@@ -1,0 +1,27 @@
+Testing Metrics:
+	Throughput - given ratio of read/write how many ops per sec (randomised)
+	Availability - 
+		latency before read/write
+		max/min latency (draw graphs)
+
+Tests
+	Unreliable hosts 	(kill servers randomly)
+	Unreliable links 	(stop links between servers randomly)
+	Conflicting ops 	(send from multiple clients to multiple servers in the worst case writes/reads which are on the same key)
+	Message size        (increase message size)
+	Latency of links 	(artifically increase latency between clusters)
+	Split DataCentre	(have low latency between one subset and high latency between others)
+	Slow machines (?) where read/writes are very expensive to do
+	Slow node			(One node is under contnetion internally [busy wait programs])
+	Unreliable Storage	(random writes to storage medium)
+
+Notes
+	Try not to DoS CL
+	Ensure that all datasets exist are kept off test servers
+	Ensure that all runs are performed on clean hardware (see reload from image)
+	May want to checksum the snapshots to ensure that they are correctly being replicated
+	Cannot user docker network discovery since it uses raft protocol to maintain the network
+		Thus must manually bring each server back online after a simulated failure to prevent delays due
+		to docker's raft protocol.
+
+

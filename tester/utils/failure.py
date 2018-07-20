@@ -3,7 +3,7 @@ import numpy as np
 import time
 from subprocess import call
 
-def nofailure(name):
+def nofailure():
     return 
 
 class Stoppable_Thread(threading.Thread):
@@ -18,14 +18,13 @@ class Stoppable_Thread(threading.Thread):
         return self.__stop_event.is_set()
 
 def stop_restart(mttr, stop, start, endpoint):
-    print(stop, start)
-    call([stop, endpoint], shell=True)
+    call([stop, endpoint])
     
     # TODO make smarter repair function
     # sleep for time T, where T is distributed given a constant repair rate => exponential function
     time.sleep(np.random.exponential(mttr))
 
-    call([start, endpoint], shell=True)
+    call([start, endpoint])
     
 
 class Crash_Simulator_Thread(Stoppable_Thread):
@@ -53,9 +52,9 @@ def crash_sim_wrapper(mtbf, mttr, hosts, client_name):
     thread = Crash_Simulator_Thread(mtbf, mttr, hosts, client_name)
     return (thread.start, thread.stop)
 
-def none(client_name):
-    return (nofailure, nofailure)
+def none():
+    return lambda service: (nofailure, nofailure)
 
-def crash(mtbf, mttr, hosts):
-    return lambda client_name: crash_sim_wrapper(mtbf, mttr, hosts, client_name)
+def crash(mtbf, mttr, hostnames):
+    return lambda client_name: crash_sim_wrapper(mtbf, mttr, hostnames, client_name)
 

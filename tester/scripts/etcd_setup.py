@@ -9,8 +9,7 @@ def setup_remote(host, ip, node_name):
     call([
         "ssh",
         host,
-        ("sudo docker rm -f etcd; " + 
-            "screen -d -S etcd_background -m sudo docker run " + 
+        (  "screen -d -S etcd_background -m sudo docker run " + 
             "-p 2379:2379 -p 2380:2380 " +
             "--name etcd {registry}:{etcd_ver} " + 
             "/usr/local/bin/etcd " +
@@ -29,9 +28,12 @@ def setup_remote(host, ip, node_name):
             cluster_token="urop_cluster")
         ])
 
-setup_remote(hosts[0], gethostbyname(hosts[0]), "etcd-node-1")
+def stop_remote(host):
+    call(["ssh", host, "sudo docker rm -f etcd"])
 
+for i, host in enumerate(hosts):
+    stop_remote(host)
 
-
-
+for i, host in enumerate(hosts):
+    setup_remote(host, gethostbyname(host), "etcd-node-" + str(i+1))
 

@@ -5,14 +5,15 @@ from  subprocess import Popen, PIPE, call
 import json
 import time
 from threading import Thread
-from tqdm import tqdm
+#from tqdm import tqdm
 import socket
 
-def run_test(setup, operations, result, client_name):
+def run_test(setup, operations, result, client_name, thread_num):
     resps = []
     logs = []
     link_context = setup()
-    for op in tqdm(operations, desc=client_name):
+    #for op in tqdm(operations, desc=client_name):
+    for op in operations:
         if op.op_type == Op.type_NOP:
             time.sleep(op.time)
             continue
@@ -24,10 +25,12 @@ def run_test(setup, operations, result, client_name):
         resps.append(resp.response_time)
         logs.append(resp.err)
 
-    result(resps, logs)
+    result[thread_num] = (resps, logs)
 
 def update(result, resp_time, log, i):
     result[i] = (resp_time, log)
+
+
 
 def multi_client(client_path, endpoints, num_clients, operations):
     client_ops = [[] for i in range(num_clients)]
@@ -40,11 +43,11 @@ def multi_client(client_path, endpoints, num_clients, operations):
     threads = [ Thread(
         target = run_test,
         args = [
-            lambda: link.gen_context(50000 + i),
-            client_ops[i],
-            lambda resp_time, log: update(result, resp_time, log, i),
-            client_path
-            ]) for i in range(num_clients)]
+            lambda: link.gen_context(50000 + thread_num),
+            client_ops[thread_num],
+            result,
+            client_path,
+            thread_num]) for thread_num in range(num_clients)]
 
     print("Starting client on: " + client_path) 
     for i in range(num_clients):
@@ -63,7 +66,6 @@ def multi_client(client_path, endpoints, num_clients, operations):
     for thread in threads:
         thread.join()
 
-
     # collate results from all threads
     res = []
     logs = []
@@ -79,13 +81,14 @@ def run_tests(tests):
 
     for tag, test, hosts, failure in tests:
         print("Test: " + tag)
+        print("Hosts: " + str(hosts))
         for name, path in zip(clients, client_execs):
             service = name[:(name.index('_'))]
 
             # Set up service 
             setup = "scripts/" + service + "_setup.py"
             hostnames = "".join(host + "," for host in hosts)[:-1]
-            call(["python", setup, hostnames], shell=True) 
+            call(["python", setup, hostnames]) 
 
             f_start, f_end = failure(service)
             f_start()

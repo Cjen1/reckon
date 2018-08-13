@@ -1,1 +1,0 @@
-{"test": "ThirdBascTest_consul_go-basic", "resps": [0.090421266, 0.000586738, 0.091006537, 0.00053329, 0.090554701, 0.000429138, 0.090379776, 0.000567922], "logs": ["None", "None", "None", "Key-Value Pair not found...", "None", "Key-Value Pair not found...", "None", "Key-Value Pair not found..."]}

@@ -16,8 +16,9 @@ hostnames = [
 
 # test = (tag, hostnames, num_clients, operations, failure_mode)
 tests = [
-#	("VeryBasicTest", hostnames[:3], 1, op_gen.sequential_keys(100, 100), failure.none()),
-	("ThirdBascTest", hostnames[:3], 4, op_gen.mixed_ops(8,100, 0.5, 4), failure.none())
+	("VeryBasicTest", hostnames[:3], 1, op_gen.sequential_keys(100, 100), failure.none()),
+	("OtherBascTest", hostnames[:3], 1, op_gen.mixed_ops(100, 100, 0.5, 1), failure.none()),
+	("ThirdBascTest", hostnames[:3], 4, op_gen.mixed_ops(100, 100, 0.5, 4), failure.none()),
         ]
 
 for test in tests:

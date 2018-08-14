@@ -1,6 +1,7 @@
 syntax="proto3";
 
 package OpWire;
+option java_package="zookeeper_java.OpWire";
 
 message Operation {
 	oneof op_type {

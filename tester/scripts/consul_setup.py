@@ -3,9 +3,22 @@ from sys import argv
 from socket import gethostbyname
 
 hosts = argv[1].split(",")
-host_ips = [gethostbyname(host) for host in hosts]
+
+ips = {"caelum-504.cl.cam.ac.uk": "128.232.80.65"}
+
+def ipbyhost(host):
+	res = gethostbyname(host)
+	if "127" in res: 
+		res = ips[host]
+	return res
+
+host_ips = [ipbyhost(host) for host in hosts]
 
 def stop_remote(host):
+	command = ""
+	for i in range(len(host_ips)):
+		command += ("docker rm -f registrator{index}; ").format(index=str(i+1))
+	call(["ssh", host, command])
 	call(["ssh", host, "sudo docker rm -f consul"])
 
 for i, host in enumerate(hosts):
@@ -14,7 +27,7 @@ for i, host in enumerate(hosts):
 def bootstrap(host, ip):
 	call(["ssh",
 	       host,
-	       ("docker run -d -h node1 --name=consul " +
+	       ("docker run -d -h consul-node1 --name consul " +
 	        "-p {sip}:8300:8300 " +
 		"-p {sip}:8301:8301 " +
 		"-p {sip}:8301:8301/udp " +
@@ -33,7 +46,7 @@ def bootstrap(host, ip):
 def join(host, ip, first_ip, index):
 	call(["ssh",
 	       host,
-	       ("docker run -d -h node" + str(index) + " --name=consul " +
+	       ("docker run -d -h consul-node" + str(index) + " --name consul " +
 	        "-p {sip}:8300:8300 " +
 		"-p {sip}:8301:8301 " +
 		"-p {sip}:8301:8301/udp " +
@@ -51,15 +64,6 @@ def join(host, ip, first_ip, index):
 
 def registrators():
 	command = ""
-	for i in range(len(host_ips)):
-		command += ("docker rm -f registrator{index}; ").format(index=str(i+1))
-	for host in hosts:
-		call([
-			"ssh",
-			host,
-			command
-		])
-	command = ""
 	for i, host_ip in enumerate(host_ips):
 		command += ("docker run -d --name=registrator{index} --net=host --volume=/var/run/docker.sock:/tmp/docker.sock gliderlabs/registrator:latest consul://{ip}:8500; "
 		           ).format(index=str(i+1), ip=host_ip)
@@ -75,3 +79,8 @@ for i, host in enumerate(hosts[1:]):
 	join(host, host_ips[i+1], host_ips[0], i+2)
 
 registrators()
+
+a = 0
+for i in range(100000000):
+	a = i
+

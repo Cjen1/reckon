@@ -1,4 +1,4 @@
-from subprocess import call
+from subprocess import call, Popen
 from sys import argv
 from socket import gethostbyname
 
@@ -14,15 +14,22 @@ def ipbyhost(host):
 
 host_ips = [ipbyhost(host) for host in hosts]
 
-def stop_remote(host):
-	command = ""
-	for i in range(len(host_ips)):
-		command += ("docker rm -f registrator{index}; ").format(index=str(i+1))
-	call(["ssh", host, command])
-	call(["ssh", host, "sudo docker rm -f consul"])
+def rmCons(host):
+        call(["ssh", host, "docker rm -f consul"])
 
-for i, host in enumerate(hosts):
-	stop_remote(host)
+def regs(host, reg):
+        call(["ssh", host, "docker rm -f registrator{i}".format(i=reg)])
+
+
+rs = [i+1 for i in range(5)]
+hosts2 = ["caelum-50{k}.cl.cam.ac.uk".format(k=str(i+4)) for i in range(5)]
+
+
+
+for host in hosts2:
+        rmCons(host)
+        for r in rs:
+                regs(host, r)
 
 def bootstrap(host, ip):
 	call(["ssh",

@@ -30,20 +30,23 @@ def separate(data, num_buckets):
 
     for i, x in enumerate(data):
         result[i % num_buckets].append(x)
-
+    print('Separated Data: ')
+    print([len(i) for i in result])
     return result
 
 def run_ops(context_generator, operations, client_id, resps_storage, logs_storage):
+    print('Running operations with client ' + str(client_id))
     resps = []
     logs = []
-    link_context = context_generator()
+    link_context = context_generator(50000 + client_id)
 
     for op in operations:
         if op.op_type == Op.type_NOP:
             time.sleep(op.time)
             continue
-
+        print('About to send message to client ' + str(client_id) + ' at port ' + str(link_context.port))
         rec = link.send(link_context, op.operation)
+	print(rec)
         resp = msg_pb.Response()
         resp.ParseFromString(rec)
 
@@ -68,6 +71,10 @@ def run_test(test):
 
     for client in listdir("clients"):
         service = client[:(client.index('_'))]
+	
+	if("zookeeper" in service):
+            if( ( (service == "zookeeper") and len(cluster_hostnames) == 5) or ( (service == "zookeeper5") and len(cluster_hostnames) == 3)):
+                continue
 
         # marshall hostnames
         arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
@@ -81,10 +88,13 @@ def run_test(test):
         # Set up client threads 
         resp_storage = [i for i in range(num_clients)]
         logs_storage = [i for i in range(num_clients)]
+        
+        gens = [lambda k : link.gen_context(k) for i in range(num_clients)]
+        
         client_threads = [ Thread (
             target = run_ops,
             args = [
-                lambda: link.gen_context(50000 + client_id),
+                gens[client_id],
                 separated_ops[client_id],
                 client_id,
                 resp_storage,

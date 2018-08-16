@@ -44,7 +44,7 @@ utils/message_pb2.py: build/utils/message_pb2.py
 
 #-------------- etcd golang prereq ----------------
 
-clients/etcd_go-basic: etcd_go/client.go etcd_go/OpWire/message.pb.go etcd_go/etcd_start.sh
+clients/etcd_go-basic: etcd_go/client.go etcd_go/OpWire/message.pb.go 
 	go get github.com/pebbe/zmq4
 	cd etcd_go ; \
 		go build -o ../clients/etcd_go-basic client.go
@@ -52,8 +52,21 @@ clients/etcd_go-basic: etcd_go/client.go etcd_go/OpWire/message.pb.go etcd_go/et
 etcd_go/OpWire/message.pb.go: build/utils/message.pb.go
 	cp build/utils/message.pb.go etcd_go/OpWire
 
-etcd_go/etcd_start.sh: scripts/etcd_start.sh
-	cp scripts/etcd_start.sh etcd_go
+#-------------- consul golang prereq ----------------
 
+clients/consul_go: consul_go/client.go consul_go/OpWire/message.pb.go 
+	go get github.com/pebbe/zmq4
+	cd consul_go ; \
+		go build -a -o ../clients/consul_go client.go
 
+consul_go/OpWire/message.pb.go: build/utils/message.pb.go
+	cp build/utils/message.pb.go consul_go/OpWire
+#------------- zk java prereq ---------------------
+clients/zookeeper_java/OpWire/Message.class: zookeeper_java/OpWire/Message.java
+	javac -cp ".:/home/dks28/Zookeeper/tester/jars/com.google.protobuf.jar:/home/dks28/Zookeeper/tester/jars/zookeeper-3.4.12.jar:/home/dks28/Zookeeper/tester/jars/org.zeromq.jar:/home/dks28/Zookeeper/tester/jars/com.neilalexander.jnacl.crypto.jar" -d clients/zookeeper_java-basic/OpWire zookeeper_java/OpWire/Message.java
 
+clients/zookeeper_java-basic/Client.class: zookeeper_java/Client.java clients/zookeeper_java/OpWire/Message.class
+	javac -cp ".:/home/dks28/Zookeeper/tester/jars/com.google.protobuf.jar:/home/dks28/Zookeeper/tester/jars/zookeeper-3.4.12.jar:/home/dks28/Zookeeper/tester/jars/org.zeromq.jar:/home/dks28/Zookeeper/tester/jars/com.neilalexander.jnacl.crypto.jar" -d clients/zookeeper_java-basic/ zookeeper_java/Client.java
+
+clients/zookeeper_java-basic.jar: clients/zookeeper_java-basic/Client.class
+	cd clients/zookeeper_java-basic; jar cvfe /home/dks28/Zookeeper/tester/clients/zookeeper_java-basic.jar zookeeper_java.Client *

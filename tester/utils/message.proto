@@ -29,9 +29,3 @@ message Response {
 	string err = 2;
 	string msg = 3;
 }
-
-	
-
-	
-
-

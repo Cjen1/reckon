@@ -1,4 +1,3 @@
-all: test.py
 
 #--------- setup proto files, gen config ----------
 
@@ -31,10 +30,6 @@ build/utils/message_pb2.py: utils/message.proto
 build/utils/message.pb.go: utils/message.proto
 	protoc -I . --go_out=./build utils/message.proto
 
-#----------- Test Infra prerequisites -------------
-
-test.py: utils/op_gen.py proto
-
 #------------ Generator prerequisites -------------
 
 utils/link.py: utils/message_pb2.py
@@ -61,7 +56,9 @@ clients/consul_go: consul_go/client.go consul_go/OpWire/message.pb.go
 
 consul_go/OpWire/message.pb.go: build/utils/message.pb.go
 	cp build/utils/message.pb.go consul_go/OpWire
+
 #------------- zk java prereq ---------------------
+
 clients/zookeeper_java/OpWire/Message.class: zookeeper_java/OpWire/Message.java
 	javac -cp ".:/home/dks28/Zookeeper/tester/jars/com.google.protobuf.jar:/home/dks28/Zookeeper/tester/jars/zookeeper-3.4.12.jar:/home/dks28/Zookeeper/tester/jars/org.zeromq.jar:/home/dks28/Zookeeper/tester/jars/com.neilalexander.jnacl.crypto.jar" -d clients/zookeeper_java-basic/OpWire zookeeper_java/OpWire/Message.java
 

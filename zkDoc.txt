@@ -57,16 +57,3 @@ ESTABLISHING A COMPARISON BETWEEN DIFFERENT CONSENSUS SYSTEMS
 		  6) The test suite is configurable by adding/altering tests of the form as advised in 
 		     run_tests.py within the array of tests. To add new failure modes, or Operation sets, 
 		     modify the files in ./tester/util.
-		  -) Note: The Client application has been precompiled into zookeeper_java-basic.jar. 
-		     (zookeeper5_java-basic.jar is a copy of this file, needed to differentiate between 3
-		     and 5 server scenarios.) The source code is in ./tester/zookeeper_java. If you want 
-		     to recompile the file, make sure that you first compile ./tester/zookeeper_java/
-		     OpWire/Message.java first, including all .jar files in ./tester/jars in both compil-
-		     ations, and that once the classes are compiled, you pack the class files into a jar 
-		     file together with the contents of ./tester/build/zookeeper_java-basic. To do this 
-		     automatically, call (while in ./tester) "mv build/zookeeper_java-basic clients; make 
-		     clients/zookeeper_java-basic.jar; mv clients/zookeeper_java-basic build". (Why is the 
-		     moving of the files necessary, you ask? I don't know. When I tried to write the Make-
-		     file to build it from build/zookeeper_java-basic, I was getting the weirdest Java 
-		     exceptions.) Then copy the new jar file onto ./tester/clients/zookeeper5_java-
-		     basic.jar, and you are done.

@@ -3,7 +3,7 @@ import org.zeromq.ZMQ;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.*;
 import java.util.*;
-import zookeeper_java.OpWire.*;
+import OpWire.*;
 
 public class Client implements org.apache.zookeeper.Watcher {
 	public static final int CLIENT_PORT = 2181;
@@ -29,14 +29,14 @@ public class Client implements org.apache.zookeeper.Watcher {
 	
 	public Client(){ ; }
 
-	public zookeeper_java.OpWire.Message.Operation receiveOp(ZMQ.Socket socket) throws Exception{
+	public OpWire.Message.Operation receiveOp(ZMQ.Socket socket) throws Exception{
 		byte[] payload = socket.recv(0);
-		zookeeper_java.OpWire.Message.Operation op = zookeeper_java.OpWire.Message.Operation.parseFrom(payload);
+		OpWire.Message.Operation op = OpWire.Message.Operation.parseFrom(payload);
 		return op;
 	}
 
-	public zookeeper_java.OpWire.Message.Response quit(ZMQ.Socket socket){
-		zookeeper_java.OpWire.Message.Response resp = zookeeper_java.OpWire.Message.Response.newBuilder()
+	public OpWire.Message.Response quit(ZMQ.Socket socket){
+		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(0.0)
 							     .setErr("Socket Quitting")
 							     .setMsg(".")
@@ -44,7 +44,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 		return resp;
 	}
 
-	public zookeeper_java.OpWire.Message.Response put(ZooKeeper client, zookeeper_java.OpWire.Message.Operation opr){
+	public OpWire.Message.Response put(ZooKeeper client, OpWire.Message.Operation opr){
 		String err = "None";
 		String path = "/" + opr.getPut().getKey();
 		System.out.println("Decoded Path: " + path);
@@ -57,7 +57,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 		}
 		long stop = System.nanoTime();
 		double duration = (stop - start + 0.0) / 1E9; // Duration in seconds.
-		zookeeper_java.OpWire.Message.Response resp = zookeeper_java.OpWire.Message.Response.newBuilder()
+		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)
 							     .setMsg(".")
@@ -67,7 +67,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 	}
 
 
-	public zookeeper_java.OpWire.Message.Response get(ZooKeeper client, zookeeper_java.OpWire.Message.Operation opr){
+	public OpWire.Message.Response get(ZooKeeper client, OpWire.Message.Operation opr){
 		String err = "None";
 		String path = "/" + opr.getGet().getKey();
 		long start = System.nanoTime();
@@ -79,7 +79,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 		}
 		long stop = System.nanoTime();
 		double duration = (stop - start + 0.0) / 1E9; // Duration in seconds.
-		zookeeper_java.OpWire.Message.Response resp = zookeeper_java.OpWire.Message.Response.newBuilder()
+		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)
 							     .setMsg(".")
@@ -106,7 +106,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 
 		String binding;
 		boolean quits = false;
-		zookeeper_java.OpWire.Message.Response resp = null;
+		OpWire.Message.Response resp = null;
 		byte[] payload;
 		int i = 0;
 		binding = "tcp://127.0.0.1:" + port;
@@ -114,7 +114,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 		System.out.println("CLIENT: BOUND TO PORT " + port);
 		while(!quits){
 			i++;
-			zookeeper_java.OpWire.Message.Operation opr = mainClient.receiveOp(socket);
+			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
 			System.out.println("CLIENT: RECEIVED OPERATION " + i + " @ port " + port);
 			switch(opr.getOpTypeCase().getNumber()){
 				case 1: 	//1 = Put
@@ -128,7 +128,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 					quits = true;
 					break;
 				default:
-					resp = zookeeper_java.OpWire.Message.Response.newBuilder()
+					resp = OpWire.Message.Response.newBuilder()
 					      .setResponseTime(0.0)
 					      .setErr("Operation was not found / supported")
 					      .setMsg(".")

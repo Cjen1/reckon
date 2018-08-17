@@ -39,6 +39,7 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
     print("Running test: " + tag)
 
     # TODO Convert operations into the serialized form
+    # TODO implement failure injection again
 
     for client in listdir("clients"):
         service = client[:(client.index('_'))]

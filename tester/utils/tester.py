@@ -1,4 +1,3 @@
-from utils.op_gen import Op
 from utils import link, failure, message_pb2 as msg_pb
 from os import listdir
 from subprocess import call, Popen
@@ -7,6 +6,8 @@ import socket
 import time
 from tqdm import tqdm 
 import json
+import zmq
+
 # starts a microclient with given config
 # port: local port for communication channel
 def start_micro_client(path, port, cluster_hostnames):
@@ -32,7 +33,7 @@ def separate(data, num_buckets):
     print([len(i) for i in result])
     return result
 
-def run_test(test, client_port = 50000, failure_port = 50001):
+def run_test(test, client_port = "50000", failure_port = "50001"):
     tag, cluster_hostnames, num_clients, operations, failure = test
 
     print("Running test: " + tag)
@@ -59,7 +60,7 @@ def run_test(test, client_port = 50000, failure_port = 50001):
             start_micro_client("clients/"+client, client_port, cluster_hostnames)
 
         socket = zmq.Context().socket(zmq.ROUTER)
-        socket.bind("tcp://localhost:50001")
+        socket.bind("tcp://127.0.0.1:" + client_port)
 
         #------------------ Recieve ready signals from clients --------------------------
         addresses = set()
@@ -74,8 +75,7 @@ def run_test(test, client_port = 50000, failure_port = 50001):
                 addr,
                 b'',
                 operation
-                ])
-
+                ]) 
         #------- Send operations to each of the clients in a loda balanced manner -------
         resps = []
         logs = []

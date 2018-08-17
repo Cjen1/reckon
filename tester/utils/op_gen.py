@@ -3,18 +3,6 @@ from utils import message_pb2 as msg_pb
 from numpy import random as rand
 import math
 
-
-class Op: 
-    type_OP = 0 
-    type_NOP = 1 
-
-    def __init__(self, op_type, operation = None, time = 0): 
-        self.op_type = op_type
-        if op_type == Op.type_NOP:
-            self.time = time
-        else:
-            self.operation = operation
-
 # Number of keys to write, size of data in bytes
 def sequential_keys(number_keys, data_size):
     if number_keys > 256**4:
@@ -38,6 +26,7 @@ def mixed_ops(num_ops, data_size, split, num_cli):	# split is the percentage as 
         print('Cannot handle that many keys. Aborting.')
         return
 
+    # TODO refactor
     num_keys = int(num_ops * (1 - split))
     num_reads = num_ops - num_keys
     
@@ -65,7 +54,7 @@ def Op_put(key, value):
 
     payload = op.SerializeToString()
 
-    return Op(Op.type_OP, operation=payload)
+    return payload
 
 def Op_get(key):
     op = msg_pb.Operation()
@@ -73,12 +62,12 @@ def Op_get(key):
 
     payload = op.SerializeToString()
 
-    return Op(Op.type_OP, operation=payload)
+    return payload
 
 def Op_quit():
     op = msg_pb.Operation()
     op.quit.msg = "Quit"
 
     payload = op.SerializeToString()
-
-    return Op(Op.type_OP, operation=payload)
+    
+    return payload

@@ -64,17 +64,11 @@ consul_go/OpWire/message.pb.go: build/utils/message.pb.go
 	cp build/utils/message.pb.go consul_go/OpWire
 
 #------------- zk java prereq ---------------------
-<<<<<<< HEAD
-
-clients/zookeeper_java/OpWire/Message.class: zookeeper_java/OpWire/Message.java
-	javac -cp ".:/home/dks28/Zookeeper/tester/jars/com.google.protobuf.jar:/home/dks28/Zookeeper/tester/jars/zookeeper-3.4.12.jar:/home/dks28/Zookeeper/tester/jars/org.zeromq.jar:/home/dks28/Zookeeper/tester/jars/com.neilalexander.jnacl.crypto.jar" -d clients/zookeeper_java-basic/OpWire zookeeper_java/OpWire/Message.java
-=======
 build/zookeeper_java-basic/OpWire/Message.class: OpWire/Message.java
 	javac -cp ".:jars/com.google.protobuf.jar:jars/zookeeper-3.4.12.jar:jars/org.zeromq.jar:jars/com.neilalexander.jnacl.crypto.jar" -d build/zookeeper_java-basic/ OpWire/Message.java
 
 build/zookeeper_java-basic/Client.class: zookeeper_java/Client.java build/zookeeper_java-basic/OpWire/Message.class
 	javac -cp ".:jars/com.google.protobuf.jar:jars/zookeeper-3.4.12.jar:jars/org.zeromq.jar:jars/com.neilalexander.jnacl.crypto.jar" -d build/zookeeper_java-basic/ zookeeper_java/Client.java; mv build/zookeeper_java-basic clients
->>>>>>> 9deece62710e0a3bf18fc425c68045982e7c27bc
 
 clients/zookeeper_java-basic.jar: build/zookeeper_java-basic/Client.class
 	cd clients/zookeeper_java-basic; jar cvfe ../zookeeper_java-basic.jar zookeeper_java.Client *; cd ..; mv zookeeper_java-basic ../build;

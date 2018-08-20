@@ -2738,14 +2738,14 @@ public final class Message {
         getErrBytes();
 
     /**
-     * <code>string msg = 3;</code>
+     * <code>double st = 3;</code>
      */
-    java.lang.String getMsg();
+    double getSt();
+
     /**
-     * <code>string msg = 3;</code>
+     * <code>double end = 4;</code>
      */
-    com.google.protobuf.ByteString
-        getMsgBytes();
+    double getEnd();
   }
   /**
    * Protobuf type {@code OpWire.Response}
@@ -2762,7 +2762,8 @@ public final class Message {
     private Response() {
       responseTime_ = 0D;
       err_ = "";
-      msg_ = "";
+      st_ = 0D;
+      end_ = 0D;
     }
 
     @java.lang.Override
@@ -2800,10 +2801,14 @@ public final class Message {
               err_ = s;
               break;
             }
-            case 26: {
-              java.lang.String s = input.readStringRequireUtf8();
+            case 25: {
 
-              msg_ = s;
+              st_ = input.readDouble();
+              break;
+            }
+            case 33: {
+
+              end_ = input.readDouble();
               break;
             }
             default: {
@@ -2881,38 +2886,22 @@ public final class Message {
       }
     }
 
-    public static final int MSG_FIELD_NUMBER = 3;
-    private volatile java.lang.Object msg_;
+    public static final int ST_FIELD_NUMBER = 3;
+    private double st_;
     /**
-     * <code>string msg = 3;</code>
+     * <code>double st = 3;</code>
      */
-    public java.lang.String getMsg() {
-      java.lang.Object ref = msg_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        msg_ = s;
-        return s;
-      }
+    public double getSt() {
+      return st_;
     }
+
+    public static final int END_FIELD_NUMBER = 4;
+    private double end_;
     /**
-     * <code>string msg = 3;</code>
+     * <code>double end = 4;</code>
      */
-    public com.google.protobuf.ByteString
-        getMsgBytes() {
-      java.lang.Object ref = msg_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        msg_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
+    public double getEnd() {
+      return end_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -2935,8 +2924,11 @@ public final class Message {
       if (!getErrBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, err_);
       }
-      if (!getMsgBytes().isEmpty()) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, msg_);
+      if (st_ != 0D) {
+        output.writeDouble(3, st_);
+      }
+      if (end_ != 0D) {
+        output.writeDouble(4, end_);
       }
       unknownFields.writeTo(output);
     }
@@ -2954,8 +2946,13 @@ public final class Message {
       if (!getErrBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, err_);
       }
-      if (!getMsgBytes().isEmpty()) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, msg_);
+      if (st_ != 0D) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(3, st_);
+      }
+      if (end_ != 0D) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(4, end_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -2979,8 +2976,14 @@ public final class Message {
               other.getResponseTime()));
       result = result && getErr()
           .equals(other.getErr());
-      result = result && getMsg()
-          .equals(other.getMsg());
+      result = result && (
+          java.lang.Double.doubleToLongBits(getSt())
+          == java.lang.Double.doubleToLongBits(
+              other.getSt()));
+      result = result && (
+          java.lang.Double.doubleToLongBits(getEnd())
+          == java.lang.Double.doubleToLongBits(
+              other.getEnd()));
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -2997,8 +3000,12 @@ public final class Message {
           java.lang.Double.doubleToLongBits(getResponseTime()));
       hash = (37 * hash) + ERR_FIELD_NUMBER;
       hash = (53 * hash) + getErr().hashCode();
-      hash = (37 * hash) + MSG_FIELD_NUMBER;
-      hash = (53 * hash) + getMsg().hashCode();
+      hash = (37 * hash) + ST_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          java.lang.Double.doubleToLongBits(getSt()));
+      hash = (37 * hash) + END_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          java.lang.Double.doubleToLongBits(getEnd()));
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -3136,7 +3143,9 @@ public final class Message {
 
         err_ = "";
 
-        msg_ = "";
+        st_ = 0D;
+
+        end_ = 0D;
 
         return this;
       }
@@ -3166,7 +3175,8 @@ public final class Message {
         OpWire.Message.Response result = new OpWire.Message.Response(this);
         result.responseTime_ = responseTime_;
         result.err_ = err_;
-        result.msg_ = msg_;
+        result.st_ = st_;
+        result.end_ = end_;
         onBuilt();
         return result;
       }
@@ -3222,9 +3232,11 @@ public final class Message {
           err_ = other.err_;
           onChanged();
         }
-        if (!other.getMsg().isEmpty()) {
-          msg_ = other.msg_;
-          onChanged();
+        if (other.getSt() != 0D) {
+          setSt(other.getSt());
+        }
+        if (other.getEnd() != 0D) {
+          setEnd(other.getEnd());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -3350,71 +3362,54 @@ public final class Message {
         return this;
       }
 
-      private java.lang.Object msg_ = "";
+      private double st_ ;
       /**
-       * <code>string msg = 3;</code>
+       * <code>double st = 3;</code>
        */
-      public java.lang.String getMsg() {
-        java.lang.Object ref = msg_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          msg_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
+      public double getSt() {
+        return st_;
       }
       /**
-       * <code>string msg = 3;</code>
+       * <code>double st = 3;</code>
        */
-      public com.google.protobuf.ByteString
-          getMsgBytes() {
-        java.lang.Object ref = msg_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          msg_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>string msg = 3;</code>
-       */
-      public Builder setMsg(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        msg_ = value;
+      public Builder setSt(double value) {
+        
+        st_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>string msg = 3;</code>
+       * <code>double st = 3;</code>
        */
-      public Builder clearMsg() {
+      public Builder clearSt() {
         
-        msg_ = getDefaultInstance().getMsg();
+        st_ = 0D;
+        onChanged();
+        return this;
+      }
+
+      private double end_ ;
+      /**
+       * <code>double end = 4;</code>
+       */
+      public double getEnd() {
+        return end_;
+      }
+      /**
+       * <code>double end = 4;</code>
+       */
+      public Builder setEnd(double value) {
+        
+        end_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>string msg = 3;</code>
+       * <code>double end = 4;</code>
        */
-      public Builder setMsgBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
+      public Builder clearEnd() {
         
-        msg_ = value;
+        end_ = 0D;
         onChanged();
         return this;
       }
@@ -3511,9 +3506,9 @@ public final class Message {
       "getH\000\022)\n\004quit\030\003 \001(\0132\031.OpWire.Operation.o" +
       "p_quitH\000\032$\n\006op_put\022\013\n\003key\030\001 \001(\004\022\r\n\005value" +
       "\030\002 \001(\014\032\025\n\006op_get\022\013\n\003key\030\001 \001(\004\032\026\n\007op_quit" +
-      "\022\013\n\003msg\030\001 \001(\tB\t\n\007op_type\";\n\010Response\022\025\n\r" +
-      "response_time\030\001 \001(\001\022\013\n\003err\030\002 \001(\t\022\013\n\003msg\030" +
-      "\003 \001(\tB\010\n\006OpWireb\006proto3"
+      "\022\013\n\003msg\030\001 \001(\tB\t\n\007op_type\"G\n\010Response\022\025\n\r" +
+      "response_time\030\001 \001(\001\022\013\n\003err\030\002 \001(\t\022\n\n\002st\030\003" +
+      " \001(\001\022\013\n\003end\030\004 \001(\001B\010\n\006OpWireb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -3556,7 +3551,7 @@ public final class Message {
     internal_static_OpWire_Response_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_OpWire_Response_descriptor,
-        new java.lang.String[] { "ResponseTime", "Err", "Msg", });
+        new java.lang.String[] { "ResponseTime", "Err", "St", "End", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

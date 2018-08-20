@@ -29,7 +29,7 @@ build/utils/message.pb.go: utils/message.proto
 	protoc -I . --go_out=./build utils/message.proto
 
 OpWire/Message.java: utils/message.proto
-	protoc -I . --java_out=./OpWire utils/message.proto
+	protoc -I . --java_out=. utils/message.proto
 
 #------------ Generator prerequisites -------------
 

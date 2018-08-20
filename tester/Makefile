@@ -1,9 +1,7 @@
-
+all: run_tests.py clients/*
 #--------- setup proto files, gen config ----------
 
 config: libzmq4 libsodium
-
-proto: utils/message_pb2.py etcd_go/OpWire/message.pb.go
 
 libzmq4: 
 	wget https://github.com/zeromq/libzmq/releases/download/v4.2.3/zeromq-4.2.3.tar.gz -O build/zeromq-4.2.2.tar.gz 
@@ -24,18 +22,23 @@ libsodium:
 		make && make check; \
 		sudo make install
 
-build/utils/message_pb2.py: utils/message.proto
+build/utils/message_pb2.py: utils/message.proto 
 	protoc -I=. --python_out=./build utils/message.proto
 
-build/utils/message.pb.go: utils/message.proto
+build/utils/message.pb.go: utils/message.proto 
 	protoc -I . --go_out=./build utils/message.proto
 
 #------------ Generator prerequisites -------------
 
 utils/link.py: utils/message_pb2.py
 
-utils/message_pb2.py: build/utils/message_pb2.py
+utils/message_pb2.py: build/utils/message_pb2.py 
 	cp build/utils/message_pb2.py utils/message_pb2.py
+
+#-------------- Tester Prerequisites --------------
+run_tests.py: utils/message_pb2.py
+
+utils/tester.py: utils/message_pb2.py
 
 #-------------- etcd golang prereq ----------------
 

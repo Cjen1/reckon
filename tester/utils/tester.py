@@ -26,11 +26,8 @@ def start_micro_client(path, port, cluster_hostnames):
 # splits the given data into num_buckets buckets
 def separate(data, num_buckets):
     result = [[] for i in range(num_buckets)]
-
     for i, x in enumerate(data):
         result[i % num_buckets].append(x)
-    print('Separated Data: ')
-    print([len(i) for i in result])
     return result
 
 def run_test(test, client_port = "50000", failure_port = "50001"):
@@ -64,9 +61,12 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
 
         #------------------ Recieve ready signals from clients --------------------------
         addresses = set()
+        address_uid = {}
         for i in tqdm(range(num_clients), desc="Ready signals"):
             address, empty, ready = socket.recv_multipart()
             addresses.add(address)
+            if not (address in address_uid):
+                address_uid[address] = len(address_uid)
 
         #------------------- Send initial operation to each client ----------------------
         for addr in addresses:
@@ -76,8 +76,9 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
                 b'',
                 operation
                 ]) 
+
         #------- Send operations to each of the clients in a loda balanced manner -------
-        resps = []
+        resps = [] 
         logs = []
         for operation in tqdm(operations, desc="Sending Operations"):
             address, empty, rec = socket.recv_multipart()
@@ -94,7 +95,6 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
             logs.append([address, resp.err])
 
         #---------- Collect remaining responses and make clients quit cleanly -----------
-        print()
         quit_op = msg_pb.Operation()
         quit_op.quit.msg = "Quitting normally"
         quit_op = quit_op.SerializeToString()
@@ -103,10 +103,13 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
             # Collect remaining responses 
             if rec != b'':
                 resp = msg_pb.Response()
-                resp.ParseFromString(rec)
+                try:
+                    resp.ParseFromString(rec)
+                except google.protobuf.message.DecodeError:
+                    print(rec)
 
-                resps.append([addresss, resp.response_time])
-                logs.append([address, resp.err])
+                resps.append([address_uid[address], resp.response_time])
+                logs.append([address_uid[address], resp.err])
 
             # Send quit message
             socket.send_multipart([
@@ -120,6 +123,11 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
         #----------------------- Write responses to disk --------------------------------
         print("Writing responses to disk")
         test_name = tag + "_" + client
-        fres = open("results/" + test_name + ".res", "w")
-        json.dump({'test': test_name, 'resps': resps, 'logs': logs}, fres)
+        filename = "results/" + test_name + ".res"
+        fres = open(filename, "w")
+        data =({'test': test_name, 'resps': resps, 'logs': logs}, fres)
+        print(data)
+        json.dump(data, fres)
+
         fres.close()
+

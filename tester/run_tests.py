@@ -1,5 +1,4 @@
-from utils import op_gen
-from utils import link, failure, message_pb2 as msg_pb, tester
+from utils import op_gen, link, failure, message_pb2 as msg_pb, tester
 
 #---------------------------------------------------------------------------
 #------------------------- Hostnames and Tests -----------------------------

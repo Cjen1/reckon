@@ -3,6 +3,8 @@ Testing Metrics:
 	Availability - 
 		latency before read/write
 		max/min latency (draw graphs)
+		
+	target 99'tile since depending on number of reqeusts may get 99'tile request
 
 Tests
 	Unreliable hosts 	(kill servers randomly)

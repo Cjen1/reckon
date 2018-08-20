@@ -1,6 +1,7 @@
 syntax="proto3";
 
 package OpWire;
+option java_package="zookeeper_java.OpWire";
 
 message Operation {
 	oneof op_type {
@@ -26,11 +27,6 @@ message Operation {
 message Response {
 	double response_time = 1;
 	string err = 2;
-	string msg = 3;
+	double st = 3;
+	double end = 4;
 }
-
-	
-
-	
-
-

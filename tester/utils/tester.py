@@ -1,4 +1,3 @@
-from utils.op_gen import Op
 from utils import link, failure, message_pb2 as msg_pb
 from os import listdir
 from subprocess import call, Popen
@@ -7,17 +6,16 @@ import socket
 import time
 from tqdm import tqdm 
 import json
+import zmq
 
-#---------------------------------------------------------------------------
-#------------ Test running functions, config below -------------------------
-#---------------------------------------------------------------------------
-
+# starts a microclient with given config
+# port: local port for communication channel
 def start_micro_client(path, port, cluster_hostnames):
     ips = [socket.gethostbyname(host) for host in cluster_hostnames]
 
     arg_ips = "".join(ip + "," for ip in ips)[:-1]
 
-    cliient = {}
+    client = {}
     if path.endswith(".jar"):
         client = Popen(['java', '-jar', path, port, arg_ips])
     elif path.endswith(".py"):
@@ -25,49 +23,31 @@ def start_micro_client(path, port, cluster_hostnames):
     else:
         client = Popen([path, port, arg_ips])
 
+    return client
+
+# splits the given data into num_buckets buckets
 def separate(data, num_buckets):
     result = [[] for i in range(num_buckets)]
-
     for i, x in enumerate(data):
         result[i % num_buckets].append(x)
-
     return result
 
-def run_ops(context_generator, operations, client_id, resps_storage, logs_storage):
-    resps = []
-    logs = []
-    link_context = context_generator()
-
-    for op in operations:
-        if op.op_type == Op.type_NOP:
-            time.sleep(op.time)
-            continue
-
-        rec = link.send(link_context, op.operation)
-        resp = msg_pb.Response()
-        resp.ParseFromString(rec)
-
-        resps.append(resp.response_time)
-        logs.append(resp.err)
-
-    resps_storage[client_id] = resps
-    logs_storage[client_id] = logs
-
-    link.close(link_context)
-    return
-
-def flatten(l):
-    return [item for sublist in l for item in sublist]
-
-def run_test(test):
+def run_test(test, client_port = "50000", failure_port = "50001"):
     tag, cluster_hostnames, num_clients, operations, failure = test
 
     print("Running test: " + tag)
 
-    separated_ops = separate(operations, num_clients) 
+    # TODO implement failure injection again
 
     for client in listdir("clients"):
         service = client[:(client.index('_'))]
+	
+        #---------------- Setup system and start clients --------------------------------
+        # Ensure that the correct zookeeper system is being run
+	if("zookeeper" in service) and not (
+            (service == "zookeeper"  and len(cluster_hostnames) == 3) or 
+            (service == "zookeeper5" and len(cluster_hostnames) == 5)):
+                continue
 
         # marshall hostnames
         arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
@@ -75,49 +55,91 @@ def run_test(test):
         print("Starting cluster: " + service)
         call(["python", "scripts/" + service + "_setup.py", arg_hostnames])
 
+        microclients = []
         for i in range(num_clients):
-            start_micro_client("clients/"+client, str(50000 + i), cluster_hostnames)
+            microclients.append(start_micro_client("clients/"+client, client_port, cluster_hostnames))
 
-        # Set up client threads 
-        resp_storage = [i for i in range(num_clients)]
-        logs_storage = [i for i in range(num_clients)]
-        client_threads = [ Thread (
-            target = run_ops,
-            args = [
-                lambda: link.gen_context(50000 + client_id),
-                separated_ops[client_id],
-                client_id,
-                resp_storage,
-                logs_storage
+        socket = zmq.Context().socket(zmq.ROUTER)
+        socket.bind("tcp://127.0.0.1:" + client_port)
+
+        #------------------ Recieve ready signals from clients --------------------------
+        addresses = set()
+        address_uid = {}
+        for i in tqdm(range(num_clients), desc="Ready signals"):
+            address, empty, ready = socket.recv_multipart()
+            addresses.add(address)
+            if not (address in address_uid):
+                address_uid[address] = len(address_uid)
+
+
+        #------------------- Send initial operation to each client ----------------------
+        for addr in addresses:
+            operation = operations.pop(0)
+            socket.send_multipart([
+                addr,
+                b'',
+                operation
+                ]) 
+
+        #------- Send operations to each of the clients in a loda balanced manner -------
+        resps = [] 
+        logs = []
+        def store_resp(address, resp_time, st, end, err):
+            resps.append([resp.response_time, st, end])
+            logs.append([err, st, end])
+
+        for operation in tqdm(operations, desc="Sending Operations"):
+            address, empty, rec = socket.recv_multipart()
+            socket.send_multipart([
+                address,
+                b'',
+                operation
                 ])
-            for client_id in range(num_clients)]
 
-        f_start, f_end = failure(service)
+            resp = msg_pb.Response()
+            resp.ParseFromString(rec)
 
-        print("Starting test")
+            store_resp(address, resp.response_time, resp.st, resp.end, resp.err)
+            addresses.add(address)
 
-        f_start()
+        print(addresses)
 
-        for thread in client_threads:
-            thread.start()
+        #---------- Collect remaining responses and make clients quit cleanly -----------
+        quit_op = msg_pb.Operation()
+        quit_op.quit.msg = "Quitting normally"
+        quit_op = quit_op.SerializeToString()
+        for i in tqdm(range(num_clients), desc="Closing clients"):
+            address, empty, rec = socket.recv_multipart()
+            # Collect remaining responses 
+            resp = msg_pb.Response()
+            try:
+                resp.ParseFromString(rec)
+            except google.protobuf.message.DecodeError:
+                print(rec)
 
-        for thread in client_threads:
-            thread.join()
+            store_resp(address, resp.response_time, resp.st, resp.end, resp.err)
 
-        print("Test finished, tidying up")
-        f_end()
+            # Send quit message
+            socket.send_multipart([
+                address,
+                b'',
+                quit_op
+                ])
 
-        # Ensure that threads have run correctly
-        for i in range(num_clients):
-            if resp_storage[i] == i:
-                print("Threads have not run correctly")
-                break
+        print("Waiting for clients to quit")
+        for microclient in microclients:
+            microclient.wait()
+            
 
-        print("Writing results to file")
-        resps = flatten(resp_storage)
-        logs = flatten(logs_storage)
+        socket.close()
 
+        #----------------------- Write responses to disk --------------------------------
+        print("Writing responses to disk")
         test_name = tag + "_" + client
-        fres = open("results/"+test_name+".res", "w")
-        json.dump({'test': test_name, 'resps': resps, 'logs': logs}, fres)
+        filename = "results/" + test_name + ".res"
+        fres = open(filename, "w")
+        data ={'test': test_name, 'resps': resps, 'logs': logs}
+        json.dump(data, fres)
+
         fres.close()
+

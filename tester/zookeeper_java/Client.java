@@ -47,7 +47,6 @@ public class Client implements org.apache.zookeeper.Watcher {
 	public OpWire.Message.Response put(ZooKeeper client, OpWire.Message.Operation opr){
 		String err = "None";
 		String path = "/" + opr.getPut().getKey();
-		System.out.println("Decoded Path: " + path);
 		String data = opr.getPut().getValue().toString();
 		long start = System.nanoTime();
 		try{
@@ -62,7 +61,6 @@ public class Client implements org.apache.zookeeper.Watcher {
 							     .setErr(err)
 							     .setMsg(".")
 							     .build();
-		System.out.println("Finished Put: err = " + err + ", duration = " + duration);
 		return resp;
 	}
 
@@ -84,13 +82,11 @@ public class Client implements org.apache.zookeeper.Watcher {
 							     .setErr(err)
 							     .setMsg(".")
 							     .build();
-		System.out.println("Finished get: err = " + err + ", duration = " + duration);
 		return resp;
 	}
 
 
 	public static void main(String[] args) throws Exception {
-		System.out.println("\n\n\nCLIENT: STARTING MAIN\n---@ port " + args[0] + "\n\n");
 		Client mainClient = new Client();
 		String port = args[0];
 		String[] endpoints = args[1].split(",");
@@ -102,7 +98,6 @@ public class Client implements org.apache.zookeeper.Watcher {
 
 		ZooKeeper cli = new ZooKeeper(quorum, SESSION_TIMEOUT, new Client());
 		
-		System.out.println("CLIENT: CREATED CONTEXT AND SOCKET\n---@ port " + port);
 
 		String binding;
 		boolean quits = false;
@@ -111,11 +106,9 @@ public class Client implements org.apache.zookeeper.Watcher {
 		int i = 0;
 		binding = "tcp://127.0.0.1:" + port;
 		socket.bind(binding);
-		System.out.println("CLIENT: BOUND TO PORT " + port);
 		while(!quits){
 			i++;
 			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
-			System.out.println("CLIENT: RECEIVED OPERATION " + i + " @ port " + port);
 			switch(opr.getOpTypeCase().getNumber()){
 				case 1: 	//1 = Put
 					resp = mainClient.put(cli, opr);

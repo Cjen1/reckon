@@ -31,7 +31,6 @@ build/utils/message.pb.go: utils/message.proto
 OpWire/Message.java: utils/message.proto
 	protoc -I . --java_out=. utils/message.proto
 
-
 #------------ Generator prerequisites -------------
 
 utils/link.py: utils/message_pb2.py

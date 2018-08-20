@@ -35,7 +35,6 @@ public class Client implements org.apache.zookeeper.Watcher {
 		return op;
 	}
 
-
 	public OpWire.Message.Response put(ZooKeeper client, OpWire.Message.Operation opr){
 		String err = "None";
 		String path = "/" + opr.getPut().getKey();
@@ -99,7 +98,10 @@ public class Client implements org.apache.zookeeper.Watcher {
 		byte[] payload;
 		binding = "tcp://127.0.0.1:" + port;
 		socket.connect(binding);
+<<<<<<< HEAD
 		socket.send("", 0);
+=======
+>>>>>>> 9deece62710e0a3bf18fc425c68045982e7c27bc
 		while(!quits){
 			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
 			switch(opr.getOpTypeCase().getNumber()){

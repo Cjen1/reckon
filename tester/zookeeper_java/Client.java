@@ -35,14 +35,6 @@ public class Client implements org.apache.zookeeper.Watcher {
 		return op;
 	}
 
-	public OpWire.Message.Response quit(ZMQ.Socket socket){
-		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
-							     .setResponseTime(0.0)
-							     .setErr("Socket Quitting")
-							     .setMsg(".")
-							     .build();
-		return resp;
-	}
 
 	public OpWire.Message.Response put(ZooKeeper client, OpWire.Message.Operation opr){
 		String err = "None";
@@ -59,7 +51,8 @@ public class Client implements org.apache.zookeeper.Watcher {
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)
-							     .setMsg(".")
+							     .setSt(start / 1E9)
+							     .setEnd(stop / 1E9)
 							     .build();
 		return resp;
 	}
@@ -80,7 +73,8 @@ public class Client implements org.apache.zookeeper.Watcher {
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)
-							     .setMsg(".")
+							     .setSt(start / 1E9)
+							     .setEnd(stop / 1E9)
 							     .build();
 		return resp;
 	}
@@ -105,6 +99,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 		byte[] payload;
 		binding = "tcp://127.0.0.1:" + port;
 		socket.connect(binding);
+		socket.send("", 0);
 		while(!quits){
 			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
 			switch(opr.getOpTypeCase().getNumber()){
@@ -122,7 +117,8 @@ public class Client implements org.apache.zookeeper.Watcher {
 					resp = OpWire.Message.Response.newBuilder()
 					      .setResponseTime(0.0)
 					      .setErr("Operation was not found / supported")
-					      .setMsg(".")
+					      .setSt(System.nanoTime() / 1E9)
+					      .setEnd(System.nanoTime() / 1E9)
 					      .build();
 					quits = true;
 					break;

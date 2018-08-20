@@ -36,7 +36,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 	}
 
 
-	public OpWire.Message.Response put(ZooKeeper client, OpWire.Message.Operation opr){
+	public OpWire.Message.Response put(ZooKeeper client, OpWire.Message.Operation opr, int id){
 		String err = "None";
 		String path = "/" + opr.getPut().getKey();
 		String data = opr.getPut().getValue().toString();
@@ -51,14 +51,15 @@ public class Client implements org.apache.zookeeper.Watcher {
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)
-							     .setSt(start / 1E9)
+							     .setStart(start / 1E9)
 							     .setEnd(stop / 1E9)
+							     .setId(id)
 							     .build();
 		return resp;
 	}
 
 
-	public OpWire.Message.Response get(ZooKeeper client, OpWire.Message.Operation opr){
+	public OpWire.Message.Response get(ZooKeeper client, OpWire.Message.Operation opr, int id){
 		String err = "None";
 		String path = "/" + opr.getGet().getKey();
 		long start = System.nanoTime();
@@ -73,8 +74,9 @@ public class Client implements org.apache.zookeeper.Watcher {
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)
-							     .setSt(start / 1E9)
+							     .setStart(start / 1E9)
 							     .setEnd(stop / 1E9)
+							     .setId(id)
 							     .build();
 		return resp;
 	}
@@ -84,7 +86,8 @@ public class Client implements org.apache.zookeeper.Watcher {
 		Client mainClient = new Client();
 		String port = args[0];
 		String[] endpoints = args[1].split(",");
-		
+		int id = Integer.parseInt(args[2]);
+
 		ZMQ.Context context = ZMQ.context(1);
 		ZMQ.Socket socket = context.socket(ZMQ.REQ);
 		
@@ -104,10 +107,10 @@ public class Client implements org.apache.zookeeper.Watcher {
 			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
 			switch(opr.getOpTypeCase().getNumber()){
 				case 1: 	//1 = Put
-					resp = mainClient.put(cli, opr);
+					resp = mainClient.put(cli, opr, id);
 					break;			
 				case 2:		//2 = Get
-					resp = mainClient.get(cli, opr);
+					resp = mainClient.get(cli, opr, id);
 					break;				
 				case 3:		//3 = Quit
 					socket.close();
@@ -115,10 +118,11 @@ public class Client implements org.apache.zookeeper.Watcher {
 					return;
 				default:
 					resp = OpWire.Message.Response.newBuilder()
-					      .setResponseTime(0.0)
+					      .setResponseTime(-100000.0)
 					      .setErr("Operation was not found / supported")
-					      .setSt(System.nanoTime() / 1E9)
-					      .setEnd(System.nanoTime() / 1E9)
+					      .setStart(0.0)
+					      .setEnd(0.0)
+					      .setId(id)
 					      .build();
 					quits = true;
 					break;

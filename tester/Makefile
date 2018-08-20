@@ -31,6 +31,9 @@ build/utils/message_pb2.py: utils/message.proto
 build/utils/message.pb.go: utils/message.proto
 	protoc -I . --go_out=./build utils/message.proto
 
+OpWire/Message.java: utils/message.proto
+	protoc -I . --java_out=./OpWire utils/message.proto
+
 #----------- Test Infra prerequisites -------------
 
 test.py: utils/op_gen.py proto

@@ -27,6 +27,7 @@ message Operation {
 message Response {
 	double response_time = 1;
 	string err = 2;
-	double st = 3;
+	double start = 3;
 	double end = 4;
+	uint32 id = 5;
 }

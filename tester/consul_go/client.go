@@ -24,18 +24,23 @@ func put(cli *api.Client, op *OpWire.Operation_Put) *OpWire.Response {
 	p := &api.KVPair{Key: fmt.Sprintf("%v", op.Put.Key), Value: []byte(string(op.Put.Value))}
 	st := time.Now()
 	_, err := kv.Put(p, nil)
-	duration := time.Since(st)
+	end := time.Now()
+	duration := end.Sub(st)
 
 	var resp *OpWire.Response
 	if(err != nil) {
 		resp = &OpWire.Response {
-			ResponseTime: 	duration.Seconds(),
-			Err: 			err.Error(),
+			ResponseTime:	duration.Seconds(),
+			Err:		err.Error(),
+			St:		float64(st.UnixNano())/1e9,
+			End:		float64(end.UnixNano())/1e9,
 		}
 	} else {
 		resp = &OpWire.Response {
 			ResponseTime: 	duration.Seconds(),
-			Err: 			"None",	
+			Err: 			"None",
+			St:		float64(st.UnixNano())/1e9,
+			End:		float64(end.UnixNano())/1e9,
 		}
 	}
 
@@ -47,38 +52,35 @@ func get(cli *api.Client, op *OpWire.Operation_Get) *OpWire.Response {
 
 	st := time.Now()
 	p, _, err := kv.Get(fmt.Sprintf("%v",op.Get.Key), nil)
-	duration := time.Since(st)
+	end := time.Now()
+	duration := end.Sub(st)
 	var resp *OpWire.Response
 	if(err != nil) {
 		resp = &OpWire.Response {
 			ResponseTime: 	duration.Seconds(),
 			Err: 			err.Error(),
+			St:		float64(st.UnixNano()) / 1e9,
+			End:		float64(end.UnixNano()) / 1e9,
 		}
 	} else if p!= nil  {
 		resp = &OpWire.Response {
 			ResponseTime: 	duration.Seconds(),
-			Err: 			"None",	
+			Err: 		"None",
+			St:		float64(st.UnixNano()) / 1e9,
+			End:		float64(end.UnixNano()) / 1e9,
 		}
 	} else{
 		resp = &OpWire.Response {
 			ResponseTime: duration.Seconds(),
 			Err: fmt.Sprintf("Key-Value Pair not found... (Key %v)", op.Get.Key),
+			St:		float64(st.UnixNano()) / 1e9,
+			End:		float64(end.UnixNano()) / 1e9,
 		}
 	}
 
 	return resp
 }
 
-
-func quit(op *OpWire.Operation_Quit, socket *zmq.Socket) {
-	resp := &OpWire.Response {
-		ResponseTime:	0,
-		Err:			"Endpoint Quitting",
-	}
-	payload := marshall_response(resp)
-	socket.Send(payload, 0)
-	return
-}
 
 func ReceiveOp(socket *zmq.Socket) *OpWire.Operation{
 	fmt.Println("Test1")
@@ -124,7 +126,7 @@ func main() {
 
 	binding := "tcp://127.0.0.1:" + port
 	socket.Connect(binding)
-
+	socket.Send("", 0)
 	for {
 
 		Operation := ReceiveOp(socket)
@@ -144,8 +146,10 @@ func main() {
 			return
 		default:
 			resp := &OpWire.Response {
-				ResponseTime:  0,
+				ResponseTime:  -10000.0,
 				Err:			"Error: Operation was not found / supported", 
+				St:		0.0,
+				End:		0.0,
 			}
 			payload := marshall_response(resp)
 			socket.Send(payload, 0)

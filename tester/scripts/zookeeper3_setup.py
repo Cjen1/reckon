@@ -19,11 +19,7 @@ def setup_remote(host):
             zk_ver="latest") 
         ])
 
-def stop_remote(host):
-    call(["ssh", host, "sudo docker rm -f zookeeper"])
-
-for i, host in enumerate(hosts):
-    stop_remote(host)
+call(["python", "zkCleanup.py"])
 
 for host in hosts:
     setup_remote(host)

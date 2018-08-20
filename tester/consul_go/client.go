@@ -110,7 +110,7 @@ func main() {
 	port := os.Args[1]
 	endpoints := strings.Split(os.Args[2], ",")
 
-	socket, _ := zmq.NewSocket(zmq.REP)
+	socket, _ := zmq.NewSocket(zmq.REQ)
 	defer socket.Close()
 
 	cli, err := api.NewClient(&api.Config{
@@ -123,7 +123,7 @@ func main() {
 	}
 
 	binding := "tcp://127.0.0.1:" + port
-	socket.Bind(binding)
+	socket.Connect(binding)
 
 	for {
 
@@ -141,9 +141,7 @@ func main() {
 			socket.Send(payload, 0)
 
 		case *OpWire.Operation_Quit:
-			quit(op, socket)
-			break
-
+			return
 		default:
 			resp := &OpWire.Response {
 				ResponseTime:  0,

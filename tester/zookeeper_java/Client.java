@@ -92,7 +92,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 		String[] endpoints = args[1].split(",");
 		
 		ZMQ.Context context = ZMQ.context(1);
-		ZMQ.Socket socket = context.socket(ZMQ.REP);
+		ZMQ.Socket socket = context.socket(ZMQ.REQ);
 		
 		String quorum = String.join(":" + CLIENT_PORT + ",", endpoints) + ":" + CLIENT_PORT;
 
@@ -103,11 +103,9 @@ public class Client implements org.apache.zookeeper.Watcher {
 		boolean quits = false;
 		OpWire.Message.Response resp = null;
 		byte[] payload;
-		int i = 0;
 		binding = "tcp://127.0.0.1:" + port;
-		socket.bind(binding);
+		socket.connect(binding);
 		while(!quits){
-			i++;
 			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
 			switch(opr.getOpTypeCase().getNumber()){
 				case 1: 	//1 = Put
@@ -117,9 +115,9 @@ public class Client implements org.apache.zookeeper.Watcher {
 					resp = mainClient.get(cli, opr);
 					break;				
 				case 3:		//3 = Quit
-					resp = mainClient.quit(socket);
-					quits = true;
-					break;
+					socket.close();
+					context.term();
+					return;
 				default:
 					resp = OpWire.Message.Response.newBuilder()
 					      .setResponseTime(0.0)

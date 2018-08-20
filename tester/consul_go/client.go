@@ -6,6 +6,7 @@ import (
 	"strings"
 	"os"
 	"fmt"
+	"strconv"
 
 	zmq "github.com/pebbe/zmq4"
 	"github.com/hashicorp/consul/api"
@@ -19,7 +20,7 @@ var (
 )
 
 
-func put(cli *api.Client, op *OpWire.Operation_Put) *OpWire.Response {
+func put(cli *api.Client, op *OpWire.Operation_Put, id uint32) *OpWire.Response {
 	kv := cli.KV()
 	p := &api.KVPair{Key: fmt.Sprintf("%v", op.Put.Key), Value: []byte(string(op.Put.Value))}
 	st := time.Now()
@@ -32,22 +33,24 @@ func put(cli *api.Client, op *OpWire.Operation_Put) *OpWire.Response {
 		resp = &OpWire.Response {
 			ResponseTime:	duration.Seconds(),
 			Err:		err.Error(),
-			St:		float64(st.UnixNano())/1e9,
+			Start:		float64(st.UnixNano())/1e9,
 			End:		float64(end.UnixNano())/1e9,
+			Id:		id,
 		}
 	} else {
 		resp = &OpWire.Response {
 			ResponseTime: 	duration.Seconds(),
 			Err: 			"None",
-			St:		float64(st.UnixNano())/1e9,
+			Start:		float64(st.UnixNano())/1e9,
 			End:		float64(end.UnixNano())/1e9,
+			Id:		id,
 		}
 	}
 
 	return resp
 }
 
-func get(cli *api.Client, op *OpWire.Operation_Get) *OpWire.Response {
+func get(cli *api.Client, op *OpWire.Operation_Get, id uint32) *OpWire.Response {
 	kv := cli.KV()
 
 	st := time.Now()
@@ -59,22 +62,25 @@ func get(cli *api.Client, op *OpWire.Operation_Get) *OpWire.Response {
 		resp = &OpWire.Response {
 			ResponseTime: 	duration.Seconds(),
 			Err: 			err.Error(),
-			St:		float64(st.UnixNano()) / 1e9,
+			Start:		float64(st.UnixNano()) / 1e9,
 			End:		float64(end.UnixNano()) / 1e9,
+			Id: 		id,
 		}
 	} else if p!= nil  {
 		resp = &OpWire.Response {
 			ResponseTime: 	duration.Seconds(),
 			Err: 		"None",
-			St:		float64(st.UnixNano()) / 1e9,
+			Start:		float64(st.UnixNano()) / 1e9,
 			End:		float64(end.UnixNano()) / 1e9,
+			Id: 		id,
 		}
 	} else{
 		resp = &OpWire.Response {
 			ResponseTime: duration.Seconds(),
 			Err: fmt.Sprintf("Key-Value Pair not found... (Key %v)", op.Get.Key),
-			St:		float64(st.UnixNano()) / 1e9,
+			Start:		float64(st.UnixNano()) / 1e9,
 			End:		float64(end.UnixNano()) / 1e9,
+			Id:		id,
 		}
 	}
 
@@ -111,7 +117,7 @@ func main() {
 
 	port := os.Args[1]
 	endpoints := strings.Split(os.Args[2], ",")
-
+	clientid := uint32(strconv.Atoi(os.Args[3]))
 	socket, _ := zmq.NewSocket(zmq.REQ)
 	defer socket.Close()
 
@@ -133,12 +139,12 @@ func main() {
 
 		switch op := Operation.OpType.(type) {
 		case *OpWire.Operation_Put:
-			resp := put(cli, op)
+			resp := put(cli, op, clientid)
 			payload := marshall_response(resp) 
 			socket.Send(payload, 0)
 
 		case *OpWire.Operation_Get:
-			resp := get(cli, op)
+			resp := get(cli, op, clientid)
 			payload := marshall_response(resp) 
 			socket.Send(payload, 0)
 
@@ -148,8 +154,9 @@ func main() {
 			resp := &OpWire.Response {
 				ResponseTime:  -10000.0,
 				Err:			"Error: Operation was not found / supported", 
-				St:		0.0,
+				Start:		0.0,
 				End:		0.0,
+				Id:		clientid,
 			}
 			payload := marshall_response(resp)
 			socket.Send(payload, 0)

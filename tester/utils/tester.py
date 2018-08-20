@@ -23,6 +23,8 @@ def start_micro_client(path, port, cluster_hostnames):
     else:
         client = Popen([path, port, arg_ips])
 
+    return client
+
 # splits the given data into num_buckets buckets
 def separate(data, num_buckets):
     result = [[] for i in range(num_buckets)]
@@ -53,8 +55,9 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
         print("Starting cluster: " + service)
         call(["python", "scripts/" + service + "_setup.py", arg_hostnames])
 
+        microclients = []
         for i in range(num_clients):
-            start_micro_client("clients/"+client, client_port, cluster_hostnames)
+            microclients.append(start_micro_client("clients/"+client, client_port, cluster_hostnames))
 
         socket = zmq.Context().socket(zmq.ROUTER)
         socket.bind("tcp://127.0.0.1:" + client_port)
@@ -68,6 +71,7 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
             if not (address in address_uid):
                 address_uid[address] = len(address_uid)
 
+
         #------------------- Send initial operation to each client ----------------------
         for addr in addresses:
             operation = operations.pop(0)
@@ -80,6 +84,10 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
         #------- Send operations to each of the clients in a loda balanced manner -------
         resps = [] 
         logs = []
+        def store_resp(address, resp_time, st, end, err):
+            resps.append([resp.response_time, st, end])
+            logs.append([err, st, end])
+
         for operation in tqdm(operations, desc="Sending Operations"):
             address, empty, rec = socket.recv_multipart()
             socket.send_multipart([
@@ -91,8 +99,10 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
             resp = msg_pb.Response()
             resp.ParseFromString(rec)
 
-            resps.append([address, resp.response_time])
-            logs.append([address, resp.err])
+            store_resp(address, resp.response_time, resp.st, resp.end, resp.err)
+            addresses.add(address)
+
+        print(addresses)
 
         #---------- Collect remaining responses and make clients quit cleanly -----------
         quit_op = msg_pb.Operation()
@@ -101,15 +111,13 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
         for i in tqdm(range(num_clients), desc="Closing clients"):
             address, empty, rec = socket.recv_multipart()
             # Collect remaining responses 
-            if rec != b'':
-                resp = msg_pb.Response()
-                try:
-                    resp.ParseFromString(rec)
-                except google.protobuf.message.DecodeError:
-                    print(rec)
+            resp = msg_pb.Response()
+            try:
+                resp.ParseFromString(rec)
+            except google.protobuf.message.DecodeError:
+                print(rec)
 
-                resps.append([address_uid[address], resp.response_time])
-                logs.append([address_uid[address], resp.err])
+            store_resp(address, resp.response_time, resp.st, resp.end, resp.err)
 
             # Send quit message
             socket.send_multipart([
@@ -118,6 +126,11 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
                 quit_op
                 ])
 
+        print("Waiting for clients to quit")
+        for microclient in microclients:
+            microclient.wait()
+            
+
         socket.close()
 
         #----------------------- Write responses to disk --------------------------------
@@ -125,8 +138,7 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
         test_name = tag + "_" + client
         filename = "results/" + test_name + ".res"
         fres = open(filename, "w")
-        data =({'test': test_name, 'resps': resps, 'logs': logs}, fres)
-        print(data)
+        data ={'test': test_name, 'resps': resps, 'logs': logs}
         json.dump(data, fres)
 
         fres.close()

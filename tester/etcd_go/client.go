@@ -18,11 +18,16 @@ var (
 	requestTimeout = 10 * time.Second
 )
 
+func unix_seconds(t time.Time) float64 {
+	return float64(t.UnixNano()) / 1e9
+}
+
 func put(cli *clientv3.Client, op *OpWire.Operation_Put) *OpWire.Response {
 	// TODO implement options
 	st := time.Now()
 	_, err := cli.Put(context.Background(), string(op.Put.Key), string(op.Put.Value))
-	duration := time.Since(st)
+	end := time.Now()
+	duration := end.Sub(st)
 
 	err_msg := ""
 	if(err != nil){
@@ -32,6 +37,8 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put) *OpWire.Response {
 	resp := &OpWire.Response {
 		ResponseTime: 	duration.Seconds(),
 		Err:			err_msg,
+		St: 			unix_seconds(st),  			
+		End:			unix_seconds(end),
 	}
 
 	return resp
@@ -41,7 +48,8 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get) *OpWire.Response {
 	// TODO implement options
 	st := time.Now()
 	_, err := cli.Get(context.Background(), string(op.Get.Key))
-	duration := time.Since(st)
+	end := time.Now()
+	duration := end.Sub(st)
 
 	err_msg := ""
 	if(err != nil){
@@ -51,6 +59,8 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get) *OpWire.Response {
 	resp := &OpWire.Response {
 		ResponseTime: 	duration.Seconds(),
 		Err:			err_msg,
+		St: 			unix_seconds(st),  			
+		End:			unix_seconds(end),
 	}
 
 	return resp

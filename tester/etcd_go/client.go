@@ -6,6 +6,7 @@ import (
 	"context"
 	"strings"
 	"os"
+	"strconv"
 
 	zmq "github.com/pebbe/zmq4"
 	"github.com/coreos/etcd/clientv3"
@@ -22,7 +23,7 @@ func unix_seconds(t time.Time) float64 {
 	return float64(t.UnixNano()) / 1e9
 }
 
-func put(cli *clientv3.Client, op *OpWire.Operation_Put) *OpWire.Response {
+func put(cli *clientv3.Client, op *OpWire.Operation_Put, id uint32) *OpWire.Response {
 	// TODO implement options
 	st := time.Now()
 	_, err := cli.Put(context.Background(), string(op.Put.Key), string(op.Put.Value))
@@ -37,14 +38,15 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put) *OpWire.Response {
 	resp := &OpWire.Response {
 		ResponseTime: 	duration.Seconds(),
 		Err:			err_msg,
-		St: 			unix_seconds(st),  			
+		Start: 			unix_seconds(st),  			
 		End:			unix_seconds(end),
+		Id: 			id,
 	}
 
 	return resp
 }
 
-func get(cli *clientv3.Client, op *OpWire.Operation_Get) *OpWire.Response {
+func get(cli *clientv3.Client, op *OpWire.Operation_Get, id uint32) *OpWire.Response {
 	// TODO implement options
 	st := time.Now()
 	_, err := cli.Get(context.Background(), string(op.Get.Key))
@@ -59,8 +61,9 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get) *OpWire.Response {
 	resp := &OpWire.Response {
 		ResponseTime: 	duration.Seconds(),
 		Err:			err_msg,
-		St: 			unix_seconds(st),  			
+		Start: 			unix_seconds(st),
 		End:			unix_seconds(end),
+		Id:				id,
 	}
 
 	return resp
@@ -84,11 +87,18 @@ func marshall_response(resp *OpWire.Response) string {
 }
 
 func main() {
-	if(len(os.Args) < 3){
+	if(len(os.Args) < 4){
 		println("Incorrect number of arguments") }
 
 	port := os.Args[1]
 	endpoints := strings.Split(os.Args[2], ",")
+	i, err := strconv.ParseUint(os.Args[3], 10, 32)
+	if(err != nil){
+		println(err)
+		return
+	}
+	id := uint32(i)
+
 	for index, endpoint := range endpoints {
 		endpoints[index] = endpoint + ":2379"
 	}
@@ -120,12 +130,12 @@ func main() {
 
 		switch op := Operation.OpType.(type) {
 		case *OpWire.Operation_Put:
-			resp := put(cli, op)
+			resp := put(cli, op, id)
 			payload := marshall_response(resp) 
 			socket.Send(payload, 0)
 
 		case *OpWire.Operation_Get:
-			resp := get(cli, op)
+			resp := get(cli, op, id)
 			payload := marshall_response(resp)
 			socket.Send(payload, 0)
 
@@ -136,6 +146,9 @@ func main() {
 			resp := &OpWire.Response {
 				ResponseTime:  -1,
 				Err: 			"Error: Operation was not found / supported", 
+				Start: 			0,
+				End:			0,
+				Id:				id,
 			}
 			payload := marshall_response(resp)
 			socket.Send(payload, 0)

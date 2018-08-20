@@ -1,1 +1,5 @@
 */build/*
+*/clients/*
+*/result*
+*.pyc
+*.swp

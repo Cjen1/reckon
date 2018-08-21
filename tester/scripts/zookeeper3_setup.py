@@ -19,7 +19,7 @@ def setup_remote(host):
             zk_ver="latest") 
         ])
 
-call(["python", "zkCleanup.py"])
+call(["python", "scripts/zkCleanup.py"])
 
 for host in hosts:
     setup_remote(host)

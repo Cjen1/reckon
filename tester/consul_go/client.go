@@ -117,7 +117,9 @@ func main() {
 
 	port := os.Args[1]
 	endpoints := strings.Split(os.Args[2], ",")
-	clientid := uint32(strconv.Atoi(os.Args[3]))
+	var clientid uint32
+	tmpid, _ := strconv.Atoi(os.Args[3])
+	clientid = uint32(tmpid)
 	socket, _ := zmq.NewSocket(zmq.REQ)
 	defer socket.Close()
 

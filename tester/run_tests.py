@@ -15,10 +15,13 @@ hostnames = [
 
 # test = (tag, hostnames, num_clients, operations, failure_mode)
 tests = [
-        ("SplitTest-9xSlowRestart-00r-1c-10f-3s", hostnames[:3], 1, op_gen.sequential_keys(1000, 100), failure.crash(10, 0.9, hostnames[:3])),# Previously "Test 3"
-        ("SplitTest-9xSlowRestart-00r-4c-10f-3s", hostnames[:3], 4, op_gen.sequential_keys(1000, 100), failure.crash(10, 0.9, hostnames[:3])),# Previously "Test 4"
-        ("SplitTest-9xSlowRestart-00r-1c", hostnames[:3], 1, op_gen.sequential_keys(1000, 100), failure.none),# Previously "Test 3"
-        ("SplitTest-9xSlowRestart-00r-4c", hostnames[:3], 4, op_gen.sequential_keys(1000, 100), failure.none),# Previously "Test 4"
+        #("Seqw_3s_1c",   hostnames[:3],  1,  op_gen.sequential_keys(1000, 100), lambda ops: failure.NoFailure(ops)),
+        #("Seqw_3s_4c",   hostnames[:3],  4,  op_gen.sequential_keys(1000, 100), lambda ops: failure.NoFailure(ops)),
+        #("Seqw_3s_8c",   hostnames[:3],  8,  op_gen.sequential_keys(1000, 100), lambda ops: failure.NoFailure(ops)),
+        #("Seqw_3s_12c",  hostnames[:3],  12, op_gen.sequential_keys(1000, 100), lambda ops: failure.NoFailure(ops)),
+        #("Seqw_3s_16c",  hostnames[:3],  16, op_gen.sequential_keys(1000, 100), lambda ops: failure.NoFailure(ops)),
+        ("Seqw_f_3s_1c",    hostnames[:3],  1,  op_gen.sequential_keys(10, 100), lambda ops: failure.SystemFailure(ops, hostnames[0:1])),
+        ("Seqw_fr_3s_1c",   hostnames[:3],  1,  op_gen.sequential_keys(10, 100), lambda ops: failure.SystemFailureRecovery(ops, hostnames[0:1]))
         ]
 
 for test in tests:

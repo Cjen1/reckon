@@ -79,9 +79,7 @@ def run_test(test, client_port = "50000"):
             (service == "zookeeper5" and len(cluster_hostnames) == 5)):
                 continue
 
-        # marshall hostnames
         arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
-
         print("Starting cluster: " + service)
         call(["python", "scripts/" + service + "_setup.py", arg_hostnames])
 
@@ -144,3 +142,7 @@ def run_test(test, client_port = "50000"):
         json.dump(data, fres)
 
         fres.close()
+
+        arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
+        print("Stopping cluster: " + service)
+        call(["python", "scripts/" + service + "_cleanup.py", arg_hostnames])

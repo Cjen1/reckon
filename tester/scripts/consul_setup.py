@@ -13,7 +13,7 @@ def ipbyhost(host):
 	return res
 
 host_ips = [ipbyhost(host) for host in hosts]
-
+'''
 def rmCons(host):
         call(["ssh", host, "docker rm -f consul"])
 
@@ -30,6 +30,9 @@ for host in hosts2:
         rmCons(host)
         for r in rs:
                 regs(host, r)
+'''
+
+call(['python', 'consul_cleanup.py'])
 
 def bootstrap(host, ip):
 	call(["ssh",

@@ -40,13 +40,23 @@ public class Client implements org.apache.zookeeper.Watcher {
 		String err = "None";
 		String path = "/" + opr.getPut().getKey();
 		String data = opr.getPut().getValue().toString();
-		long start = System.nanoTime();
+		long start = 0L;
+		long stop = 0L;
 		try{
-			client.create(path, data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-		} catch(Exception e) {
-			err = "Caught Exception: " + e.getMessage();
-		}
-		long stop = System.nanoTime();
+			start = System.nanoTime();
+			client.setData(path, data.getBytes(), -1);
+			stop = System.nanoTime();
+		} catch(KeeperException.NoNodeException n) {
+			start = System.nanoTime();
+			try{
+				client.create(path, data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+			} catch(Exception e) {
+				err = "Caught Exception: " + e.getMessage();
+			}
+			stop = System.nanoTime();
+		} catch(Exception k) {
+			err = "Caught Exception: " + k.getMessage();
+		} 
 		double duration = (stop - start + 0.0) / 1E9; // Duration in seconds.
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)

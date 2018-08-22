@@ -7,11 +7,11 @@ import numpy as np
 
 
 hostnames = [
-	"caelum-504.cl.cam.ac.uk"
-	"caelum-505.cl.cam.ac.uk",
         "caelum-506.cl.cam.ac.uk",
         "caelum-507.cl.cam.ac.uk",
         "caelum-508.cl.cam.ac.uk",
+	"caelum-504.cl.cam.ac.uk"
+	"caelum-505.cl.cam.ac.uk",
         ]
 
 tests = [

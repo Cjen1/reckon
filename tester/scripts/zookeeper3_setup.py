@@ -15,7 +15,7 @@ def setup_remote(host):
             "--restart always " +
             "--name zookeeper {registry}:{zk_ver} " 
         ).format(
-            registry="zkstart5", 
+            registry="zkstart", 
             zk_ver="latest") 
         ])
 

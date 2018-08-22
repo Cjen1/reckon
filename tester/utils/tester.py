@@ -1,4 +1,5 @@
 from utils import link, failure, message_pb2 as msg_pb
+from utils.op_gen import Operation
 from os import listdir
 from subprocess import call, Popen
 from threading import Thread
@@ -25,12 +26,48 @@ def start_microclient(path, port, cluster_hostnames, client_id):
 
     return client
 
-def run_test(test, client_port = "50000", failure_port = "50001"):
-    tag, cluster_hostnames, num_clients, operations, failure = test
+def run_ops(operations, socket, num_clients, service, store_fn=(lambda *args: None)):
+    if len(operations) < 1:
+        return
+
+    #------------------ Recieve ready signals from clients --------------------------
+    addr_init_ops = set()
+    for i in tqdm(range(num_clients), desc="Ready signals"):
+        address, empty, ready = socket.recv_multipart()
+        addr_init_ops.add(address)
+
+    #------- Send operations to each of the clients in a load balanced manner -------
+
+    for operation in tqdm(operations, desc="Sending Operations"):
+        if operation.type == Operation.STANDARD:
+            # Get address to send to either from initial queue or from received responses
+            addr = {}
+            if len(addr_init_ops) > 0:
+                addr = addr_init_ops.pop()
+            else:
+                addr, empty, rec = socket.recv_multipart()
+                resp = msg_pb.Response()
+                resp.ParseFromString(rec)
+                store_fn(resp.response_time, resp.start, resp.end, resp.err, resp.id)
+
+            socket.send_multipart([
+                addr,
+                b'',
+                operation.op
+                ])
+
+        elif operation.type == Operation.SYSTEMFAILURE:
+            operation.fn(service)
+        elif operation.type == Operation.SYSTEMRECOVERY:
+            operation.fn(service)
+        else:
+            print("UNKNOWN OPERATION")
+
+def run_test(test, client_port = "50000"):
+    tag, cluster_hostnames, num_clients, op_obj, fail_fn = test
+    ops, prereq = op_obj
 
     print("Running test: " + tag)
-
-    # TODO implement failure injection again
 
     for client in listdir("clients"):
         service = client[:(client.index('_'))]
@@ -42,9 +79,7 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
             (service == "zookeeper5" and len(cluster_hostnames) == 5)):
                 continue
 
-        # marshall hostnames
         arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
-
         print("Starting cluster: " + service)
         call(["python", "scripts/" + service + "_setup.py", arg_hostnames])
 
@@ -55,46 +90,25 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
         socket = zmq.Context().socket(zmq.ROUTER)
         socket.bind("tcp://127.0.0.1:" + client_port)
 
-        #------------------ Recieve ready signals from clients --------------------------
-        addr_init_ops = set()
-        for i in tqdm(range(num_clients), desc="Ready signals"):
-            address, empty, ready = socket.recv_multipart()
-            addr_init_ops.add(address)
-
-        #------------------- Send initial operation to each client ----------------------
-        for addr in addr_init_ops:
-            operation = operations.pop(0)
-            socket.send_multipart([
-                addr,
-                b'',
-                operation
-                ]) 
-
-        #------- Send operations to each of the clients in a loda balanced manner -------
+        #----------- Satisify Prerequisites and then store responses to queries ---------
         resps = [] 
         logs = []
         def store_resp(resp_time, st, end, err, client_idx):
-            resps.append([client_idx, resp.response_time, st, end])
+            resps.append([client_idx, resp_time, st, end])
             logs.append([client_idx, err, st, end])
+        
+        # Apply failure to the operations
+        prereq = failure.NoFailure(prereq)
+        ops = fail_fn(ops)
 
-        for operation in tqdm(operations, desc="Sending Operations"):
-            address, empty, rec = socket.recv_multipart()
-            socket.send_multipart([
-                address,
-                b'',
-                operation
-                ])
-
-            resp = msg_pb.Response()
-            resp.ParseFromString(rec)
-
-            store_resp(resp.response_time, resp.start, resp.end, resp.err, resp.id)
+        run_ops(prereq, socket, num_clients, service)
+        run_ops(ops, socket, num_clients, service, store_fn = store_resp)
 
         #---------- Collect remaining responses and make clients quit cleanly -----------
         quit_op = msg_pb.Operation()
         quit_op.quit.msg = "Quitting normally"
         quit_op = quit_op.SerializeToString()
-        for i in tqdm(range(num_clients), desc="Closing clients"):
+        for i in tqdm(range(num_clients), desc="Awaiting Resps & Closing clients"):
             address, empty, rec = socket.recv_multipart()
             # Collect remaining responses 
             resp = msg_pb.Response()
@@ -128,3 +142,7 @@ def run_test(test, client_port = "50000", failure_port = "50001"):
         json.dump(data, fres)
 
         fres.close()
+
+        arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
+        print("Stopping cluster: " + service)
+        call(["python", "scripts/" + service + "_cleanup.py", arg_hostnames])

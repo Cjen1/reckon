@@ -3,49 +3,66 @@ from utils import message_pb2 as msg_pb
 from numpy import random as rand
 import math
 
+class Operation:
+    def __init__(self, opType):
+        self.type = opType
+
+    @staticmethod
+    def system_failure(failure_fn):
+        res = Operation(Operation.SYSTEMFAILURE)
+        res.fn = failure_fn
+        return res
+
+    @staticmethod
+    def system_recovery(recovery_fn):
+        res = Operation(Operation.SYSTEMRECOVERY)
+        res.fn = recovery_fn
+        return res
+
+    @staticmethod
+    def standard(op):
+        res = Operation(Operation.STANDARD)
+        res.op = op
+        return res
+
+    STANDARD = "standard"
+    SYSTEMFAILURE = "systemfailure"
+    SYSTEMRECOVERY = "systemrecovery"
+
+
 # Number of keys to write, size of data in bytes
-def sequential_keys(number_keys, data_size):
-    if number_keys > 256**4:
-        print("Can't handle that many keys")
-        return
+# Return (<operations>, []) 
+def sequential_keys(num_ops, data_size, limit = 256**4):
+    num_keys = num_ops
+    if num_keys > limit:
+        num_keys = limit - 1
+
+    ops = [Op_put(key, gen_payload(data_size)) for key in range(num_keys)]
+
+    return (ops, [])
+
+# Number of keys to write, size of data in bytes, proportion of the operations to be reads
+# Return (<operations>, <prerequisite operations>) 
+def mixed_ops(num_ops, num_keys, data_size, split, limit = 256**4):	
+    if num_keys > limit:
+        num_keys = limit - 1
+
+    num_reads = int(num_ops * split)
+    num_writes =num_ops - num_reads
+
+    writes = [Op_put(key, gen_payload(data_size)) for key in rand.uniform(0, num_keys, num_writes)]
+    reads = [Op_get(key) for key in rand.uniform(0, num_keys, num_writes)]
 
     ops = []
-    for key in range(number_keys):
-        payload = rand.randint(0, 10, data_size)
-
-        value = ""
-        for i in payload:
-            value += (str(i))
-
-        ops.append(Op_put(key, value))
+    ops.extend(writes)
+    ops.extend(reads)
+    rand.shuffle(ops)
 
     return ops
 
-def mixed_ops(num_ops, data_size, split, num_cli):	# split is the percentage as a double of reads.
-    if num_ops > 256**4:
-        print('Cannot handle that many keys. Aborting.')
-        return
-
-    # TODO refactor
-    num_keys = int(num_ops * (1 - split))
-    num_reads = num_ops - num_keys
-    
-    wri = sequential_keys(num_keys, data_size)
-    rea = []
-    
-    starti = num_keys 
-    tmp = num_keys // num_cli
-
-    
-    for i in range(num_reads):
-        key = rand.randint(0, tmp) * num_cli + ((starti + i) % num_cli)
-	print("Generated read key: {k} at index {i}".format(k=str(key), i=str(starti + i)))
-        rea.append(Op_get(key))
-    
-    res = wri
-    res.extend(rea)
-
-    return res
+def gen_payload(num_bytes):
+    options = map(None, "abcdefghijklmnopqrstuvwxyz123456789")
+    return "".join(c for c in rand.choice(options, num_bytes))
 
 def Op_put(key, value):
     op = msg_pb.Operation()

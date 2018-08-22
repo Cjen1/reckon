@@ -28,8 +28,14 @@ build/utils/message_pb2.py: utils/message.proto
 build/utils/message.pb.go: utils/message.proto 
 	protoc -I . --go_out=./build utils/message.proto
 
-OpWire/Message.java: utils/message.proto
+build/OpWire/Message.java: utils/message.proto
 	protoc -I . --java_out=./build utils/message.proto
+build/zookeeper_java-basic:
+	mkdir build/zookeeper_java-basic
+
+build/zookeeper_java-basic/external_classes: build/zookeeper_java-basic
+	cd build/zookeeper_java-basic; jar xf ../../jars/zookeeper-3.4.12.jar; jar xf ../../jars/com.google.protobuf.jar; jar xf ../../jars/com.neilalexander.jnacl.crypto.jar; \
+	jar xf ../../jars/org.zeromq.jar; jar xf ../../jars/slf4j.jar
 
 #------------ Generator prerequisites -------------
 
@@ -55,8 +61,8 @@ etcd_go/OpWire/message.pb.go: build/utils/message.pb.go
 
 #-------------- consul golang prereq ----------------
 
-clients/consul_go: consul_go/client.go consul_go/OpWire/message.pb.go 
-	go get github.com/pebbe/zmq4
+clients/consul_go: consul_go/client.go consul_go/OpWire/message.pb.go libzmq4
+	go get github.com/pebbe/zmq4; go get github.com/hashicorp/consul
 	cd consul_go ; \
 		go build -a -o ../clients/consul_go client.go
 
@@ -64,14 +70,13 @@ consul_go/OpWire/message.pb.go: build/utils/message.pb.go
 	cp build/utils/message.pb.go consul_go/OpWire
 
 #------------- zk java prereq ---------------------
-build/zookeeper_java-basic/OpWire/Message.class: OpWire/Message.java
-	cd build; javac -cp ".:jars/com.google.protobuf.jar:jars/zookeeper-3.4.12.jar:jars/org.zeromq.jar:jars/com.neilalexander.jnacl.crypto.jar" -d zookeeper_java-basic/ OpWire/Message.java
+build/zookeeper_java-basic/OpWire/Message.class: build/OpWire/Message.java
+	cd build; javac -cp ".:../jars/com.google.protobuf.jar:../jars/zookeeper-3.4.12.jar:../jars/org.zeromq.jar:../jars/com.neilalexander.jnacl.crypto.jar" -d zookeeper_java-basic/ OpWire/Message.java
 
 build/zookeeper_java-basic/Client.class: zookeeper_java/Client.java build/zookeeper_java-basic/OpWire/Message.class
-	javac -cp ".:jars/com.google.protobuf.jar:jars/zookeeper-3.4.12.jar:jars/org.zeromq.jar:jars/com.neilalexander.jnacl.crypto.jar" -d build/zookeeper_java-basic/ zookeeper_java/Client.java; mv build/zookeeper_java-basic clients
-
-clients/zookeeper_java-basic.jar: build/zookeeper_java-basic/Client.class
-	cd clients/zookeeper_java-basic; jar cvfe ../zookeeper_java-basic.jar zookeeper_java.Client *; cd ..; mv zookeeper_java-basic ../build;
+	javac -cp ".:jars/com.google.protobuf.jar:jars/zookeeper-3.4.12.jar:jars/org.zeromq.jar:jars/com.neilalexander.jnacl.crypto.jar" -d build/zookeeper_java-basic/ zookeeper_java/Client.java;
+clients/zookeeper_java-basic.jar: build/zookeeper_java-basic/Client.class build/zookeeper_java-basic/external_classes
+	 mv build/zookeeper_java-basic clients; cd clients/zookeeper_java-basic; jar cvfe ../zookeeper_java-basic.jar zookeeper_java.Client *; cd ..; mv zookeeper_java-basic ../build;
 
 experiment.txt: clients/zookeeper_java-basic.jar
 	echo "TEst, teST" >> experiment.txt

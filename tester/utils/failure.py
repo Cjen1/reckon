@@ -2,59 +2,30 @@ import threading
 import numpy as np
 import time
 from subprocess import call
+from op_gen import Operation
 
-def nofailure():
-    return 
+def NoFailure(ops):
+    return [Operation.standard(op) for op in ops]
 
-class Stoppable_Thread(threading.Thread):
-    def __init__(self):
-        super(Stoppable_Thread, self).__init__()
-        self.__stop_event = threading.Event()
+def SystemFailure(ops, endpoints):
+    res = [Operation.system_failure(system_crash(endpoint)) for endpoint in endpoints]
+    res.extend(NoFailure(ops))
+    return res
 
-    def stop(self):
-        self.__stop_event.set()
+def SystemFailureRecovery(ops, endpoints):
+    res = SystemFailure(ops, endpoints)
+    res.extend([Operation.system_recovery(system_recovery(endpoint)) for endpoint in endpoints])
+    return res
 
-    def stopped(self):
-        return self.__stop_event.is_set()
+def system_crash(endpoint):
+    def helper(service):
+        print("Stopping Service: " + service + " on " + endpoint)
+        call(["scripts/" + service + "_stop.sh", endpoint])
+    return helper
 
-def stop_restart(mttr, stop, start, endpoint):
-    call([stop, endpoint])
-    
-    # TODO make smarter repair function
-    # sleep for time T, where T is distributed given a constant repair rate => exponential function
-    time.sleep(np.random.exponential(mttr))
-
-    call([start, endpoint])
-    
-
-class Crash_Simulator_Thread(Stoppable_Thread):
-    def __init__(self, mtbf, mttr, hosts, client_name):
-        super(Crash_Simulator_Thread, self).__init__()
-        self.mtbf = mtbf
-        self.mttr = mttr
-        self.hosts = hosts
-        self.log = []
-
-        self.start_script = "scripts/" + client_name + "_start.sh"
-        self.stop_script = "scripts/" + client_name + "_stop.sh"
-
-    def run(self):
-        while not self.stopped():
-            # sleep for time T, where T is distributed given a constant failure rate => exponential function
-            time.sleep(np.random.exponential(self.mtbf)) 
-
-            self.log.append("Stopping service at " + time.asctime())
-            threading.Thread(target=stop_restart, 
-                    args=(self.mttr, self.stop_script, self.start_script, self.hosts[np.random.randint(len(self.hosts))])
-                        ).start()
-
-def crash_sim_wrapper(mtbf, mttr, hosts, client_name):
-    thread = Crash_Simulator_Thread(mtbf, mttr, hosts, client_name)
-    return (thread.start, thread.stop)
-
-def none():
-    return lambda service: (nofailure, nofailure)
-
-def crash(mtbf, mttr, hostnames):
-    return lambda client_name: crash_sim_wrapper(mtbf, mttr, hostnames, client_name)
+def system_recovery(endpoint):
+    def helper(service):
+        print("Stopping Service: " + service + " on " + endpoint)
+        call(["scripts/" + service + "_start.sh", endpoint])
+    return helper
 

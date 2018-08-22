@@ -1,4 +1,6 @@
 from subprocess import call
+from sys import argv
+
 def rmCons(host):
 	call(["ssh", host, "docker rm -f consul"])
 
@@ -7,8 +9,8 @@ def regs(host, reg):
 
 
 rs = [i+1 for i in range(5)]
-hosts = ["caelum-50{k}.cl.cam.ac.uk".format(k=str(i+4)) for i in range(5)]
 
+hosts = argv[1].split(',')
 
 
 for host in hosts[::-1]:

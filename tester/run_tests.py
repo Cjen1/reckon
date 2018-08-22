@@ -20,7 +20,7 @@ tests = [
 
 tests.extend([
     ("Seqw_3s_1c_" + data_size + "d", hostnames[:3], 1, op_gen.sequential_keys(1000, data_size), lambda ops: failure.NoFailure(ops)) for data_size in np.linspace(0, 1048576, dtype = int, endpoint=True)  
-    ] # Test how systems perform over a range of data sizes
+    ]) # Test how systems perform over a range of data sizes
 
 for test in tests:
     tester.run_test(test)

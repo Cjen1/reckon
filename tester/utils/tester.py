@@ -50,11 +50,7 @@ def run_ops(operations, socket, num_clients, service, store_fn=(lambda *args: No
                 resp.ParseFromString(rec)
                 store_fn(resp.response_time, resp.start, resp.end, resp.err, resp.id)
 
-            socket.send_multipart([
-                addr,
-                b'',
-                operation.op
-                ])
+            socket.send_multipart([addr,b'',operation.op])
 
         elif operation.type == Operation.SYSTEMFAILURE:
             operation.fn(service)
@@ -66,6 +62,11 @@ def run_ops(operations, socket, num_clients, service, store_fn=(lambda *args: No
 def run_test(test, client_port = "50000"):
     tag, cluster_hostnames, num_clients, op_obj, fail_fn = test
     ops, prereq = op_obj
+
+
+    # Apply failure to the operations
+    prereq = failure.NoFailure(prereq)
+    ops = fail_fn(ops)
 
     print("Running test: " + tag)
 
@@ -97,9 +98,6 @@ def run_test(test, client_port = "50000"):
             resps.append([client_idx, resp_time, st, end])
             logs.append([client_idx, err, st, end])
         
-        # Apply failure to the operations
-        prereq = failure.NoFailure(prereq)
-        ops = fail_fn(ops)
 
         run_ops(prereq, socket, num_clients, service)
         run_ops(ops, socket, num_clients, service, store_fn = store_resp)

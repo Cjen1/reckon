@@ -5,6 +5,7 @@ def rmZK(host):
 
 hosts = argv[1].split(',')
 
+call(["python", "scripts/zookeeper_logs.py"])
 
 for host in hosts[::-1]:
 	rmZK(host)

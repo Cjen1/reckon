@@ -89,9 +89,7 @@ func get(cli *api.Client, op *OpWire.Operation_Get, id uint32) *OpWire.Response 
 
 
 func ReceiveOp(socket *zmq.Socket) *OpWire.Operation{
-	fmt.Println("Test1")
 	payload, _ := socket.Recv(0)
-	fmt.Println("Test2")
 	op := &OpWire.Operation{}
 
 	if err := proto.Unmarshal([]byte(payload), op); err != nil {

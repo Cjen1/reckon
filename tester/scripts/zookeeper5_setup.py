@@ -12,6 +12,7 @@ def setup_remote(host):
         host,
         (  "docker run -d " + 
             "-p 2181:2181 -p 2888:2888 -p 3888:3888 " +
+            "-v logs:/usr/local/zookeeper/logs " + 
             "--restart always " +
             "--name zookeeper {registry}:{zk_ver} " 
         ).format(

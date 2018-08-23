@@ -50,9 +50,9 @@ run_tests.py: utils/message_pb2.py
 utils/tester.py: utils/message_pb2.py
 
 #-------------- etcd golang prereq ----------------
-
 clients/etcd_go-basic: etcd_go/client.go etcd_go/OpWire/message.pb.go 
 	go get github.com/pebbe/zmq4
+	go get github.com/coreos/etcd/clientv3
 	cd etcd_go ; \
 		go build -o ../clients/etcd_go-basic client.go
 

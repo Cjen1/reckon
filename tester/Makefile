@@ -77,6 +77,3 @@ build/zookeeper_java-basic/Client.class: zookeeper_java/Client.java build/zookee
 	javac -cp ".:jars/com.google.protobuf.jar:jars/zookeeper-3.4.12.jar:jars/org.zeromq.jar:jars/com.neilalexander.jnacl.crypto.jar" -d build/zookeeper_java-basic/ zookeeper_java/Client.java;
 clients/zookeeper_java-basic.jar: build/zookeeper_java-basic/Client.class build/zookeeper_java-basic/external_classes
 	 mv build/zookeeper_java-basic clients; cd clients/zookeeper_java-basic; jar cvfe ../zookeeper_java-basic.jar zookeeper_java.Client *; cd ..; mv zookeeper_java-basic ../build;
-
-experiment.txt: clients/zookeeper_java-basic.jar
-	echo "TEst, teST" >> experiment.txt

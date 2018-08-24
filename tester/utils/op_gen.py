@@ -58,7 +58,7 @@ def mixed_ops(num_ops, num_keys, data_size, split, limit = 256**4):
     ops.extend(reads)
     rand.shuffle(ops)
 
-    return ops
+    return (ops, [Op_put(key, 0) for key in range(0, num_keys)])
 
 def gen_payload(num_bytes):
     return rand.bytes(num_bytes)

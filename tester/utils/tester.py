@@ -61,7 +61,7 @@ def run_ops(operations, socket, num_clients, service, store_fn=(lambda *args: No
 
 client_port_id = 50000
 def run_test(test):
-
+    global client_port_id
     tag, cluster_hostnames, num_clients, op_obj, fail_fn = test
     ops, prereq = op_obj
 

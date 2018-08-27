@@ -50,19 +50,18 @@ def mixed_ops(num_ops, num_keys, data_size, split, limit = 256**4):
     num_reads = int(num_ops * split)
     num_writes =num_ops - num_reads
 
-    writes = [Op_put(key, gen_payload(data_size)) for key in rand.uniform(0, num_keys, num_writes)]
-    reads = [Op_get(key) for key in rand.uniform(0, num_keys, num_writes)]
+    writes = [Op_put(key, gen_payload(data_size)) for key in rand.randint(0, num_keys, num_writes)]
+    reads = [Op_get(key) for key in rand.randint(0, num_keys, num_reads)]
 
     ops = []
     ops.extend(writes)
     ops.extend(reads)
     rand.shuffle(ops)
 
-    return ops
+    return (ops, sequential_keys(num_keys, 1))
 
 def gen_payload(num_bytes):
-    options = map(None, "abcdefghijklmnopqrstuvwxyz123456789")
-    return "".join(c for c in rand.choice(options, num_bytes))
+    return rand.bytes(num_bytes)
 
 def Op_put(key, value):
     op = msg_pb.Operation()

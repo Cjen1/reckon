@@ -12,18 +12,13 @@ def setup_remote(host):
         host,
         (  "docker run -d " + 
             "-p 2181:2181 -p 2888:2888 -p 3888:3888 " +
+            "-v logs:/usr/local/zookeeper/logs " + 
             "--restart always " +
             "--name zookeeper {registry}:{zk_ver} " 
         ).format(
             registry="zkstart5", 
             zk_ver="latest") 
         ])
-
-def stop_remote(host):
-    call(["ssh", host, "sudo docker rm -f zookeeper"])
-
-for i, host in enumerate(hosts):
-    stop_remote(host)
 
 for host in hosts:
     setup_remote(host)

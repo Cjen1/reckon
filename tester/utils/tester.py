@@ -74,7 +74,7 @@ def run_test(test):
 
     for client in listdir("clients"):
         # Increment client port to ensure that there is no unencapsulated state
-        client_port = client_port + 1
+        client_port = client_port + 1 if client_port < 60000 else 50000
 
         service = client[:(client.index('_'))]
 	

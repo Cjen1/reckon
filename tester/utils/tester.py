@@ -59,7 +59,7 @@ def run_ops(operations, socket, num_clients, service, store_fn=(lambda *args: No
         else:
             print("UNKNOWN OPERATION")
 
-client_port = 50000
+client_port_id = 50000
 def run_test(test):
 
     tag, cluster_hostnames, num_clients, op_obj, fail_fn = test
@@ -74,8 +74,9 @@ def run_test(test):
 
     for client in listdir("clients"):
         # Increment client port to ensure that there is no unencapsulated state
-        client_port = client_port + 1 if client_port < 60000 else 50000
-
+        client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
+        client_port = str(client_port_id)
+        
         service = client[:(client.index('_'))]
 	
         #---------------- Setup system and start clients --------------------------------

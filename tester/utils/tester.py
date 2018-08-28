@@ -99,6 +99,12 @@ def run_test(test):
             (service == "zookeeper5" and len(cluster_hostnames) == 5)):
                 continue
 
+        # Sleep to allow cleanup of the zmq socket
+        time.sleep(0.5)
+
+        socket = zmq.Context().socket(zmq.ROUTER)
+        socket.bind("tcp://127.0.0.1:" + client_port)
+
         arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
         print("Starting cluster: " + service)
         call(["python", "scripts/" + service + "_setup.py", arg_hostnames])

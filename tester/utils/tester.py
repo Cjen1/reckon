@@ -75,6 +75,19 @@ def run_test(test):
     for client in listdir("clients"):
         # Increment client port to ensure that there is no unencapsulated state
         client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
+
+        #-------------- Loop until can connect to a port --------------------------------
+        while(True):
+            try:
+                socket = zmq.Context().socket(zmq.ROUTER)
+                socket.bind("tcp://127.0.0.1:" + client_port)
+                socket.setsockopt(zmq.Linger, 0)
+                break
+            except zmq.ZMQError ex:
+                print(ex)
+                # Increment client port to ensure that there is no unencapsulated state
+                client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
+
         client_port = str(client_port_id)
         
         service = client[:(client.index('_'))]
@@ -93,9 +106,6 @@ def run_test(test):
         microclients = []
         for i in range(num_clients):
             microclients.append(start_microclient("clients/"+client, client_port, cluster_hostnames, str(i)))
-
-        socket = zmq.Context().socket(zmq.ROUTER)
-        socket.bind("tcp://127.0.0.1:" + client_port)
 
         #----------- Satisify Prerequisites and then store responses to queries ---------
         resps = [] 

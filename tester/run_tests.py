@@ -1,5 +1,6 @@
 from utils import op_gen, link, failure, message_pb2 as msg_pb, tester
 import numpy as np
+import sys
 
 #---------------------------------------------------------------------------
 #------------------------- Hostnames and Tests -----------------------------
@@ -38,6 +39,9 @@ tests = [
 
 
 for test in tests:
-    tester.run_test(test)
+    try:
+        tester.run_test(test)
+    except:
+        print("Unexpected error:" + sys.exc_info()[0])
 
 

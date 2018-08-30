@@ -30,7 +30,7 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, id uint32) *OpWire.Resp
 	end := time.Now()
 	duration := end.Sub(st)
 
-	err_msg := ""
+	err_msg := "None"
 	if(err != nil){
 		err_msg = err.Error()
 	}
@@ -53,7 +53,7 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, id uint32) *OpWire.Resp
 	end := time.Now()
 	duration := end.Sub(st)
 
-	err_msg := ""
+	err_msg := "None"
 	if(err != nil){
 		err_msg = err.Error()
 	}

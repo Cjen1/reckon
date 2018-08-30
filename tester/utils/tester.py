@@ -76,19 +76,20 @@ def run_test(test):
         # Increment client port to ensure that there is no unencapsulated state
         client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
 
+        client_port = str(client_port_id)
         #-------------- Loop until can connect to a port --------------------------------
         while(True):
             try:
+                client_port = str(client_port_id)
                 socket = zmq.Context().socket(zmq.ROUTER)
                 socket.bind("tcp://127.0.0.1:" + client_port)
-                socket.setsockopt(zmq.Linger, 0)
+                socket.setsockopt(zmq.LINGER, 0)
                 break
-            except zmq.ZMQError ex:
+            except zmq.ZMQError as ex:
                 print(ex)
                 # Increment client port to ensure that there is no unencapsulated state
                 client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
 
-        client_port = str(client_port_id)
         
         service = client[:(client.index('_'))]
 	
@@ -101,9 +102,6 @@ def run_test(test):
 
         # Sleep to allow cleanup of the zmq socket
         time.sleep(0.5)
-
-        socket = zmq.Context().socket(zmq.ROUTER)
-        socket.bind("tcp://127.0.0.1:" + client_port)
 
         arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
         print("Starting cluster: " + service)

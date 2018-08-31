@@ -21,11 +21,11 @@ def SystemFailureRecovery(ops, endpoints):
 
 def system_crash(endpoint):
     def helper(service):
-        call(["scripts/" + service + "_stop.sh", endpoint], shell=True)
+        call(["bash", "scripts/" + service + "_stop.sh", endpoint])
     return helper
 
 def system_recovery(endpoint):
     def helper(service):
-        call(["scripts/" + service + "_start.sh", endpoint], shell=True)
+        call(["bash", "scripts/" + service + "_start.sh", endpoint])
     return helper
 

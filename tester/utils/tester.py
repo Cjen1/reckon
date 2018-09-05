@@ -26,7 +26,7 @@ def start_microclient(path, port, cluster_hostnames, client_id):
 
     return client
 
-def run_ops(operations, socket, num_clients, service, store_fn=(lambda *args: None)):
+def run_ops(operations, socket, num_clients, service, store_resp_fn=(lambda *args: None), store_fail_fn=(lambda *args: None):
     if len(operations) < 1:
         return
 
@@ -48,14 +48,16 @@ def run_ops(operations, socket, num_clients, service, store_fn=(lambda *args: No
                 addr, empty, rec = socket.recv_multipart()
                 resp = msg_pb.Response()
                 resp.ParseFromString(rec)
-                store_fn(resp.response_time, resp.start, resp.end, resp.err, resp.id)
+                store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.id)
 
             socket.send_multipart([addr,b'',operation.op])
 
         elif operation.type == Operation.SYSTEMFAILURE:
-            operation.fn(service)
+            opThread = Thread(target = operation.fn, args=[service, store_fail_fn])
+            opThread.start()
         elif operation.type == Operation.SYSTEMRECOVERY:
-            operation.fn(service)
+            opThread = Thread(target = operation.fn, args=[service, store_fail_fn])
+            opThread.start()
         else:
             print("UNKNOWN OPERATION")
 
@@ -113,10 +115,14 @@ def run_test(test):
         def store_resp(resp_time, st, end, err, client_idx):
             resps.append([client_idx, resp_time, st, end])
             logs.append([client_idx, err, st, end])
+
+        failures = []
+        def store_fail(fail_type, start, end):
+            failures.append([fail_type, start, end])
         
 
         run_ops(prereq, socket, num_clients, service)
-        run_ops(ops, socket, num_clients, service, store_fn = store_resp)
+        run_ops(ops, socket, num_clients, service, store_resp_fn = store_resp, store_fail_fn = store_fail)
 
         #---------- Collect remaining responses and make clients quit cleanly -----------
         quit_op = msg_pb.Operation()
@@ -152,7 +158,7 @@ def run_test(test):
         test_name = tag + "_" + client
         filename = "results/" + test_name + ".res"
         fres = open(filename, "w")
-        data ={'test': test_name, 'resps': resps, 'logs': logs}
+        data ={'test': test_name, 'resps': resps, 'logs': logs, 'fail': failures}
         json.dump(data, fres)
 
         fres.close()

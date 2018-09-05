@@ -95,10 +95,6 @@ def run_test(test):
 	
         #---------------- Setup system and start clients --------------------------------
         # Ensure that the correct zookeeper system is being run
-	if("zookeeper" in service) and not (
-            (service == "zookeeper"  and len(cluster_hostnames) == 3) or 
-            (service == "zookeeper5" and len(cluster_hostnames) == 5)):
-                continue
 
         # Sleep to allow cleanup of the zmq socket
         time.sleep(0.5)

@@ -13,7 +13,7 @@ hostnames = [
         "caelum-506.cl.cam.ac.uk",
         "caelum-507.cl.cam.ac.uk",
         "caelum-508.cl.cam.ac.uk",
-	"caelum-504.cl.cam.ac.uk"
+	"caelum-504.cl.cam.ac.uk",
 	"caelum-505.cl.cam.ac.uk",
         ]
 
@@ -32,9 +32,9 @@ def tagFailure(fail, reads=default_reads, servers=3, clients=default_clients, da
     return fail + "_" + str(r) + "R_" + str(servers) + "S_" + str(clients).zfill(3) + "C_" + str(datasize).zfill(7) + "B"
 
 variation_reads = [0.0, 1.0]   #np.linspace(0, 1, 101, endpoint=True)
-variation_clients = np.append(np.linspace(1, 300, 100, dtype=int), np.logspace(math.log(301, 3), math.log(1001, 3), num=25, base=3, endpoint=True, dtype=int)) # Over 1000 clients realistic?.
+variation_clients = np.linspace(1, 300, 100, dtype=int) # Over 1000 clients realistic?.
 variation_datasizes = np.logspace(0, np.log2(5)+20,num=20, base=2, endpoint=True, dtype=int) # MAx size chosen as 5MB to not exceed system memory.
-variation_servers = [3,5]
+variation_servers = [5,3]
 
 
 def flatten(a):
@@ -50,18 +50,17 @@ def flatten(a):
 
 testsN=[
             [
-                      [
-                                  (tag(reads=rr, datasize=ds, servers=ser), hostnames[:ser], default_clients, op_gen.mixed_ops(1000, 1000, ds, rr), failure.NoFailure) for ds in tqdm(variation_datasizes)
-                                        ] + [
-                                                    (tag(reads=rr, servers=ser, clients=nC), hostnames[:ser], nC, op_gen.mixed_ops(20000, 1000, default_datasize, rr), failure.NoFailure)  for nC in tqdm(variation_clients)
-                                                          ] + [
-                                                                      (tagFailure("jf" + str(i).zfill(3), servers=ser, reads=rr), hostnames[:ser], default_clients, op_gen.mixed_ops(30, 10, default_datasize, rr), lambda ops: failure.SystemFailure(ops, hostnames[:1])) for i in range(1)
-                                                                            ] + [
-                                                                                        (tagFailure("fr" + str(i).zfill(3), servers=ser, reads=rr), hostnames[:5], default_clients, op_gen.mixed_ops(30, 10, default_datasize, rr), lambda ops: failure.SystemFailureRecovery(ops, hostnames[:1])) for i in range(20)
-                                                                                              ] for ser in variation_servers
-                                                                                ] for rr in variation_reads
-            ]
-
+                [
+                #    (tag(reads=rr, datasize=ds, servers=ser), hostnames[:ser], default_clients, op_gen.mixed_ops(1000, 1000, ds, rr), failure.NoFailure) for ds in tqdm(variation_datasizes)
+                #] + [
+                #    (tag(reads=rr, servers=ser, clients=nC), hostnames[:ser], nC, op_gen.mixed_ops(20000, 1000, default_datasize, rr), failure.NoFailure)  for nC in tqdm(variation_clients)
+                #] + [
+                    (tagFailure("jf" + str(i+1).zfill(3), servers=ser, reads=rr), hostnames[:ser], default_clients, op_gen.mixed_ops(30, 10, default_datasize, rr), lambda ops: failure.SystemFailure(ops, hostnames[:i+1])) for i in tqdm(range(int(math.floor(ser / 2))))
+                ] + [
+                    (tagFailure("fr" + str(i+1).zfill(3), servers=ser, reads=rr), hostnames[:ser], default_clients, op_gen.mixed_ops(30, 10, default_datasize, rr), lambda ops: failure.SystemFailureRecovery(ops, hostnames[:i+1])) for i in tqdm(range(int(math.floor(ser / 2))))
+                ] for ser in variation_servers
+            ] for rr in variation_reads
+        ]
 
 tests = flatten(testsN)
 

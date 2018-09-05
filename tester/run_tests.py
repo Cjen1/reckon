@@ -55,9 +55,9 @@ testsN=[
                 #] + [
                 #    (tag(reads=rr, servers=ser, clients=nC), hostnames[:ser], nC, op_gen.mixed_ops(20000, 1000, default_datasize, rr), failure.NoFailure)  for nC in tqdm(variation_clients)
                 #] + [
-                    (tagFailure("jf" + str(i+1).zfill(3), servers=ser, reads=rr), hostnames[:ser], default_clients, op_gen.mixed_ops(30, 10, default_datasize, rr), lambda ops: failure.SystemFailure(ops, hostnames[:i+1])) for i in tqdm(range(int(math.floor(ser / 2))))
+                    (tagFailure("jf" + str(i+1).zfill(3), servers=ser, reads=rr), hostnames[:ser], default_clients, op_gen.mixed_ops(1000, 100, default_datasize, rr), lambda ops: failure.SystemFailure(ops, hostnames[:i+1])) for i in tqdm(range(int(math.floor(ser / 2))))
                 ] + [
-                    (tagFailure("fr" + str(i+1).zfill(3), servers=ser, reads=rr), hostnames[:ser], default_clients, op_gen.mixed_ops(30, 10, default_datasize, rr), lambda ops: failure.SystemFailureRecovery(ops, hostnames[:i+1])) for i in tqdm(range(int(math.floor(ser / 2))))
+                    (tagFailure("fr" + str(i+1).zfill(3), servers=ser, reads=rr), hostnames[:ser], default_clients, op_gen.mixed_ops(1000, 100, default_datasize, rr), lambda ops: failure.SystemFailureRecovery(ops, hostnames[:i+1])) for i in tqdm(range(int(math.floor(ser / 2))))
                 ] for ser in variation_servers
             ] for rr in variation_reads
         ]

@@ -22,18 +22,18 @@ def SystemFailureRecovery(ops, endpoints):
 CRASH = "crash"
 def system_crash(endpoint):
     def helper(service, store_fail_fn):
-        st = time.now()
+        st = time.time()
         call(["bash", "scripts/" + service + "_stop.sh", endpoint])
-        end = time.now()
+        end = time.time()
         store_fail_fn(CRASH, st, end)
     return helper
 
 RECOVER = "recover"
 def system_recovery(endpoint):
     def helper(service, store_fail_fn):
-        st = time.now()
+        st = time.time()
         call(["bash", "scripts/" + service + "_start.sh", endpoint])
-        end = time.now()
+        end = time.time()
         store_fail_fn(RECOVER, st, end)
     return helper
 

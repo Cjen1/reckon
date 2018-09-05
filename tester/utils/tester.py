@@ -26,7 +26,7 @@ def start_microclient(path, port, cluster_hostnames, client_id):
 
     return client
 
-def run_ops(operations, socket, num_clients, service, store_resp_fn=(lambda *args: None), store_fail_fn=(lambda *args: None):
+def run_ops(operations, socket, num_clients, service, store_resp_fn=(lambda *args: None), store_fail_fn=(lambda *args: None)):
     if len(operations) < 1:
         return
 

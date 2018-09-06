@@ -5,6 +5,7 @@ import (
 	"time"
 	"strings"
 	"os"
+	"os/exec"
 	"fmt"
 	"strconv"
 
@@ -110,20 +111,26 @@ func marshall_response(resp *OpWire.Response) string {
 }
 
 func main() {
-	//port := *flag.String("port", "4444", "Local port to use for input")
-	//endpoints := strings.Split(*flag.String("endpoints", "NONE", "Endpoints for client to use, comma delimited. Format: https://<ip>:<client port>"), ",")
-
 	port := os.Args[1]
 	endpoints := strings.Split(os.Args[2], ",")
-	var clientid uint32
+
 	tmpid, _ := strconv.Atoi(os.Args[3])
-	clientid = uint32(tmpid)
+	clientid := uint32(tmpid)
+
 	socket, _ := zmq.NewSocket(zmq.REQ)
 	defer socket.Close()
 
-	cli, err := api.NewClient(&api.Config{
-				Address:endpoints[0] + ":8500",
-		        })
+	client_agent = Command(
+		"consul", "agent",
+		"-bind", "0.0.0.0:" + strconv(60000 + clientid),
+		"-disable-host-node-id",
+		"-retry-join", endpoints[0],
+	)
+
+	consulconfig = api.DefaultConfig()
+	consulconfig.Address = endpoints[0] + ":8500"
+
+	cli, err := api.NewClient(consulconfig)
 
 	if(err != nil){
 		println(err)

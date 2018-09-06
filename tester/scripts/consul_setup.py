@@ -69,8 +69,3 @@ for i, host in enumerate(hosts[1:]):
 	join(host, host_ips[i+1], host_ips[0], i+2)
 
 registrators()
-
-a = 0
-for i in range(100000000):
-	a = i
-

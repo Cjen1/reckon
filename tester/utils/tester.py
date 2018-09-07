@@ -53,9 +53,11 @@ def run_ops(operations, socket, num_clients, service, store_resp_fn=(lambda *arg
             socket.send_multipart([addr,b'',operation.op])
 
         elif operation.type == Operation.SYSTEMFAILURE:
+            print("Starting failure Thread")
             opThread = Thread(target = operation.fn, args=[service, store_fail_fn])
             opThread.start()
         elif operation.type == Operation.SYSTEMRECOVERY:
+            print("Starting recovery Thread")
             opThread = Thread(target = operation.fn, args=[service, store_fail_fn])
             opThread.start()
         else:
@@ -98,9 +100,7 @@ def run_test(test):
         #---------------- Setup system and start clients --------------------------------
         # Ensure that the correct zookeeper system is being run
 
-        # Sleep to allow cleanup of the zmq socket
-        time.sleep(0.5)
-
+        #[:-1] removes the trailing ','
         arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
         print("Starting cluster: " + service)
         call(["python", "scripts/" + service + "_setup.py", arg_hostnames])
@@ -118,6 +118,7 @@ def run_test(test):
 
         failures = []
         def store_fail(fail_type, start, end):
+            print("Storing a failure", fail_type, start, end)
             failures.append([fail_type, start, end])
         
 

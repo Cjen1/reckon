@@ -17,3 +17,6 @@ for host in hosts[::-1]:
 	rmCons(host)
 	for r in rs:
 		regs(host, r)
+
+call(["sudo", "docker", "rm", "-f", "consul"])
+call(["sudo", "docker", "volume", "prune", "-f"])

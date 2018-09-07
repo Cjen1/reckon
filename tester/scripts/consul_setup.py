@@ -1,6 +1,7 @@
 from subprocess import call, Popen
 from sys import argv
 from socket import gethostbyname
+import socket
 
 hosts = argv[1].split(",")
 
@@ -64,13 +65,34 @@ def registrators():
 			command
 		])
 
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+def start_client_node(endpoints):
+    localAddress = get_ip()
+    call([
+        "sudo", "docker", "run", "-d", 
+        "--net=host",
+        "-p", "8500:8500",
+        "--name", "consul",
+        "consul", "agent",
+        "-bind="+localAddress,
+        "-retry-join="+endpoints[0],
+        ])
+
 bootstrap(hosts[0], host_ips[0])
 for i, host in enumerate(hosts[1:]):
 	join(host, host_ips[i+1], host_ips[0], i+2)
 
 registrators()
 
-a = 0
-for i in range(100000000):
-	a = i
-
+start_client_node(host_ips)

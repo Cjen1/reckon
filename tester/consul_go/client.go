@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"time"
-	"strings"
+	//"strings"
 	"os"
 	"fmt"
 	"strconv"
@@ -103,27 +103,51 @@ func ReceiveOp(socket *zmq.Socket) *OpWire.Operation{
 func marshall_response(resp *OpWire.Response) string {
 	payload, err := proto.Marshal(resp)
 	if err != nil {
-		log.Fatalln("Failed to encode response: " + err.Error()) 
+		log.Fatalln("Failed to encode response: " + err.Error())
 	}
 
 	return string(payload)
 }
 
 func main() {
-	//port := *flag.String("port", "4444", "Local port to use for input")
-	//endpoints := strings.Split(*flag.String("endpoints", "NONE", "Endpoints for client to use, comma delimited. Format: https://<ip>:<client port>"), ",")
-
 	port := os.Args[1]
-	endpoints := strings.Split(os.Args[2], ",")
-	var clientid uint32
+	//endpoints := strings.Split(os.Args[2], ",")
+
 	tmpid, _ := strconv.Atoi(os.Args[3])
-	clientid = uint32(tmpid)
+	clientid := uint32(tmpid)
+
 	socket, _ := zmq.NewSocket(zmq.REQ)
 	defer socket.Close()
 
-	cli, err := api.NewClient(&api.Config{
-				Address:endpoints[0] + ":8500",
-		        })
+	// ca_port_http := strconv.FormatUint(uint64(60000 + clientid * 4), 10)
+	// ca_port_lan  := strconv.FormatUint(uint64(60000 + clientid * 4 + 1), 10)
+	// ca_port_wan  := strconv.FormatUint(uint64(60000 + clientid * 4 + 2), 10)
+	// ca_port_dns  := strconv.FormatUint(uint64(60000 + clientid * 4 + 3), 10)
+
+	// conn, err := net.Dial("udp", "8.8.8.8:80")
+	// defer conn.Close()
+	// localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	// client_agent := exec.Command(
+	// 	"consul", "agent",
+	// 	"-disable-host-node-id", "-name=np"+ca_port_http,
+	// 	"-retry-join="+endpoints[0],
+	// 	"-advertise="+localAddr,
+	// 	"-data-dir=~/consul_data"+ca_port_http,
+	// 	"-http-port="+ca_port_http,
+	// 	"-serf-lan-port="+ca_port_lan,
+	// 	"-serf-wan-port="+ca_port_wan,
+	// 	"-dns-port="+ca_port_dns,
+	// )
+
+	// client_agent.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	// client_agent.Start()
+	// defer syscall.Kill(-client_agent.Process.Pid, syscall.SIGKILL)
+
+	consulconfig := api.DefaultConfig()
+	consulconfig.Address = "127.0.0.1:8500"
+
+	cli, err := api.NewClient(consulconfig)
 
 	if(err != nil){
 		println(err)

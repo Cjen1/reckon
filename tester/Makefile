@@ -61,8 +61,9 @@ etcd_go/OpWire/message.pb.go: build/utils/message.pb.go
 
 #-------------- consul golang prereq ----------------
 
-clients/consul_go: consul_go/client.go consul_go/OpWire/message.pb.go libzmq4
-	go get github.com/pebbe/zmq4; go get github.com/hashicorp/consul
+clients/consul_go: consul_go/client.go consul_go/OpWire/message.pb.go
+	go get github.com/pebbe/zmq4
+	go get github.com/hashicorp/consul
 	cd consul_go ; \
 		go build -a -o ../clients/consul_go client.go
 

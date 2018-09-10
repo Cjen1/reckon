@@ -60,6 +60,16 @@ def mixed_ops(num_ops, num_keys, data_size, split, limit = 256**4):
 
     return (ops, [Op_put(key, "") for key in range(num_keys)])
 
+# Dynamically generate a write operation 
+def write_ops(num_keys, data_size):
+    return (lambda: Op_put(rand.randint(0, num_keys), rand.bytes(data_size)), 
+            [])
+
+# Dynamically generate a read operation 
+def read_ops(num_keys, data_size):
+    return (lambda: Op_get(rand.randint(0, num_keys)), 
+            [Op_put(key, rand.bytes(data_size)) for key in range(num_keys)]) 
+
 def gen_payload(num_bytes):
     return rand.bytes(num_bytes)
 

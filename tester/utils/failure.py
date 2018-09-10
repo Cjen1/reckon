@@ -19,6 +19,10 @@ def SystemFailureRecovery(ops, endpoints):
     res += NoFailure(ops)
     return res
 
+NOFAIL = "nofail"
+def no_fail():
+    return (NOFAIL, lambda *args: None)
+
 CRASH = "crash"
 def system_crash(endpoint):
     def helper(service, store_fail_fn):
@@ -26,7 +30,7 @@ def system_crash(endpoint):
         call(["bash", "scripts/" + service + "_stop.sh", endpoint])
         end = time.time()
         store_fail_fn(CRASH, st, end)
-    return helper
+    return (CRASH, helper)
 
 RECOVER = "recover"
 def system_recovery(endpoint):
@@ -35,5 +39,5 @@ def system_recovery(endpoint):
         call(["bash", "scripts/" + service + "_start.sh", endpoint])
         end = time.time()
         store_fail_fn(RECOVER, st, end)
-    return helper
+    return (RECOVER, helper)
 

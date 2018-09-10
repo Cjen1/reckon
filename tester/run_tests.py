@@ -50,24 +50,23 @@ def flatten(a):
 
 testsN=[
             [
-                [
-                #    (tag(reads=rr, datasize=ds, servers=ser), hostnames[:ser], default_clients, op_gen.mixed_ops(1000, 1000, ds, rr), failure.NoFailure) for ds in tqdm(variation_datasizes)
-                #] + [
-                #    (tag(reads=rr, servers=ser, clients=nC), hostnames[:ser], nC, op_gen.mixed_ops(20000, 1000, default_datasize, rr), failure.NoFailure)  for nC in tqdm(variation_clients)
-                #] + [
-                    (tagFailure("jf" + str(i+1).zfill(3), servers=ser, reads=rr), hostnames[:ser], default_clients, op_gen.mixed_ops(1000, 100, default_datasize, rr), lambda ops: failure.SystemFailure(ops, hostnames[:i+1])) for i in tqdm(range(int(math.floor(ser / 2))))
-                ] + [
-                    (tagFailure("fr" + str(i+1).zfill(3), servers=ser, reads=rr), hostnames[:ser], default_clients, op_gen.mixed_ops(1000, 100, default_datasize, rr), lambda ops: failure.SystemFailureRecovery(ops, hostnames[:i+1])) for i in tqdm(range(int(math.floor(ser / 2))))
-                ] for ser in variation_servers
-            ] for rr in variation_reads
+                (
+                    tagFailure("fr" + str(i+1).zfill(3), servers=nser, reads=rr), 
+                    hostnames[:nser], 
+                    default_clients, 
+                    op_gen.write_ops(100, default_datasize) if rr == 0  else op_gen.read_ops(100, default_datasize),
+                    30,#seconds
+                    [failure.no_fail()] + 
+                        [failure.system_crash(host) for host in hostnames[:i+1]] + 
+                        [failure.system_recovery(host) for host in hostnames[:i+1]]
+                ) for i in range(int(math.floor(nser / 2)))
+            ] for nser in [3, 5]
+        for rr in [0, 100]
         ]
 
 tests = flatten(testsN)
 
 for test in tests:
-    try:
         tester.run_test(test)
-    except Exception as e:
-        print(e)
 
 

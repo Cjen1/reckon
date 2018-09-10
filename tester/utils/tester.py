@@ -9,74 +9,32 @@ from tqdm import tqdm
 import json
 import zmq
 
-# starts a microclient with given config
-# port: local port for communication channel
-def start_microclient(path, port, cluster_hostnames, client_id):
-    ips = [socket.gethostbyname(host) for host in cluster_hostnames]
-
-    arg_ips = "".join(ip + "," for ip in ips)[:-1]
-
-    client = {}
-    if path.endswith(".jar"):
-        client = Popen(['java', '-jar', path, port, arg_ips, client_id])
-    elif path.endswith(".py"):
-        client = Popen(['python', path, port, arg_ips, client_id])
-    else:
-        client = Popen([path, port, arg_ips, client_id])
-
-    return client
-
-def run_ops(operations, socket, num_clients, service, store_resp_fn=(lambda *args: None), store_fail_fn=(lambda *args: None)):
-    if len(operations) < 1:
-        return
-
-    #------------------ Recieve ready signals from clients --------------------------
-    addr_init_ops = set()
-    for i in tqdm(range(num_clients), desc="Ready signals"):
-        address, empty, ready = socket.recv_multipart()
-        addr_init_ops.add(address)
-
+def run_ops_list(operations, socket, ready_signals, service, store_resp_fn=(lambda *args: None)):
     #------- Send operations to each of the clients in a load balanced manner -------
-
-    for operation in tqdm(operations, desc="Sending Operations"):
-        if operation.type == Operation.STANDARD:
-            # Get address to send to either from initial queue or from received responses
-            addr = {}
-            if len(addr_init_ops) > 0:
-                addr = addr_init_ops.pop()
-            else:
-                addr, empty, rec = socket.recv_multipart()
-                resp = msg_pb.Response()
-                resp.ParseFromString(rec)
-                store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.id)
-
-            socket.send_multipart([addr,b'',operation.op])
-
-        elif operation.type == Operation.SYSTEMFAILURE:
-            print("Starting failure Thread")
-            opThread = Thread(target = operation.fn, args=[service, store_fail_fn])
-            opThread.start()
-        elif operation.type == Operation.SYSTEMRECOVERY:
-            print("Starting recovery Thread")
-            opThread = Thread(target = operation.fn, args=[service, store_fail_fn])
-            opThread.start()
+    for operation in operations:
+        # Get address to send to either from initial queue or from received responses
+        addr = {}
+        if len(ready_signals) > 0:
+            addr = ready_signals.pop()
         else:
-            print("UNKNOWN OPERATION")
+            addr, empty, rec = socket.recv_multipart()
+            resp = msg_pb.Response()
+            resp.ParseFromString(rec)
+            store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.id)
+
+        socket.send_multipart([addr,b'',operation])
 
 client_port_id = 50000
 def run_test(test):
     global client_port_id
-    tag, cluster_hostnames, num_clients, op_obj, fail_fn = test
-    ops, prereq = op_obj
-
-
-    # Apply failure to the operations
-    prereq = failure.NoFailure(prereq)
-    ops = fail_fn(ops)
+    tag, cluster_hostnames, num_clients, op_obj, duration, failures = test
+    opgen, prereq = op_obj
 
     print("Running test: " + tag)
 
     for client in listdir("clients"):
+        service = client[:(client.index('_'))]
+
         # Increment client port to ensure that there is no unencapsulated state
         client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
 
@@ -94,9 +52,6 @@ def run_test(test):
                 # Increment client port to ensure that there is no unencapsulated state
                 client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
 
-        
-        service = client[:(client.index('_'))]
-	
         #---------------- Setup system and start clients --------------------------------
         # Ensure that the correct zookeeper system is being run
 
@@ -109,37 +64,44 @@ def run_test(test):
         for i in range(num_clients):
             microclients.append(start_microclient("clients/"+client, client_port, cluster_hostnames, str(i)))
 
-        #----------- Satisify Prerequisites and then store responses to queries ---------
-        resps = [] 
-        logs = []
-        def store_resp(resp_time, st, end, err, client_idx):
+        #------------------------------ Run Test ----------------------------------------
+        #--- Satisify prerequisites -------------
+        readys, _ = get_ready_signals(socket, num_clients)
+        run_ops_list(prereq, socket, readys, service)
+
+        resps = []
+        logs  = []
+        def store_resp_fn(resp_time, st, end, err, client_idx):
             resps.append([client_idx, resp_time, st, end])
             logs.append([client_idx, err, st, end])
 
-        failures = []
-        def store_fail(fail_type, start, end):
-            print("Storing a failure", fail_type, start, end)
-            failures.append([fail_type, start, end])
+        fails = []
+        def store_fail_fn(failure_type, start, end):
+            fails.append([failure_type, start, end])
+
+        print("Sending Operations")
+        for failure_type, failure_fn in failures:
+            print("Section: " + failure_type)
+            fail_thread = Thread(target = failure_fn, args=[service, store_fail_fn])
+            fail_thread.start()
+
+            #send operations to probe failure transition
+            while fail_thread.isAlive():
+                run_ops(opgen, socket, store_resp_fn, readys)
+
+            #send operations until time limit
+            t_end = time.time() + duration
+            while time.time() < t_end:
+                run_ops(opgen, socket, store_resp_fn, readys)
+
         
-
-        run_ops(prereq, socket, num_clients, service)
-        run_ops(ops, socket, num_clients, service, store_resp_fn = store_resp, store_fail_fn = store_fail)
-
         #---------- Collect remaining responses and make clients quit cleanly -----------
+        # Don't store responses since they happened out of the timeframe
         quit_op = msg_pb.Operation()
         quit_op.quit.msg = "Quitting normally"
         quit_op = quit_op.SerializeToString()
-        for i in tqdm(range(num_clients), desc="Awaiting Resps & Closing clients"):
-            address, empty, rec = socket.recv_multipart()
-            # Collect remaining responses 
-            resp = msg_pb.Response()
-            try:
-                resp.ParseFromString(rec)
-            except google.protobuf.message.DecodeError:
-                print(rec)
-
-            store_resp(resp.response_time, resp.start, resp.end, resp.err, resp.id)
-
+        for i in range(num_clients):
+            address, _, rec = socket.recv_multipart()
             # Send quit message
             socket.send_multipart([
                 address,
@@ -150,7 +112,6 @@ def run_test(test):
         print("Waiting for clients to quit")
         for microclient in microclients:
             microclient.wait()
-            
 
         socket.close()
 
@@ -159,7 +120,7 @@ def run_test(test):
         test_name = tag + "_" + client
         filename = "results/" + test_name + ".res"
         fres = open(filename, "w")
-        data ={'test': test_name, 'resps': resps, 'logs': logs, 'fail': failures}
+        data ={'test': test_name, 'resps': resps, 'logs': logs, 'fail': fails}
         json.dump(data, fres)
 
         fres.close()
@@ -167,3 +128,43 @@ def run_test(test):
         arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
         print("Stopping cluster: " + service)
         call(["python", "scripts/" + service + "_cleanup.py", arg_hostnames])
+
+#----- Utility Functions --------------------------------------------------------
+def run_ops(opgen, socket, store_resp_fn=lambda *args:None, ready_signals=set()):
+    op = opgen()
+
+    addr = {}
+    if len(ready_signals) > 0:
+        addr = ready_signals.pop()
+    else:
+        addr, _, rec = socket.recv_multipart()
+        resp = msg_pb.Response()
+        resp.ParseFromString(rec)
+        store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.id)
+    socket.send_multipart([addr, b'', op])
+
+# starts a microclient with given config
+# port: local port for communication channel
+def start_microclient(path, port, cluster_hostnames, client_id):
+    ips = [socket.gethostbyname(host) for host in cluster_hostnames]
+
+    arg_ips = "".join(ip + "," for ip in ips)[:-1]
+
+    client = {}
+    if path.endswith(".jar"):
+        client = Popen(['java', '-jar', path, port, arg_ips, client_id])
+    elif path.endswith(".py"):
+        client = Popen(['python', path, port, arg_ips, client_id])
+    else:
+        client = Popen([path, port, arg_ips, client_id])
+
+    return client
+
+def get_ready_signals(socket, num_clients):
+    addr_init_ops = set()
+    readys = []
+    for i in tqdm(range(num_clients), desc="Ready signals"):
+        address, _, ready = socket.recv_multipart()
+        addr_init_ops.add(address)
+
+    return (addr_init_ops, readys)

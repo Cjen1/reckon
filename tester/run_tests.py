@@ -49,17 +49,39 @@ def flatten(a):
 
 
 testsN=[
-            [
+            [   
+                [#clients dimension
                 (
-                    tagFailure("fr" + str(i+1).zfill(3), servers=nser, reads=rr), 
-                    hostnames[:nser], 
-                    default_clients, 
-                    op_gen.write_ops(100, default_datasize) if rr == 0  else op_gen.read_ops(100, default_datasize),
-                    30,#seconds
-                    [failure.no_fail()] + 
-                        [failure.system_crash(host) for host in hostnames[:i+1]] + 
-                        [failure.system_recovery(host) for host in hostnames[:i+1]]
-                ) for i in range(int(math.floor(nser / 2)))
+                    tag(clients=nclients),
+                    hostnames[:nser],
+                    nclients,
+                    op_gen.write_ops(1000, default_datasize) if rr == 0 else op_gen.read_ops(100, default_datasize),
+                    60,#seconds
+                    [failure.no_fail()]
+                ) for nclients in variation_clients
+                ],
+                [#data size dimension
+                (
+                    tag(datasize=datasize),
+                    hostnames[:nser],
+                    default_clients,
+                    op_gen.write_ops(1000, datasize) if rr == 0 else op_gen.read_ops(100, datasize),
+                    60,#seconds
+                    [failure.no_fail()]
+                ) for datasize in variation_datasizes
+                ],
+                [#Failure injection
+                    (
+                        tagFailure("fr" + str(i+1).zfill(3), servers=nser, reads=rr), 
+                        hostnames[:nser], 
+                        default_clients, 
+                        op_gen.write_ops(100, default_datasize) if rr == 0  else op_gen.read_ops(100, default_datasize),
+                        30,#seconds
+                        [failure.no_fail()] + 
+                            [failure.system_crash(host) for host in hostnames[:i+1]] + 
+                            [failure.system_recovery(host) for host in hostnames[:i+1]]
+                    ) for i in range(int(math.floor(nser / 2)))
+                ]
             ] for nser in [3, 5]
         for rr in [0, 100]
         ]

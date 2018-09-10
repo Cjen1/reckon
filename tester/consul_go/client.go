@@ -145,7 +145,6 @@ func main() {
 	// defer syscall.Kill(-client_agent.Process.Pid, syscall.SIGKILL)
 
 	consulconfig := api.DefaultConfig()
-	consulconfig.Address = "127.0.0.1:8500"
 
 	cli, err := api.NewClient(consulconfig)
 

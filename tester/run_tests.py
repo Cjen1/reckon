@@ -70,17 +70,19 @@ testsN=[
                     [failure.no_fail()]
                 ) for datasize in variation_datasizes
                 ],
-                [#Failure injection
-                    (
-                        tagFailure("fr" + str(i+1).zfill(3), servers=nser, reads=rr), 
-                        hostnames[:nser], 
-                        default_clients, 
-                        op_gen.write_ops(100, default_datasize) if rr == 0  else op_gen.read_ops(100, default_datasize),
-                        30,#seconds
-                        [failure.no_fail()] + 
-                            [failure.system_crash(host) for host in hostnames[:i+1]] + 
-                            [failure.system_recovery(host) for host in hostnames[:i+1]]
-                    ) for i in range(int(math.floor(nser / 2)))
+                [
+                    [#Failure injection
+                        (
+                            tagFailure(str(j).zfill(2) + "t_" + str(i+1).zfill(3) + "fr_", servers=nser, reads=rr), 
+                            hostnames[:nser], 
+                            default_clients, 
+                            op_gen.write_ops(100, default_datasize) if rr == 0  else op_gen.read_ops(100, default_datasize),
+                            30,#seconds
+                            [failure.no_fail()] + 
+                                [failure.system_crash(host) for host in hostnames[:i+1]] + 
+                                [failure.system_recovery(host) for host in hostnames[:i+1]]
+                        ) for i in range(int(math.floor(nser / 2)))
+                    ] for j in range(5) 
                 ]
             ] for nser in [3, 5]
         for rr in [0, 100]
@@ -90,5 +92,4 @@ tests = flatten(testsN)
 
 for test in tests:
         tester.run_test(test)
-
 

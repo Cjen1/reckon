@@ -46,6 +46,8 @@ def run_test(test):
                 socket = zmq.Context().socket(zmq.ROUTER)
                 socket.bind("tcp://127.0.0.1:" + client_port)
                 socket.setsockopt(zmq.LINGER, 0)
+                # Prevents infinite waits
+                socket.RCVTIMEO = 1000 * duration
                 break
             except zmq.ZMQError as ex:
                 print(ex)

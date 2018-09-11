@@ -13,8 +13,8 @@ hostnames = [
         "caelum-506.cl.cam.ac.uk",
         "caelum-507.cl.cam.ac.uk",
         "caelum-508.cl.cam.ac.uk",
-	"caelum-504.cl.cam.ac.uk",
-	"caelum-505.cl.cam.ac.uk",
+    	"caelum-504.cl.cam.ac.uk",
+    	"caelum-505.cl.cam.ac.uk",
         ]
 
 print("starting test")
@@ -24,11 +24,11 @@ default_clients  = 1
 default_datasize = 1024
 
 def tag(reads=default_reads, servers=3, clients=default_clients, datasize=default_datasize):
-    r = int(100 * reads)
+    r = int(reads)
     return str(r).zfill(3) + "R_" + str(servers) + "S_" + str(clients).zfill(3) + "C_" + str(datasize).zfill(7) + "B"
 
 def tagFailure(fail, reads=default_reads, servers=3, clients=default_clients, datasize=default_datasize):
-    r = int(100 * reads)
+    r = int(reads)
     return fail + "_" + str(r) + "R_" + str(servers) + "S_" + str(clients).zfill(3) + "C_" + str(datasize).zfill(7) + "B"
 
 variation_reads = [0.0, 1.0]   #np.linspace(0, 1, 101, endpoint=True)
@@ -52,7 +52,7 @@ testsN=[
             [   
                 [#clients dimension
                 (
-                    tag(clients=nclients),
+                    tag(clients=nclients, reads=rr, servers=nser),
                     hostnames[:nser],
                     nclients,
                     op_gen.write_ops(1000, default_datasize) if rr == 0 else op_gen.read_ops(100, default_datasize),
@@ -62,7 +62,7 @@ testsN=[
                 ],
                 [#data size dimension
                 (
-                    tag(datasize=datasize),
+                    tag(datasize=datasize, reads=rr, servers=nser),
                     hostnames[:nser],
                     default_clients,
                     op_gen.write_ops(1000, datasize) if rr == 0 else op_gen.read_ops(100, datasize),

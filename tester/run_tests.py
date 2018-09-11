@@ -24,12 +24,12 @@ default_clients  = 1
 default_datasize = 1024
 
 def tag(reads=default_reads, servers=3, clients=default_clients, datasize=default_datasize):
-    r = int(100 * reads)
+    r = int(reads)
     return str(r).zfill(3) + "R_" + str(servers) + "S_" + str(clients).zfill(3) + "C_" + str(datasize).zfill(7) + "B"
 
 def tagFailure(fail, reads=default_reads, servers=3, clients=default_clients, datasize=default_datasize):
-    r = int(100 * reads)
-    return fail + "_" + str(r) + "R_" + str(servers) + "S_" + str(clients).zfill(3) + "C_" + str(datasize).zfill(7) + "B"
+    r = int(reads)
+    return fail + str(r).zfill(3) + "R_" + str(servers) + "S_" + str(clients).zfill(3) + "C_" + str(datasize).zfill(7) + "B"
 
 variation_reads = [0.0, 1.0]   #np.linspace(0, 1, 101, endpoint=True)
 variation_clients = np.linspace(1, 300, 100, dtype=int) # Over 1000 clients realistic?.
@@ -52,7 +52,7 @@ testsN=[
             [   
                 [#clients dimension
                 (
-                    tag(clients=nclients),
+                    tag(clients=nclients, reads=rr, servers = nser),
                     hostnames[:nser],
                     nclients,
                     op_gen.write_ops(1000, default_datasize) if rr == 0 else op_gen.read_ops(100, default_datasize),
@@ -62,7 +62,7 @@ testsN=[
                 ],
                 [#data size dimension
                 (
-                    tag(datasize=datasize),
+                    tag(datasize=datasize, reads=rr, servers=nser),
                     hostnames[:nser],
                     default_clients,
                     op_gen.write_ops(1000, datasize) if rr == 0 else op_gen.read_ops(100, datasize),
@@ -70,17 +70,19 @@ testsN=[
                     [failure.no_fail()]
                 ) for datasize in variation_datasizes
                 ],
-                [#Failure injection
-                    (
-                        tagFailure("fr" + str(i+1).zfill(3), servers=nser, reads=rr), 
-                        hostnames[:nser], 
-                        default_clients, 
-                        op_gen.write_ops(100, default_datasize) if rr == 0  else op_gen.read_ops(100, default_datasize),
-                        30,#seconds
-                        [failure.no_fail()] + 
-                            [failure.system_crash(host) for host in hostnames[:i+1]] + 
-                            [failure.system_recovery(host) for host in hostnames[:i+1]]
-                    ) for i in range(int(math.floor(nser / 2)))
+                [
+                    [#Failure injection
+                        (
+                            tagFailure(str(j).zfill(2) + "t_" + str(i+1).zfill(3) + "fr_", servers=nser, reads=rr), 
+                            hostnames[:nser], 
+                            default_clients, 
+                            op_gen.write_ops(100, default_datasize) if rr == 0  else op_gen.read_ops(100, default_datasize),
+                            30,#seconds
+                            [failure.no_fail()] + 
+                                [failure.system_crash(host) for host in hostnames[:i+1]] + 
+                                [failure.system_recovery(host) for host in hostnames[:i+1]]
+                        ) for i in range(int(math.floor(nser / 2)))
+                    ] for j in range(5) 
                 ]
             ] for nser in [3, 5]
         for rr in [0, 100]

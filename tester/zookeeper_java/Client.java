@@ -43,26 +43,26 @@ public class Client implements org.apache.zookeeper.Watcher {
 		long start = 0L;
 		long stop = 0L;
 		try{
-			start = System.nanoTime();
+			start = System.currentTimeMillis();
 			client.setData(path, data.getBytes(), -1);
-			stop = System.nanoTime();
+			stop = System.currentTimeMillis();
 		} catch(KeeperException.NoNodeException n) {
-			start = System.nanoTime();
+			start = System.currentTimeMillis();
 			try{
 				client.create(path, data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 			} catch(Exception e) {
 				err = "Caught Exception: " + e.getMessage();
 			}
-			stop = System.nanoTime();
+			stop = System.currentTimeMillis();
 		} catch(Exception k) {
 			err = "Caught Exception: " + k.getMessage();
 		} 
-		double duration = (stop - start + 0.0) / 1E9; // Duration in seconds.
+		double duration = (stop - start + 0.0) / 1E3; // Duration in seconds.
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)
-							     .setStart(start / 1E9)
-							     .setEnd(stop / 1E9)
+							     .setStart(start / 1E3)
+							     .setEnd(stop / 1E3)
 							     .setId(id)
 							     .build();
 		return resp;
@@ -72,20 +72,20 @@ public class Client implements org.apache.zookeeper.Watcher {
 	public OpWire.Message.Response get(ZooKeeper client, OpWire.Message.Operation opr, int id){
 		String err = "None";
 		String path = "/" + opr.getGet().getKey();
-		long start = System.nanoTime();
+		long start = System.currentTimeMillis();
 		try{
 
 			client.getData(path, false, client.exists(path, false));
 		} catch(Exception e) {
 			err = "Caught Exception: " + e.getMessage();
 		}
-		long stop = System.nanoTime();
-		double duration = (stop - start + 0.0) / 1E9; // Duration in seconds.
+		long stop = System.currentTimeMillis();
+		double duration = (stop - start + 0.0) / 1E3; // Duration in seconds.
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)
-							     .setStart(start / 1E9)
-							     .setEnd(stop / 1E9)
+							     .setStart(start / 1E3)
+							     .setEnd(stop / 1E3)
 							     .setId(id)
 							     .build();
 		return resp;

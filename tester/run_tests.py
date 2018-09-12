@@ -84,7 +84,7 @@ testsN=[
                         ) for i in range(int(math.floor(nser / 2)))
                     ] for j in range(5) 
                 ]
-            ] for nser in [3, 5]
+            ] for nser in [5, 3]
         for rr in [0, 100]
         ]
 

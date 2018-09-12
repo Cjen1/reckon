@@ -40,24 +40,28 @@ public class Client implements org.apache.zookeeper.Watcher {
 		String err = "None";
 		String path = "/" + opr.getPut().getKey();
 		String data = opr.getPut().getValue().toString();
-		long start = 0L;
-		long stop = 0L;
+		long start = 0L, start2 = 0L;
+		long stop = 0L, stop2 = 0L;
 		try{
 			start = System.currentTimeMillis();
+			start2 = System.nanoTime();
 			client.setData(path, data.getBytes(), -1);
+			stop2 = System.nanoTime();
 			stop = System.currentTimeMillis();
 		} catch(KeeperException.NoNodeException n) {
 			start = System.currentTimeMillis();
+			start2 = System.nanoTime();
 			try{
 				client.create(path, data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 			} catch(Exception e) {
 				err = "Caught Exception: " + e.getMessage();
 			}
+			stop2 = System.nanoTime();
 			stop = System.currentTimeMillis();
 		} catch(Exception k) {
 			err = "Caught Exception: " + k.getMessage();
 		} 
-		double duration = (stop - start + 0.0) / 1E3; // Duration in seconds.
+		double duration = (stop2 - start2 + 0.0) / 1E9; // Duration in seconds.
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)
@@ -73,14 +77,15 @@ public class Client implements org.apache.zookeeper.Watcher {
 		String err = "None";
 		String path = "/" + opr.getGet().getKey();
 		long start = System.currentTimeMillis();
+		long start2 = System.nanoTime();
 		try{
-
 			client.getData(path, false, client.exists(path, false));
 		} catch(Exception e) {
 			err = "Caught Exception: " + e.getMessage();
 		}
+		long stop2 = System.nanoTime();
 		long stop = System.currentTimeMillis();
-		double duration = (stop - start + 0.0) / 1E3; // Duration in seconds.
+		double duration = (stop2 - start2 + 0.0) / 1E9; // Duration in seconds.
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)

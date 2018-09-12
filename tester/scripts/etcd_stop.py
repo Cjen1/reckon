@@ -6,15 +6,17 @@ import requests
 import etcd
 
 def kill(host):
-    call (["ssh", host, "docker stop consul"])
+    call (["ssh", host, "docker stop etcd"])
 
 def killLeader(cluster):
     cluster_arg = tuple([(host, 2379) for host in cluster])
     client = etcd.Client(host=cluster_arg, allow_reconnect=True)
 
-    url = client.leader['peerURLs']
+    url = client.leader['peerURLs'][0]
     print(url)
-    leader = url.split(':')[0]
+    url = url.partition('://')[-1]
+    print(url)
+    leader = url[:url.index(':')]
     print(leader)
 
     print("Killing leader: " +leader)

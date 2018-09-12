@@ -3,21 +3,19 @@ from sys import argv
 import argparse
 import socket
 import requests
-
+import etcd
 
 def kill(host):
     call (["ssh", host, "docker stop consul"])
 
 def killLeader(cluster):
-    host_lookup = {socket.gethostbyname(host) : host for host in cluster}
+    cluster_arg = tuple([(host, 2379) for host in cluster])
+    client = etcd.Client(host=cluster_arg, allow_reconnect=True)
 
-    resp = requests.get('http://127.0.0.1:8500/v1/status/leader')
-    # Remove surrounding quotes then select first part of "127.0.0.1:8500"
-    leader_ip = resp.text[1:-1].split(':')[0]
-    print(leader_ip)
-    print(host_lookup)
-
-    leader = host_lookup[leader_ip]
+    url = client.leader['peerURLs']
+    print(url)
+    leader = url.split(':')[0]
+    print(leader)
 
     print("Killing leader: " +leader)
 

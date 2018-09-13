@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description='Restarts each server in cluster')
 parser.add_argument('--cluster', '-c')
 args = parser.parse_args()
 
-hosts = args.hosts.split(',')
+hosts = args.cluster.split(',')
 
 for host in hosts:
     recover(host)

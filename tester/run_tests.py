@@ -50,41 +50,43 @@ def flatten(a):
 
 testsN=[
             [   
-                [#clients dimension
-                (
-                    tag(clients=nclients, reads=rr, servers=nser),
-                    hostnames[:nser],
-                    nclients,
-                    op_gen.write_ops(1000, default_datasize) if rr == 0 else op_gen.read_ops(100, default_datasize),
-                    60,#seconds
-                    [failure.no_fail()]
-                ) for nclients in variation_clients
-                ],
-                [#data size dimension
-                (
-                    tag(datasize=datasize, reads=rr, servers=nser),
-                    hostnames[:nser],
-                    default_clients,
-                    op_gen.write_ops(1000, datasize) if rr == 0 else op_gen.read_ops(100, datasize),
-                    60,#seconds
-                    [failure.no_fail()]
-                ) for datasize in variation_datasizes
-                ],
+                #[#clients dimension
+                #(
+                #    tag(clients=nclients, reads=rr, servers=nser),
+                #    cluster,
+                #    nclients,
+                #    op_gen.write_ops(1000, default_datasize) if rr == 0 else op_gen.read_ops(100, default_datasize),
+                #    30,#seconds
+                #    [failure.no_fail()]
+                #) for nclients in variation_clients
+                #],
+                #[#data size dimension
+                #(
+                #    tag(datasize=datasize, reads=rr, servers=nser),
+                #    cluster,
+                #    default_clients,
+                #    op_gen.write_ops(1000, datasize) if rr == 0 else op_gen.read_ops(100, datasize),
+                #    30,#seconds
+                #    [failure.no_fail()]
+                #) for datasize in variation_datasizes
+                #],
                 [
                     [#Failure injection
                         (
-                            tagFailure(str(j).zfill(2) + "t_" + str(i+1).zfill(3) + "fr_", servers=nser, reads=rr), 
-                            hostnames[:nser], 
+                            tagFailure(str(j).zfill(2) + "t_" + "lf_", servers=nser, reads=rr), 
+                            cluster,
                             default_clients, 
                             op_gen.write_ops(100, default_datasize) if rr == 0  else op_gen.read_ops(100, default_datasize),
-                            30,#seconds
-                            [failure.no_fail()] + 
-                                [failure.system_crash(host) for host in hostnames[:i+1]] + 
-                                [failure.system_recovery(host) for host in hostnames[:i+1]]
-                        ) for i in range(int(math.floor(nser / 2)))
-                    ] for j in range(5) 
+                            20,#seconds
+                            [
+                                failure.no_fail(), 
+                                failure.system_leader_crash(cluster), 
+                                failure.system_full_recovery(cluster)
+                            ] 
+                        ) 
+                    ] for j in range(1) 
                 ]
-            ] for nser in [5, 3]
+            ] for cluster in [hostnames[:nser] for nser in [5, 3]]
         for rr in [0, 100]
         ]
 

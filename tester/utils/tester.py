@@ -72,10 +72,8 @@ def run_test(test):
         run_ops_list(prereq, socket, readys, service)
 
         resps = []
-        logs  = []
         def store_resp_fn(resp_time, st, end, err, client_idx):
-            resps.append([client_idx, resp_time, st, end])
-            logs.append([client_idx, err, st, end])
+            resps.append([client_idx, resp_time, err, st, end])
 
         fails = []
         def store_fail_fn(failure_type, start, end):
@@ -122,7 +120,7 @@ def run_test(test):
         test_name = tag + "_" + client
         filename = "results/" + test_name + ".res"
         fres = open(filename, "w")
-        data ={'test': test_name, 'resps': resps, 'logs': logs, 'fail': fails}
+        data ={'test': test_name, 'resps': resps, 'fail': fails}
         json.dump(data, fres)
 
         fres.close()

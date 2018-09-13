@@ -6,7 +6,7 @@ import requests
 import etcd
 
 def kill(host):
-    call (["ssh", host, "docker stop etcd"])
+    call (["ssh", host, "docker stop zookeeper"])
 
 def killLeader(cluster):
     leader = None

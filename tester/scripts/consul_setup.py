@@ -5,7 +5,7 @@ import socket
 
 hosts = argv[1].split(",")
 
-ips = {"caelum-504.cl.cam.ac.uk": "128.232.80.65", "caelum-505.cl.cam.ac.uk": "128.232.80.66", "caelum-506.cl.cam.ac.uk": "128.232.80.67", "caelum-507.cl.cam.ac.uk": "128.232.80.68", "caelum-508.cl.cam.ac.uk": "128.232.80.69"}
+ips = {host: gethostbyname(host) for host in hosts}
 
 def ipbyhost(host):
 	res = gethostbyname(host)

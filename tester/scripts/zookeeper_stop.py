@@ -8,19 +8,26 @@ import etcd
 def kill(host):
     call (["ssh", host, "docker stop zookeeper"])
 
+def leader(host):
+    output = check_output(['echo stat | nc '+socket.gethostbyname(host)+' 2181 | grep Mode'], shell=True)
+    if 'leader' in output:
+        return True
+    return False
+
+
 def killLeader(cluster):
-    leader = None
+    leaderNode = None
     for host in cluster:
         output = check_output(['echo stat | nc '+socket.gethostbyname(host)+' 2181 | grep Mode'], shell=True)
-        if 'leader' in output:
-            leader = host
+        if leader(host):
+            leaderNode = host
             break
-    if leader == None:
+    if leaderNode == None:
         print("Error: No leader to kill")
         return
 
-    print("Killing leader: " +leader)
-    kill(leader)
+    print("Killing leader: " +leaderNode)
+    kill(leaderNode)
 
 parser = argparse.ArgumentParser(description='Stops the either a given server or the leader of a cluster')
 parser.add_argument('--cluster', '-c')
@@ -31,4 +38,7 @@ hosts = args.cluster.split(',')
 if args.leader:
     killLeader(hosts)
 else:
-    kill(hosts[0])
+    if not(leader(hosts[0])):
+        kill(hosts[0])
+    else:
+        kill(hosts[1])

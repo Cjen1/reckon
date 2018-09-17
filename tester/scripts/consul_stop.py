@@ -8,14 +8,18 @@ import requests
 def kill(host):
     call (["ssh", host, "docker stop consul"])
 
-def killLeader(cluster):
+def getLeader(cluster):
     host_lookup = {socket.gethostbyname(host) : host for host in cluster}
 
     resp = requests.get('http://127.0.0.1:8500/v1/status/leader')
     # Remove surrounding quotes then select first part of "127.0.0.1:8500"
     leader_ip = resp.text[1:-1].split(':')[0]
     leader = host_lookup[leader_ip]
+    return leader
 
+
+def killLeader(cluster):
+    leader = getLeader(cluster)
     print("Killing leader: " +leader)
     kill(leader)
 
@@ -28,4 +32,7 @@ hosts = args.cluster.split(',')
 if args.leader:
     killLeader(hosts)
 else:
-    kill(hosts[0])
+    if(getLeader(hosts) == hosts[0]):
+        kill(hosts[1])
+    else:
+        kill(hosts[1])

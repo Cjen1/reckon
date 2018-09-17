@@ -8,14 +8,17 @@ import etcd
 def kill(host):
     call (["ssh", host, "docker stop etcd"])
 
-def killLeader(cluster):
+def getLeader(cluster):
     cluster_arg = tuple([(host, 2379) for host in cluster])
     client = etcd.Client(host=cluster_arg, allow_reconnect=True)
-
     url = client.leader['peerURLs'][0]
     url = url.partition('://')[-1]
     leader = url[:url.index(':')]
+    return leader
 
+
+def killLeader(cluster):
+    leader = getLeader(cluster)
     print("Killing leader: " +leader)
     kill(leader)
 
@@ -28,4 +31,9 @@ hosts = args.cluster.split(',')
 if args.leader:
     killLeader(hosts)
 else:
-    kill(hosts[0])
+    if (hosts[0] == getLeader(hosts)):
+        kill(hosts[1])
+    else:
+        kill(hosts[0])
+
+

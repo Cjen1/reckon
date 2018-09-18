@@ -29,10 +29,12 @@ parser.add_argument('--leader', '-l', action='store_true')
 args = parser.parse_args()
 
 hosts = args.cluster.split(',')
+leader = getLeader(hosts)
 if args.leader:
-    killLeader(hosts)
+    print("Killing leader: " +leader)
+    kill(leader)
 else:
-    if(getLeader(hosts) == hosts[0]):
-        kill(hosts[1])
-    else:
-        kill(hosts[1])
+    hosts.remove(leader)
+    candidate = hosts[0]
+    print("Killing follower: " + candidate)
+    kill(candidate)

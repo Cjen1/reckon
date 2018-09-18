@@ -41,24 +41,34 @@ def sequential_keys(num_ops, data_size, limit = 256**4):
 
     return (ops, [])
 
-# Number of keys to write, size of data in bytes, proportion of the operations to be reads
-# Return (<operations>, <prerequisite operations>) 
-def mixed_ops(num_ops, num_keys, data_size, split, limit = 256**4):	
-    if num_keys > limit:
-        num_keys = limit - 1
+## Number of keys to write, size of data in bytes, proportion of the operations to be reads
+## Return (<operations>, <prerequisite operations>) 
+#def mixed_ops(num_ops, num_keys, data_size, split, limit = 256**4):	
+#    if num_keys > limit:
+#        num_keys = limit - 1
+#
+#    num_reads = int(num_ops * split)
+#    num_writes =num_ops - num_reads
+#
+#    writes = [Op_put(key, gen_payload(data_size)) for key in rand.randint(0, num_keys, num_writes)]
+#    reads = [Op_get(key) for key in rand.randint(0, num_keys, num_reads)]
+#
+#    ops = []
+#    ops.extend(writes)
+#    ops.extend(reads)
+#    rand.shuffle(ops)
+#
+#    return (ops, [Op_put(key, "") for key in range(num_keys)])
 
-    num_reads = int(num_ops * split)
-    num_writes =num_ops - num_reads
-
-    writes = [Op_put(key, gen_payload(data_size)) for key in rand.randint(0, num_keys, num_writes)]
-    reads = [Op_get(key) for key in rand.randint(0, num_keys, num_reads)]
-
-    ops = []
-    ops.extend(writes)
-    ops.extend(reads)
-    rand.shuffle(ops)
-
-    return (ops, [Op_put(key, "") for key in range(num_keys)])
+# Dynamically generate a mixed operation
+# ratio: The reads/total
+def mixed_ops(num_keys, data_size, ratio):
+    return (
+            lambda: 
+                Op_get(rand.randint(0, num_keys)) 
+                    if rand.rand() < ratio 
+                    else Op_put(rand.randint(0, num_keys), rand.bytes(data_size)),
+            [Op_put(key, rand.bytes(data_size)) for key in range(num_keys)])
 
 # Dynamically generate a write operation 
 def write_ops(num_keys, data_size):

@@ -46,49 +46,46 @@ def flatten(a):
             res.append(i)
     return res
 
-
-
-testsN=[
-            [   
-                [#clients dimension
+testsN= [
+        [
+            [# Read ratio datapoints
                 (
-                    tag(clients=nclients, reads=rr, servers=len(cluster)),
-                    cluster,
-                    nclients,
-                    op_gen.write_ops(1000, default_datasize) if rr == 0 else op_gen.read_ops(100, default_datasize),
-                    30,#seconds
-                    [failure.no_fail()]
-                ) for nclients in variation_clients
-                ],
-                [#data size dimension
-                (
-                    tag(datasize=datasize, reads=rr, servers=len(cluster)),
+                    tag(servers=len(cluster), reads=rr*100),
                     cluster,
                     default_clients,
-                    op_gen.write_ops(1000, datasize) if rr == 0 else op_gen.read_ops(100, datasize),
-                    30,#seconds
-                    [failure.no_fail()]
-                ) for datasize in variation_datasizes
-                ],
-                [
-                    [#Failure injection
-                        (
-                            tagFailure(str(j).zfill(2) + "t_" + "lf_", servers=len(cluster), reads=rr), 
-                            cluster,
-                            default_clients, 
-                            op_gen.write_ops(100, default_datasize) if rr == 0  else op_gen.read_ops(100, default_datasize),
-                            30,#seconds
-                            [
-                                failure.no_fail(), 
-                                failure.system_leader_crash(cluster), 
-                                failure.system_full_recovery(cluster)
-                            ] 
-                        ) 
-                    ] for j in range(2) 
-                ]
-            ] for cluster in [hostnames[:nser] for nser in [5, 3]]
-        for rr in [0, 100]
-        ]
+                    op_gen.mixed_ops(100, default_datasize, rr),
+                    30, #seconds
+                    [
+                        failure.no_fail()
+                    ]
+                )
+            for rr in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]]
+        for cluster in [hostnames[:nser] for nser in [3,5]] ]
+    for rr in [0,100]]
+
+    #[
+    #        [
+    #            [
+    #                
+    #            ] 
+    #            [#Failure injection
+    #                 (
+    #                    tagFailure(str(j).zfill(2) + "t_" + "ff_", servers=len(cluster), reads=rr), 
+    #                    cluster,
+    #                    default_clients, 
+    #                    op_gen.write_ops(100, default_datasize) if rr == 0  else op_gen.read_ops(100, default_datasize),
+    #                    30,#seconds
+    #                    [
+    #                        failure.no_fail(), 
+    #                        failure.endpoint_crash(cluster), 
+    #                        failure.system_full_recovery(cluster)
+    #                    ] 
+    #                 ) ] 
+    #            for j in range(2) 
+    #        ] 
+    #        for cluster in [hostnames[:nser] for nser in [5, 3]]
+    #    for rr in [0, 100] 
+    #]
 
 tests = flatten(testsN)
 

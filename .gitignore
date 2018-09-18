@@ -4,3 +4,6 @@
 *.pyc
 *.swp
 *.pdf
+*.aux
+*.log
+*.gz

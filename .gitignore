@@ -3,3 +3,6 @@
 */result*
 *.pyc
 *.swp
+*.aux
+*.log
+*.gz

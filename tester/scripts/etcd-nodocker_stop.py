@@ -6,7 +6,7 @@ import requests
 import etcd
 
 def kill(host):
-    call (["ssh", host, "docker kill etcd"])
+    call (["ssh", host, "screen -X -S etcd_background quit"])
 
 def getLeader(cluster):
     cluster_arg = tuple([(host, 2379) for host in cluster])

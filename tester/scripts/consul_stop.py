@@ -6,7 +6,7 @@ import requests
 
 
 def kill(host):
-    call (["ssh", host, "docker stop consul"])
+    call (["ssh", host, "docker kill consul"])
 
 def getLeader(cluster):
     host_lookup = {socket.gethostbyname(host) : host for host in cluster}

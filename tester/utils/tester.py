@@ -25,9 +25,9 @@ def run_ops_list(operations, socket, ready_signals, service, store_resp_fn=(lamb
         socket.send_multipart([addr,b'',operation])
 
 client_port_id = 50000
-def run_test(test):
+def run_test(tag, cluster_hostnames, op_obj, num_clients=1, duration=30, failures=[failure.no_fail()]):
     global client_port_id
-    tag, cluster_hostnames, num_clients, op_obj, duration, failures = test
+    #t ag, cluster_hostnames, num_clients, op_obj, duration, failures = test
     opgen, prereq = op_obj
 
     print("Running test: " + tag)
@@ -60,7 +60,8 @@ def run_test(test):
         #[:-1] removes the trailing ','
         arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
         print("Starting cluster: " + service)
-        call(["python", "scripts/" + service + "_setup.py", arg_hostnames])
+        if 1 == call(["python", "scripts/" + service + "_setup.py", arg_hostnames]):
+            print("ERROR: setup failed, continuing")
 
         microclients = []
         for i in range(num_clients):
@@ -127,7 +128,9 @@ def run_test(test):
 
         arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
         print("Stopping cluster: " + service)
-        call(["python", "scripts/" + service + "_cleanup.py", arg_hostnames])
+        if 1 == call(["python", "scripts/" + service + "_cleanup.py", arg_hostnames]):
+            print("ERROR CLEANUP NOT COMPLETE")
+            quit()
 
 #----- Utility Functions --------------------------------------------------------
 def run_ops(opgen, socket, store_resp_fn=lambda *args:None, ready_signals=set()):

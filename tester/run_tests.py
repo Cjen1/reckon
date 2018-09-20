@@ -37,58 +37,44 @@ variation_datasizes = np.logspace(0, np.log2(5)+20,num=20, base=2, endpoint=True
 variation_servers = [5,3]
 
 
-def flatten(a):
-    res = []
-    for i in a:
-        if type(i) == list:
-            res.extend(flatten(i))
-        else:
-            res.append(i)
-    return res
+# def flatten(a):
+#     res = []
+#     for i in a:
+#         if type(i) == list:
+#             res.extend(flatten(i))
+#         else:
+#             res.append(i)
+#     return res
+# 
+# testsN= [
+#             [
+#                 [#Standard Test
+#                      (
+#                         tagFailure("nd", servers=len(cluster), reads=rr), 
+#                         cluster,
+#                         op_gen.write_ops() if rr == 0  else op_gen.read_ops(),
+#                         default_clients, 
+#                         30,#seconds
+#                         [
+#                             failure.no_fail(), 
+#                         ] 
+#                      ) ] 
+#                 for j in range(1) 
+#             ] 
+#             for cluster in [hostnames[:nser] for nser in [5, 3]]
+#         for rr in [0, 100] 
+#     ]
+# 
+# tests = flatten(testsN)
+# 
+# for args in tests:
+#         tester.run_test(*kwargs)
 
-testsN= [
-        [
-            [# Read ratio datapoints
-                (
-                    tag(servers=len(cluster), reads=rr*100),
-                    cluster,
-                    default_clients,
-                    op_gen.mixed_ops(100, default_datasize, rr),
-                    30, #seconds
-                    [
-                        failure.no_fail()
-                    ]
+for readratio in [0, 100]:
+    for cluster in [hostnames[:nser] for nser in [1,3,5]]:
+        tester.run_test(
+                tag(servers=len(cluster), reads=readratio),
+                cluster,
+                op_obj = op_gen.write_ops() if readratio == 0 else op_gen.read_ops(),
+                duration=10
                 )
-            for rr in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]]
-        for cluster in [hostnames[:nser] for nser in [3,5]] ]
-    for rr in [0,100]]
-
-    #[
-    #        [
-    #            [
-    #                
-    #            ] 
-    #            [#Failure injection
-    #                 (
-    #                    tagFailure(str(j).zfill(2) + "t_" + "ff_", servers=len(cluster), reads=rr), 
-    #                    cluster,
-    #                    default_clients, 
-    #                    op_gen.write_ops(100, default_datasize) if rr == 0  else op_gen.read_ops(100, default_datasize),
-    #                    30,#seconds
-    #                    [
-    #                        failure.no_fail(), 
-    #                        failure.endpoint_crash(cluster), 
-    #                        failure.system_full_recovery(cluster)
-    #                    ] 
-    #                 ) ] 
-    #            for j in range(2) 
-    #        ] 
-    #        for cluster in [hostnames[:nser] for nser in [5, 3]]
-    #    for rr in [0, 100] 
-    #]
-
-tests = flatten(testsN)
-
-for test in tests:
-        tester.run_test(test)
-

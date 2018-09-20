@@ -8,15 +8,15 @@ NOFAIL = "nofail"
 def no_fail():
     return (NOFAIL, lambda *args: None)
 
-CRASH = "crash"
-def endpoint_crash(endpoint):
+FOLLOWER_CRASH = "crash"
+def system_follower_crash(cluster):
     def helper(service, store_fail_fn):
         st = time.time()
-        cluster_arg = endpoint
+        cluster_arg = "".join(host + ',' for host in cluster)[:-1]
         call(['python', 'scripts/'+service+'_stop.py', '--cluster', cluster_arg])
-        end = time.time()
-        store_fail_fn(CRASH, st, end)
-    return (CRASH, helper)
+        end =time.time()
+        store_fail_fn(FOLLOWER_CRASH, st, end)
+    return (FOLLOWER_CRASH, helper)
 
 LEADER_CRASH="leader_crash"
 def system_leader_crash(cluster):

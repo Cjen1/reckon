@@ -70,6 +70,7 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, id uint32) *OpWire.Resp
 }
 
 func ReceiveOp(socket *zmq.Socket) *OpWire.Operation{
+	//print("CLIENT: Awaiting Operation")
 	payload, _ := socket.Recv(0)
 	op := &OpWire.Operation{}
 	if err := proto.Unmarshal([]byte(payload), op); err != nil {

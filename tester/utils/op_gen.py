@@ -62,7 +62,7 @@ def sequential_keys(num_ops, data_size, limit = 256**4):
 
 # Dynamically generate a mixed operation
 # ratio: The reads/total
-def mixed_ops(num_keys, data_size, ratio):
+def mixed_ops(num_keys=100, data_size=1024, ratio=0.5):
     return (
             lambda: 
                 Op_get(rand.randint(0, num_keys)) 
@@ -71,12 +71,12 @@ def mixed_ops(num_keys, data_size, ratio):
             [Op_put(key, rand.bytes(data_size)) for key in range(num_keys)])
 
 # Dynamically generate a write operation 
-def write_ops(num_keys, data_size):
+def write_ops(num_keys=100, data_size=1024):
     return (lambda: Op_put(rand.randint(0, num_keys), rand.bytes(data_size)), 
             [])
 
 # Dynamically generate a read operation 
-def read_ops(num_keys, data_size):
+def read_ops(num_keys=100, data_size=1024):
     return (lambda: Op_get(rand.randint(0, num_keys)), 
             [Op_put(key, rand.bytes(data_size)) for key in range(num_keys)]) 
 

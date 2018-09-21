@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	zmq "github.com/pebbe/zmq4"
-	"github.com/coreos/etcd/clientv3"
+	"go.etcd.io/etcd/clientv3"
 	"github.com/golang/protobuf/proto"
 	"./OpWire"
 )
@@ -70,6 +70,7 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, id uint32) *OpWire.Resp
 }
 
 func ReceiveOp(socket *zmq.Socket) *OpWire.Operation{
+	//print("CLIENT: Awaiting Operation")
 	payload, _ := socket.Recv(0)
 	op := &OpWire.Operation{}
 	if err := proto.Unmarshal([]byte(payload), op); err != nil {

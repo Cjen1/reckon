@@ -49,20 +49,34 @@ run_tests.py: utils/message_pb2.py
 
 utils/tester.py: utils/message_pb2.py
 
-#-------------- etcd golang prereq ----------------
-clients/etcd_go-basic: etcd_go/client.go etcd_go/OpWire/message.pb.go 
+#-------------- etcd golang docker ----------------
+clients/etcd_go: etcd_go/client.go etcd_go/OpWire/message.pb.go 
 	go get github.com/pebbe/zmq4
-	go get github.com/coreos/etcd/clientv3
+	go get go.etcd.io/etcd/clientv3
 	cd etcd_go ; \
-		go build -o ../clients/etcd_go-basic client.go
+		go build -o ../clients/etcd_go client.go
 
 etcd_go/OpWire/message.pb.go: build/utils/message.pb.go
 	cp build/utils/message.pb.go etcd_go/OpWire
 
-#-------------- consul golang prereq ----------------
+#-------------- etcd golang nodocker --------------
+clients/etcd-nodocker_go: etcd_go/client.go etcd_go/OpWire/message.pb.go 
+	go get github.com/pebbe/zmq4
+	go get go.etcd.io/etcd/clientv3
+	cd etcd_go ; \
+		go build -o ../clients/etcd-nodocker_go client.go
 
-clients/consul_go: consul_go/client.go consul_go/OpWire/message.pb.go libzmq4
-	go get github.com/pebbe/zmq4; go get github.com/hashicorp/consul
+#-------------- consul golang prereq --------------
+
+clients/consul-progrium_go: consul_go/client.go consul_go/OpWire/message.pb.go
+	go get github.com/pebbe/zmq4
+	go get github.com/hashicorp/consul
+	cd consul_go ; \
+		go build -a -o ../clients/consul-progrium_go client.go
+
+clients/consul: consul_go/client.go consul_go/OpWire/message.pb.go
+	go get github.com/pebbe/zmq4
+	go get github.com/hashicorp/consul
 	cd consul_go ; \
 		go build -a -o ../clients/consul_go client.go
 

@@ -3,7 +3,7 @@ import numpy as np
 import sys
 from tqdm import tqdm
 import math
-
+from subprocess import call
 #---------------------------------------------------------------------------
 #------------------------- Hostnames and Tests -----------------------------
 #---------------------------------------------------------------------------
@@ -24,16 +24,13 @@ default_clients  = 1
 default_datasize = 1024
 
 def tag(reads=default_reads, servers=3, clients=default_clients, datasize=default_datasize):
-    r = int(reads)
+    r = int(reads*100)
     return str(r).zfill(3) + "R_" + str(servers) + "S_" + str(clients).zfill(3) + "C_" + str(datasize).zfill(7) + "B"
 
 def tagFailure(fail, reads=default_reads, servers=3, clients=default_clients, datasize=default_datasize):
-    r = int(reads)
+    r = int(reads*100)
     return fail + "_" + str(r) + "R_" + str(servers) + "S_" + str(clients).zfill(3) + "C_" + str(datasize).zfill(7) + "B"
 
-variation_reads = [0.0, 1.0]   #np.linspace(0, 1, 101, endpoint=True)
-variation_clients = np.linspace(1, 300, 100, dtype=int) # Over 1000 clients realistic?.
-variation_datasizes = np.logspace(0, np.log2(5)+20,num=20, base=2, endpoint=True, dtype=int) # MAx size chosen as 5MB to not exceed system memory.
 variation_servers = [5,3]
 
 
@@ -70,11 +67,91 @@ variation_servers = [5,3]
 # for args in tests:
 #         tester.run_test(*kwargs)
 
-for readratio in [0, 100]:
-    for cluster in [hostnames[:nser] for nser in [1,3,5]]:
-        tester.run_test(
-                tag(servers=len(cluster), reads=readratio),
-                cluster,
-                op_obj = op_gen.write_ops() if readratio == 0 else op_gen.read_ops(),
-                duration=10
-                )
+for cluster in [hostnames[:nser] for nser in [3,5]]:
+    # Reads and write tests
+    for readratio in [0, 1]:
+   #     # Pure throughput
+   #     tester.run_test(
+   #             tag(servers=len(cluster), reads=readratio),
+   #             cluster,
+   #             op_obj=op_gen.write_ops() if readratio == 0 else op_gen.read_ops(),
+   #             duration=30
+   #             )
+   #     # Pure throughput
+         for ncli in [1, 20]:
+             tester.run_test(
+                     tag(servers=len(cluster), clients=ncli, reads=readratio) + '_thru',
+                     cluster,
+                     num_clients=ncli,
+                     op_obj=op_gen.write_ops(data_size=1024*1024*5) if readratio == 0 else op_gen.read_ops(data_size=5*1024**2),
+                     duration=30
+                     )
+   # 
+   #     if(len(cluster) > 1):          #For 1 server, killing the server will result in crash
+   #         # Leader Failure
+   #         tester.run_test(
+   #                 tagFailure("lf", servers=len(cluster), reads=readratio),
+   #                 cluster,
+   #                 op_obj=op_gen.write_ops() if readratio == 0 else op_gen.read_ops(),
+   #                 duration=10,
+   #                 failures=[
+   #                     failure.no_fail(),
+   #                     failure.system_leader_crash(cluster),
+   #                     failure.system_full_recovery(cluster)
+   #                     ]
+   #                 )
+
+   #          # Follower Failure
+   #         tester.run_test(
+   #                 tagFailure("ff", servers=len(cluster), reads=readratio),
+   #                 cluster,
+   #                 op_obj=op_gen.write_ops() if readratio == 0 else op_gen.read_ops(),
+   #                 duration=10,
+   #                 failures=[
+   #                     failure.no_fail(),
+   #                     failure.system_follower_crash(cluster),
+   #                     failure.system_full_recovery(cluster)
+   #                     ]
+   #                 )
+
+   #     # Client number tests
+   #     for nclients in np.linspace(1, 300, 100, dtype=int): 
+   #         tester.run_test(
+   #                 tag(servers=len(cluster), clients=nclients, reads=readratio),
+   #                 cluster,
+   #                 op_obj=op_gen.write_ops() if readratio == 0 else op_gen.read_ops(),
+   #                 num_clients=nclients,
+   #                 duration=30,
+   #                 failures=[
+   #                     failure.no_fail()
+   #                     ]
+   #                 )
+
+   #     # Data size tests
+   #     for data_size in np.logspace(0, np.log2(5)+20,num=20, base=2, endpoint=True, dtype=int): # Max size chosen as 5MB to not exceed system memory.
+   #         tester.run_test(
+   #                 tag(datasize=data_size, servers=len(cluster), clients=nclients, reads=readratio),
+   #                 cluster,
+   #                 op_obj=op_gen.write_ops(data_size=data_size) if readratio == 0 else op_gen.read_ops(data_size=data_size),
+   #                 duration=30,
+   #                 failures=[
+   #                     failure.no_fail()
+   #                     ]
+   #                 )
+
+
+   #         
+   # # Read vs writes tests
+   # for readratio in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]:
+   #     tester.run_test(
+   #             tag(servers=len(cluster), reads=readratio),
+   #             cluster,
+   #             op_obj=op_gen.mixed_ops(ratio=readratio),
+   #             duration=30
+   #             )
+
+    call(['zip', 'results' + str(len(cluster)) + 'S.zip', 'results/*'])
+    call(['rm', 'results/*'])
+
+
+

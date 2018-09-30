@@ -111,8 +111,17 @@ def run_test(tag, cluster_hostnames, op_obj, num_clients=1, duration=30, failure
                 ])
 
         print("Waiting for clients to quit")
-        for microclient in microclients:
-            microclient.wait()
+        for clientbridge in microclients:
+            timeout = 15 # Seconds
+            while clientbridge.poll() is None and timeout > 0:
+                time.sleep(1)
+                timeout -= 1
+
+            if clientbridge.poll() is None:
+                print("WARN: Had to kill process")
+                clientbridge.kill()
+            else:
+                clientbridge.wait()
 
         socket.close()
 

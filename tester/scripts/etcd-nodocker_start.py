@@ -7,13 +7,14 @@ import etcd
 import socket
 
 def recover(host, hosts):
-    nodename = {host: "etcd-node-" + str(i+1) for i, host in enumerate(hosts)}
+    #nodename = {host: "etcd-node-" + str(i+1) for i, host in enumerate(hosts)}
 
-    # Checks for running screens
-    output = check_output(['ssh', host, 'screen -list'])
-    # If etcd_background screen not running start it
-    if not 'etcd_background' in output:
-        setup_remote(host, socket.gethostbyname(host), nodename[host], hosts)
+    ## Checks for running screens
+    #output = check_output(['ssh', host, 'screen -list'])
+    ## If etcd_background screen not running start it
+    #if not 'etcd_background' in output:
+    #    setup_remote(host, socket.gethostbyname(host), nodename[host], hosts)
+    return None
 
 def setup_remote(host, ip, node_name, hosts):
     cluster = "".join("etcd-node-" + str(i+1) + "=http://" + host + ":2380," for i, host in enumerate(hosts))[:-1]
@@ -44,4 +45,4 @@ args = parser.parse_args()
 hosts = args.cluster.split(',')
 
 for host in hosts:
-    recover(host)
+    recover(host, hosts)

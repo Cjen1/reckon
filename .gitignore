@@ -3,3 +3,7 @@
 */result*
 *.pyc
 *.swp
+*.aux
+*.log
+*.gz
+.DS_Store

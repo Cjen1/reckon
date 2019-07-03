@@ -1,0 +1,1 @@
+Client performance in reference tester (etcd/tools/benchmark) is slightly lower - probable cause is reference usage of Do (transsaction) vs client usage of put/get

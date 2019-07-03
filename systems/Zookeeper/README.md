@@ -1,4 +1,12 @@
-ESTABLISHING A COMPARISON BETWEEN DIFFERENT CONSENSUS SYSTEMS
+# Template of a benchmark target
+
+General Overview:
+	- clients: all benchmarkable clients of the system (eg. go bindings for etcd, c bindings for etcd and python bindings for etcd
+		- client contains all code required to produce a client executable called client in the named client folder.
+	- scripts: scripts to start, stop, setup etc. fill in each script as appropiate
+	- service: all things required to run the service, i.e. docker images etc
+
+# ESTABLISHING A COMPARISON BETWEEN DIFFERENT CONSENSUS SYSTEMS
 -- ZOOKEEPER
 
 	0.1 - Problem Statement.
@@ -57,3 +65,4 @@ ESTABLISHING A COMPARISON BETWEEN DIFFERENT CONSENSUS SYSTEMS
 		  6) The test suite is configurable by adding/altering tests of the form as advised in 
 		     run_tests.py within the array of tests. To add new failure modes, or Operation sets, 
 		     modify the files in ./tester/util.
+

@@ -28,20 +28,27 @@ parser.add_argument(
         'distribution',
         help='The distribution to generate operations from')
 parser.add_argument(
-        'dist_args',
+        '--dist_args',
         help='settings for the distribution. eg. size=5,mean=10')
 parser.add_argument(# May swap this out for optional arguments with sensible defaults
-        'service_setup',
-        help='The setup of the service. eg. nservers=10')
+        '--setup_setup',
+        help='The setup of the setup. eg. nservers=10')
 parser.add_argument(
         'systems',
         help='A comma separated list of systems to test. eg. etcd_go,etcd_cli,zookeeper_java to test the go and cli clients for etcd as well as the java client for zookeeper.')
 parser.add_argument(
-	'cluster',
-	help='A comma-separated list of servers on which the system is running.')
+	      'cluster',
+	      help='A comma-separated list of servers on which the system is running.')
 parser.add_argument(
         'benchmark_config',
         help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500.')
+parser.add_argument(
+        'failure',
+        help='Injects the given failure into the system')
+parser.add_argument(
+        '-f', '--fail_args',
+        help='Arguments to be passed to the failure script.')
+
 
 args = parser.parse_args()
 
@@ -55,6 +62,7 @@ distribution = args.distribution
 dist_args = args.dist_args.split(',')
 dist_args = dict([arg.split('=') for arg in dist_args])
 op_gen_module = importlib.import_module('distributions.' + distribution)
+
 op_prereq = op_gen_module.generate_prereqs(**dist_args)		
 op_gen_gen = lambda : op_gen_module.generate_ops(**dist_args)		
 

@@ -13,10 +13,12 @@ message Operation {
 	message op_put {
 		uint64 key = 1;
 		bytes value = 2;
+		uint64 opid = 3;
 	}
 
 	message op_get {
 		uint64 key = 1;
+		uint64 opid = 3;
 	}
 
 	message op_quit {
@@ -29,5 +31,6 @@ message Response {
 	string err = 2;
 	double start = 3;
 	double end = 4;
-	uint32 id = 5;
+	uint32 clientid = 5;
+	uint64 opid;
 }

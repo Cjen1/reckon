@@ -4,18 +4,21 @@ import random
 def payload(num_bytes):
     return rand.bytes(num_bytes)
 
-def write(key, value):
+def write(key, value, opid):
     op = msg_pb.Operation()
     op.put.key = key
     op.put.value = value
+    op.put.opid = opid
 
     payload = op.SerializeToString()
 
     return payload
 
-def read(key):
+def read(key, opid):
     op = msg_pb.Operation()
     op.get.key = key
+
+    op.put.opid = opid
 
     payload = op.SerializeToString()
 

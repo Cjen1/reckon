@@ -8,6 +8,8 @@ import time
 from tqdm import tqdm 
 import json
 import zmq
+from Queue import Queue as queue
+import Queue
 
 def run_ops_list(operations, socket, ready_signals, service, store_resp_fn=(lambda *args: None)):
     #------- Send operations to each of the clients in a load balanced manner -------
@@ -25,126 +27,128 @@ def run_ops_list(operations, socket, ready_signals, service, store_resp_fn=(lamb
         socket.send_multipart([addr,b'',operation])
 
 client_port_id = 50000
-def run_test(tag, cluster_hostnames, op_obj, num_clients=1, duration=30, failures=[failure.no_fail()]):
+def run_test(tag, cluster_hostnames, op_obj, num_clients=1, duration=30, failures=[failure.no_fail()], sys='etcd_docker'):
     global client_port_id
     #t ag, cluster_hostnames, num_clients, op_obj, duration, failures = test
-    opgen, prereq = op_obj
-
+    opprod, opbuf, prereq = op_obj
+    
+    client, service = sys, sys[:(sys.index('_'))]
     print("Running test: " + tag)
+    
+    # Increment client port to ensure that there is no unencapsulated state
+    client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
 
-    for client in listdir("clients"):
-        service = client[:(client.index('_'))]
+    client_port = str(client_port_id)
+    #-------------- Loop until can connect to a port --------------------------------
+    while(True):
+        try:
+            client_port = str(client_port_id)
+            socket = zmq.Context().socket(zmq.ROUTER)
+            socket.bind("tcp://127.0.0.1:" + client_port)
+            socket.setsockopt(zmq.LINGER, 0)
+            # Prevents infinite waits
+            socket.RCVTIMEO = 1000 * duration
+            break
+        except zmq.ZMQError as ex:
+            print(ex)
+            # Increment client port to ensure that there is no unencapsulated state
+            client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
 
-        # Increment client port to ensure that there is no unencapsulated state
-        client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
+    #---------------- Setup system and start clients --------------------------------
+    # Ensure that the correct zookeeper system is being run
 
-        client_port = str(client_port_id)
-        #-------------- Loop until can connect to a port --------------------------------
-        while(True):
-            try:
-                client_port = str(client_port_id)
-                socket = zmq.Context().socket(zmq.ROUTER)
-                socket.bind("tcp://127.0.0.1:" + client_port)
-                socket.setsockopt(zmq.LINGER, 0)
-                # Prevents infinite waits
-                socket.RCVTIMEO = 1000 * duration
-                break
-            except zmq.ZMQError as ex:
-                print(ex)
-                # Increment client port to ensure that there is no unencapsulated state
-                client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
+    #[:-1] removes the trailing ','
+    arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
+    print("Starting cluster: " + service)
+    if 1 == call(["python", "scripts/" + service + "_setup.py", arg_hostnames]):
+        print("ERROR: setup failed, continuing")
 
-        #---------------- Setup system and start clients --------------------------------
-        # Ensure that the correct zookeeper system is being run
+    microclients = []
+    for i in range(num_clients):
+        microclients.append(start_microclient("clients/"+client, client_port, cluster_hostnames, str(i)))
 
-        #[:-1] removes the trailing ','
-        arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
-        print("Starting cluster: " + service)
-        if 1 == call(["python", "scripts/" + service + "_setup.py", arg_hostnames]):
-            print("ERROR: setup failed, continuing")
+    #------------------------------ Run Test ----------------------------------------
+    #--- Satisify prerequisites -------------
+    readys, _ = get_ready_signals(socket, num_clients)
+    run_ops_list(prereq, socket, readys, service)
 
-        microclients = []
-        for i in range(num_clients):
-            microclients.append(start_microclient("clients/"+client, client_port, cluster_hostnames, str(i)))
+    resps = []
+    def store_resp_fn(resp_time, st, end, err, client_idx):
+        resps.append([client_idx, resp_time, err, st, end])
 
-        #------------------------------ Run Test ----------------------------------------
-        #--- Satisify prerequisites -------------
-        readys, _ = get_ready_signals(socket, num_clients)
-        run_ops_list(prereq, socket, readys, service)
+    fails = []
+    def store_fail_fn(failure_type, start, end):
+        fails.append([failure_type, start, end])
 
-        resps = []
-        def store_resp_fn(resp_time, st, end, err, client_idx):
-            resps.append([client_idx, resp_time, err, st, end])
 
-        fails = []
-        def store_fail_fn(failure_type, start, end):
-            fails.append([failure_type, start, end])
+    #--- NOW start producing operations. Will probably still experience slightly 
+    #--- bursty start but can then move the line below if necessary.
+    opprod.start()
+    
+    
+    print("Sending Operations")
+    for failure_type, failure_fn in failures:
+        print("Section: " + failure_type)
+        fail_thread = Thread(target = failure_fn, args=[service, store_fail_fn])
+        fail_thread.start()
 
-        print("Sending Operations")
-        for failure_type, failure_fn in failures:
-            print("Section: " + failure_type)
-            fail_thread = Thread(target = failure_fn, args=[service, store_fail_fn])
-            fail_thread.start()
+        #send operations to probe failure transition
+        while fail_thread.isAlive():
+            run_ops(opgen, socket, store_resp_fn, readys)
 
-            #send operations to probe failure transition
-            while fail_thread.isAlive():
-                run_ops(opgen, socket, store_resp_fn, readys)
+        #send operations until time limit
+        t_end = time.time() + duration
+        while time.time() < t_end:
+            run_ops(opgen, socket, store_resp_fn, readys)
 
-            #send operations until time limit
-            t_end = time.time() + duration
-            while time.time() < t_end:
-                run_ops(opgen, socket, store_resp_fn, readys)
+    
+    #---------- Collect remaining responses and make clients quit cleanly -----------
+    # Don't store responses since they happened out of the timeframe
+    quit_op = msg_pb.Operation()
+    quit_op.quit.msg = "Quitting normally"
+    quit_op = quit_op.SerializeToString()
+    for i in range(num_clients):
+        address, _, rec = socket.recv_multipart()
+        # Send quit message
+        socket.send_multipart([
+            address,
+            b'',
+            quit_op
+            ])
 
-        
-        #---------- Collect remaining responses and make clients quit cleanly -----------
-        # Don't store responses since they happened out of the timeframe
-        quit_op = msg_pb.Operation()
-        quit_op.quit.msg = "Quitting normally"
-        quit_op = quit_op.SerializeToString()
-        for i in range(num_clients):
-            address, _, rec = socket.recv_multipart()
-            # Send quit message
-            socket.send_multipart([
-                address,
-                b'',
-                quit_op
-                ])
+    print("Waiting for clients to quit")
+    for clientbridge in microclients:
+        timeout = 15 # Seconds
+        while clientbridge.poll() is None and timeout > 0:
+            time.sleep(1)
+            timeout -= 1
 
-        print("Waiting for clients to quit")
-        for clientbridge in microclients:
-            timeout = 15 # Seconds
-            while clientbridge.poll() is None and timeout > 0:
-                time.sleep(1)
-                timeout -= 1
+        if clientbridge.poll() is None:
+            print("WARN: Had to kill process")
+            clientbridge.kill()
+        else:
+            clientbridge.wait()
 
-            if clientbridge.poll() is None:
-                print("WARN: Had to kill process")
-                clientbridge.kill()
-            else:
-                clientbridge.wait()
+    socket.close()
 
-        socket.close()
+    #----------------------- Write responses to disk --------------------------------
+    print("Writing responses to disk")
+    test_name = tag + "_" + client
+    filename = "results/" + test_name + ".res"
+    fres = open(filename, "w")
+    data ={'test': test_name, 'resps': resps, 'fail': fails}
+    json.dump(data, fres)
 
-        #----------------------- Write responses to disk --------------------------------
-        print("Writing responses to disk")
-        test_name = tag + "_" + client
-        filename = "results/" + test_name + ".res"
-        fres = open(filename, "w")
-        data ={'test': test_name, 'resps': resps, 'fail': fails}
-        json.dump(data, fres)
+    fres.close()
 
-        fres.close()
-
-        arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
-        print("Stopping cluster: " + service)
-        if 1 == call(["python", "scripts/" + service + "_cleanup.py", arg_hostnames]):
-            print("ERROR CLEANUP NOT COMPLETE")
-            quit()
+    arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
+    print("Stopping cluster: " + service)
+    if 1 == call(["python", "scripts/" + service + "_cleanup.py", arg_hostnames]):
+        print("ERROR CLEANUP NOT COMPLETE")
+        quit()
 
 #----- Utility Functions --------------------------------------------------------
 def run_ops(opgen, socket, store_resp_fn=lambda *args:None, ready_signals=set()):
-    op = opgen()
-
     addr = {}
     if len(ready_signals) > 0:
         addr = ready_signals.pop()
@@ -153,6 +157,12 @@ def run_ops(opgen, socket, store_resp_fn=lambda *args:None, ready_signals=set())
         resp = msg_pb.Response()
         resp.ParseFromString(rec)
         store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.id)
+
+    op = opgen.get()	# If no oerations are available blocks until one is 
+    
+    # Reversed order because we anticipate the client to wait for the operation. 
+    # With other ordering would waste time once we should be able to send the operation.
+
     socket.send_multipart([addr, b'', op])
 
 # starts a microclient with given config

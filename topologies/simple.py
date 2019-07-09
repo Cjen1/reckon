@@ -24,8 +24,9 @@ def setup(container, failure_setup=None, c n=3, setup_func=None):
     
     info('*** Starting network\n')
     net.start()
-    
+
+    # Any setup of clients etc
     if setup_func != None:
         setup_func(dockers, ips)
 
-    return (net, dockers)
+    return (dockers, failures)

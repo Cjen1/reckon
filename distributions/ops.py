@@ -1,4 +1,3 @@
-from utils import link
 from utils import message_pb2 as msg_pb
 import random
 

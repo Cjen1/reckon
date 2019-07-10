@@ -1,5 +1,6 @@
-package zookeeper_java;
+package clients.java;
 import org.zeromq.ZMQ;
+import org.zeromq.SocketType;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.*;
 import java.util.*;
@@ -36,7 +37,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 	}
 
 
-	public OpWire.Message.Response put(ZooKeeper client, OpWire.Message.Operation opr, int id){
+	public OpWire.Message.Response put(ZooKeeper client, OpWire.Message.Operation opr, int clientId){
 		String err = "None";
 		String path = "/" + opr.getPut().getKey();
 		String data = opr.getPut().getValue().toString();
@@ -67,13 +68,14 @@ public class Client implements org.apache.zookeeper.Watcher {
 							     .setErr(err)
 							     .setStart(start / 1E3)
 							     .setEnd(stop / 1E3)
-							     .setId(id)
+							     .setClientid(clientId)
+							     .setOpid(opr.getPut().getOpid())
 							     .build();
 		return resp;
 	}
 
 
-	public OpWire.Message.Response get(ZooKeeper client, OpWire.Message.Operation opr, int id){
+	public OpWire.Message.Response get(ZooKeeper client, OpWire.Message.Operation opr, int clientId){
 		String err = "None";
 		String path = "/" + opr.getGet().getKey();
 		long start = System.currentTimeMillis();
@@ -91,7 +93,8 @@ public class Client implements org.apache.zookeeper.Watcher {
 							     .setErr(err)
 							     .setStart(start / 1E3)
 							     .setEnd(stop / 1E3)
-							     .setId(id)
+							     .setClientid(clientId)
+							     .setOpid(opr.getGet().getOpid())
 							     .build();
 		return resp;
 	}
@@ -101,10 +104,10 @@ public class Client implements org.apache.zookeeper.Watcher {
 		Client mainClient = new Client();
 		String port = args[0];
 		String[] endpoints = args[1].split(",");
-		int id = Integer.parseInt(args[2]);
+		int clientId = Integer.parseInt(args[2]);
 
-		ZMQ.Context context = ZMQ.context(1);
-		ZMQ.Socket socket = context.socket(ZMQ.REQ);
+		ZMQ.Context context = ZMQ.context(1);			// Creates a context with 1 IOThread.
+		ZMQ.Socket socket = context.socket(SocketType.REQ);
 		
 		String quorum = String.join(":" + CLIENT_PORT + ",", endpoints) + ":" + CLIENT_PORT;
 
@@ -122,10 +125,10 @@ public class Client implements org.apache.zookeeper.Watcher {
 			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
 			switch(opr.getOpTypeCase().getNumber()){
 				case 1: 	//1 = Put
-					resp = mainClient.put(cli, opr, id);
+					resp = mainClient.put(cli, opr, clientId);
 					break;			
 				case 2:		//2 = Get
-					resp = mainClient.get(cli, opr, id);
+					resp = mainClient.get(cli, opr, clientId);
 					break;				
 				case 3:		//3 = Quit
 					socket.close();
@@ -137,7 +140,8 @@ public class Client implements org.apache.zookeeper.Watcher {
 					      .setErr("Operation was not found / supported")
 					      .setStart(0.0)
 					      .setEnd(0.0)
-					      .setId(id)
+					      .setClientid(clientId)
+					      .setOpid(0)
 					      .build();
 					quits = true;
 					break;

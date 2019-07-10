@@ -190,3 +190,41 @@ def get_ready_signals(socket, num_clients):
         addr_init_ops.add(address)
 
     return (addr_init_ops, readys)
+
+def producer(op_gen, op_buf, rate):
+    opid = 0
+        start = time()
+        while(True):
+            while time() < start + opid * 1.0/float(rate):
+                pass
+            try:
+                op_buf.put_nowait(op_gen(opid))
+            except Queue.Full:
+                pass
+            opid += 1
+
+if __name__ == "__main__":
+    # parse arguments
+    distribution = args.distribution
+    dist_args = args.dist_args.split(',')
+    dist_args = dict([arg.split('=') for arg in dist_args])
+    op_gen_module = importlib.import_module('../distributions.' + distribution)
+
+    op_prereq = op_gen_module.generate_prereqs(**dist_args)		
+    op_gen_gen = lambda : op_gen_module.generate_ops(**dist_args)		
+
+    # Set up buffers etc
+    operation_buffer = queue(maxsize=3*rate) 
+    # don't waste any memory after 3 seconds of not consuming ops.
+
+    op_producer = Thread(target=producer, args=[op_gen_gen, operation_buffer, bench_args['rate']])
+    op_producer.setDaemon(True)
+    # Not starting yet. Otherwise might build up ops during prereq leading 
+    # to overload before benchmark should really begin, which defeats 
+    # the purpose of rate throttling. 
+
+    operation_bundle = [op_producer, operation_buffer, op_prereq]
+
+    tester.run_test(tag=tag(), cluster_hostnames=cluster, op_obj=operation_bundle, num_cli=bench_args['nclients'], sys=system) 
+    #TODO: Update just how tagging works. For now always uses default values, sort the other args to run_test
+

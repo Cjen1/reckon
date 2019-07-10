@@ -22,7 +22,7 @@ def run_ops_list(operations, socket, ready_signals, service, store_resp_fn=(lamb
             addr, empty, rec = socket.recv_multipart()
             resp = msg_pb.Response()
             resp.ParseFromString(rec)
-            store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.id)
+            store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.opid)
 
         socket.send_multipart([addr,b'',operation])
 
@@ -73,8 +73,8 @@ def run_test(tag, cluster_hostnames, op_obj, num_clients=1, duration=30, failure
     run_ops_list(prereq, socket, readys, service)
 
     resps = []
-    def store_resp_fn(resp_time, st, end, err, client_idx):
-        resps.append([client_idx, resp_time, err, st, end])
+    def store_resp_fn(resp_time, st, end, err, client_idx, op_idx):
+        resps.append([client_idx, resp_time, err, st, end, op_idx])
 
     fails = []
     def store_fail_fn(failure_type, start, end):
@@ -156,7 +156,7 @@ def run_ops(opgen, socket, store_resp_fn=lambda *args:None, ready_signals=set())
         addr, _, rec = socket.recv_multipart()
         resp = msg_pb.Response()
         resp.ParseFromString(rec)
-        store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.id)
+        store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.clientid, resp.opid)
 
     op = opgen.get()	# If no oerations are available blocks until one is 
     

@@ -6,6 +6,7 @@ from time import time as time
 import argparse
 import importlib
 from os import listdir
+from subprocess import Popen
 
 
 #------- Utility functions ------------------------
@@ -46,7 +47,7 @@ parser.add_argument(
         help='Arguments to be passed to the failure script.')
 parser.add_argument(
         'benchmark_config',
-        help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500.')
+        help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500,failure_interval=10.')
 
 args = parser.parse_args()
 
@@ -69,11 +70,20 @@ fail_setup = fail_module.setup
 ## idea of what values *are* appropriate.
 bench_defs = {
         'nclients': 10, 
-        'rate': 100 # upper bound on reqs/sec 
+        'rate': 100,		# upper bound on reqs/sec 
+	'failure_interval': 10	# duration of operation sending in seconds
         }
 bench_args = {} #dict([arg.split('=') for arg in args.benchmark_config.split(',') ])
 for arg, val in bench_defs.items():
 	bench_args.setdefault(arg, val)#set as arg or as default value 
+
+tester_args_b = []
+for opt in ['--distribution', '--dist_args', '--benchmark_config']
+    try:
+        i = argv.index(opt)
+        tester_args_b.append(opt, argv[i+1])
+    except ValueError:
+        pass
 
 for system in systems:
     service, client = system.split("_")
@@ -94,6 +104,12 @@ for system in systems:
     net.start()
     #start test on client
     #wait until right % through test before running failure functions
-
+    duration = (len(failures) + 1) * failure_interval
+    
+    Popen(['python', 'utils/tester.py'] + tester_args_b + ['--system', system, '--duration', duration])
+    
+    for failure in failures:
+        time.sleep(bench_args['failure_interval'])
+        failure()
     
 

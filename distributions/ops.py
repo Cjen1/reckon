@@ -1,4 +1,4 @@
-from utils import message_pb2 as msg_pb
+import message_pb2 as msg_pb
 import random
 
 def payload(num_bytes):

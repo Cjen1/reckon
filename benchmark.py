@@ -73,7 +73,7 @@ fail_setup = fail_module.setup
 bench_defs = {
         'nclients': 10, 
         'rate': 100,		# upper bound on reqs/sec 
-	'failure_duration': 10	# duration of operation sending in seconds
+	'failure_interval': 10	# duration of operation sending in seconds
         }
 bench_args = dict(
 	[arg.split('=') for arg in args.benchmark_config.split(',') ]
@@ -108,12 +108,12 @@ for system in systems:
     net.start()
     #start test on client
     #wait until right % through test before running failure functions
-    duration = (len(failures) + 1) * failure_duration
+    duration = (len(failures) + 1) * failure_interval
     
     Popen(['python', 'utils/tester.py'] + tester_args_b + ['--system', system, '--duration', duration])
     
     for failure in failures:
-        time.sleep(bench_args['failure_duration'])
+        time.sleep(bench_args['failure_interval'])
         failure()
     
 

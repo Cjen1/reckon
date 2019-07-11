@@ -2,6 +2,7 @@ from utils import link, failure, message_pb2 as msg_pb
 from utils.op_gen import Operation
 from os import listdir
 from subprocess import call, Popen
+import argparse
 from threading import Thread
 import socket
 import time
@@ -204,6 +205,27 @@ def producer(op_gen, op_buf, rate):
             opid += 1
 
 if __name__ == "__main__":
+
+    #------- Parse arguments --------------------------
+    parser = argparse.ArgumentParser(description='Executes the test for the benchmark.')
+    parser.add_argument(
+            '--distribution',
+            help='The distribution to generate operations from')
+    parser.add_argument(
+            '--dist_args',
+            help='settings for the distribution. eg. size=5,mean=10')
+    parser.add_argument(
+            '--benchmark_config',
+            help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500,failure_interval=10.')
+    parser.add_argument(
+            '--system',
+	    help='The single system being subjected to this test.')
+    parser.add_argument(
+            '--duration',
+	    help='The duration for which to test.')
+    
+    args = parser.parse_args()
+    
     # parse arguments
     distribution = args.distribution
     dist_args = args.dist_args.split(',')

@@ -25,82 +25,79 @@ def tag(reads=default_reads, servers=3, clients=default_clients, datasize=defaul
 parser = argparse.ArgumentParser(description='Runs a benchmark of a local fault tolerant datastore')
 
 parser.add_argument(
+        'systems',
+        help='A comma separated list of systems to test. eg. etcd_go,etcd_cli,zookeeper_java to test the go and cli clients for etcd as well as the java client for zookeeper.')
+parser.add_argument(
+        'topology',
+        help='The topology of the network under test')
+parser.add_argument(
+        '--topo_args',
+        help='Configuration settings for the topology',
+        default='')
+parser.add_argument(
         'distribution',
         help='The distribution to generate operations from')
 parser.add_argument(
         '--dist_args',
         help='settings for the distribution. eg. size=5,mean=10')
-parser.add_argument(# May swap this out for optional arguments with sensible defaults
-        '--setup_setup',
-        help='The setup of the setup. eg. nservers=10')
-parser.add_argument(
-        'systems',
-        help='A comma separated list of systems to test. eg. etcd_go,etcd_cli,zookeeper_java to test the go and cli clients for etcd as well as the java client for zookeeper.')
-parser.add_argument(
-	      'cluster',
-	      help='A comma-separated list of servers on which the system is running.')
-parser.add_argument(
-        'benchmark_config',
-        help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500.')
 parser.add_argument(
         'failure',
         help='Injects the given failure into the system')
 parser.add_argument(
-        '-f', '--fail_args',
+        '--fail_args',
         help='Arguments to be passed to the failure script.')
-
+parser.add_argument(
+        'benchmark_config',
+        help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500.')
 
 args = parser.parse_args()
 
-## A list of benchmark configs with defaults. Change values as appropriate when we have an 
-## idea of what values *are* appropriate.
+systems = args.systems.split(',')
 
-bench_defs = [('nclients', 10), ('rate', 100)] 
-# rate is the upper bound on the number of requests per second
+topo = args.topology
+topo_args = args.topo_args
+topo_module = importlib.import_module('topologies.' + distribution)
 
 distribution = args.distribution
-dist_args = args.dist_args.split(',')
-dist_args = dict([arg.split('=') for arg in dist_args])
-op_gen_module = importlib.import_module('distributions.' + distribution)
+dist_args = args.dist_args
 
-op_prereq = op_gen_module.generate_prereqs(**dist_args)		
-op_gen_gen = lambda : op_gen_module.generate_ops(**dist_args)		
+failure_type = args.failure
+failure_args = args.fail_args
+fail_module = importlib.import_module('topologies.' + distribution)
+fail_setup = fail_module.setup
 
-systems = args.systems.split(',')
-service_args = args.service_setup.split(',')
-cluster = args.cluster.split(',')
-bench_args = args.benchmark_config.split(',')
-service_args = dict([arg.split('=') for arg in service_args])
-bench_args = dict([arg.split('=') for arg in bench_args])
 
-# Make sure that benchmark is fully configured:
+## A list of benchmark configs with defaults. Change values as appropriate when we have an 
+## idea of what values *are* appropriate.
+bench_defs = {
+        'nclients': 10, 
+        'rate': 100 # upper bound on reqs/sec 
+        }
+bench_args = dict(
+	[arg.split('=') for arg in args.benchmark_config.split(',') ]
+	)
 for arg, val in bench_defs:
-	bench_args.setdefault(arg, val) # If arg is not already presents sets to default value
-
-bench_args = {k : int(v) for k,v in bench_args.items()}
-
-def producer(op_gen, op_buf, rate):
-	opid = 0
-	start = time()
-	while(True):
-		while time() < start + opid * 1.0/float(rate):
-			pass
-		try:
-			op_buf.put_nowait(op_gen(opid))
-		except Queue.Full:
-			pass
-		opid += 1
+	bench_args.setdefault(arg, val)#set as arg or as default value 
 
 for system in systems:
-	operation_buffer = queue(maxsize=3*rate) # don't waste any memory after 3 seconds of not consuming ops.
-	
-	op_producer = Thread(target=producer, args=[op_gen_gen, operation_buffer, bench_args['rate']])
-	op_producer.setDaemon(True)
-	# Not starting yet. Otherwise might build up ops during prereq leading 
-	# to overload before benchmark should really begin, which defeats 
-	# the purpose of rate throttling. 
-	
-	operation_bundle = [op_producer, operation_buffer, op_prereq]
-	
-	tester.run_test(tag=tag(), cluster_hostnames=cluster, op_obj=operation_bundle, num_cli=bench_args['nclients'], sys=system) 
-	#TODO: Update just how tagging works. For now always uses default values, sort the other args to run_test
+    service, client = system.split("_")
+
+    system_setup_func = (
+            importlib.import_module(
+                "systems.{0}.scripts.setup".format(service)
+                )
+            ).setup
+
+    dimage = "cjj39_dks28/"+service
+    client_dimage = "cjj39_dks28/{0}_{1}".format(service,client)
+
+    net, ips, failures = topo_module.setup(dimage, client_dimage, failure_setup=fail_setup, setup_func=**dist_args) 
+
+    #add client
+
+    net.start()
+    #start test on client
+    #wait until right % through test before running failure functions
+
+    
+

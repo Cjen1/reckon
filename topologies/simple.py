@@ -5,7 +5,10 @@ from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 setLogLevel('info')
 
-def setup(container, failure_setup=None, c n=3, setup_func=None):
+def ip_from_int(i):
+    return '10.{0:d}.{1:d}.{2:d}'.format(i/2^16,(i%2^16)/2^8,i%2^8)
+
+def setup(dimage, fail_setup=None, setup_func=None, n=3):
     net = Containernet(controller=Controller)
     info('*** Adding controller\n')
     net.addController('c0')
@@ -14,11 +17,13 @@ def setup(container, failure_setup=None, c n=3, setup_func=None):
     s1 = net.addSwitch('s1')
     
     info('*** Adding docker containers and adding links\n')
-    ips = ['10.0.{0:d}.{1:d}'.format((i) / 256, (i) % 256) for i in range(n)]
-    dockers = [net.addDocker('d' + str(i), ip=ips[i], dimage=container) for i in range(n)]
+    ips = [ip_from_int(i+1) for i in range(n)]
+    dockers = [net.addDocker('d' + str(i), ip=ips[i], dimage=dimage) for i in range(n)]
 
     for d in dockers:
         net.addLink(d,s1)
+
+    net.addLink(client, s1)
 
     failures = failure_setup(net)
     
@@ -29,4 +34,4 @@ def setup(container, failure_setup=None, c n=3, setup_func=None):
     if setup_func != None:
         setup_func(dockers, ips)
 
-    return (dockers, failures)
+    return (net, ips, failures)

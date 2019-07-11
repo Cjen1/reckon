@@ -7,8 +7,6 @@ import argparse
 import importlib
 from os import listdir
 
-import utils.tester as tester
-
 
 #------- Utility functions ------------------------
 default_reads    = 0.9
@@ -56,14 +54,14 @@ systems = args.systems.split(',')
 
 topo = args.topology
 topo_args = args.topo_args
-topo_module = importlib.import_module('topologies.' + distribution)
+topo_module = importlib.import_module('topologies.' + topo)
 
 distribution = args.distribution
 dist_args = args.dist_args
 
-failure_type = args.failure
-failure_args = args.fail_args
-fail_module = importlib.import_module('topologies.' + distribution)
+fail_type = args.failure
+fail_args = args.fail_args
+fail_module = importlib.import_module('failures.' + fail_type)
 fail_setup = fail_module.setup
 
 
@@ -73,10 +71,8 @@ bench_defs = {
         'nclients': 10, 
         'rate': 100 # upper bound on reqs/sec 
         }
-bench_args = dict(
-	[arg.split('=') for arg in args.benchmark_config.split(',') ]
-	)
-for arg, val in bench_defs:
+bench_args = {} #dict([arg.split('=') for arg in args.benchmark_config.split(',') ])
+for arg, val in bench_defs.items():
 	bench_args.setdefault(arg, val)#set as arg or as default value 
 
 for system in systems:
@@ -91,7 +87,7 @@ for system in systems:
     dimage = "cjj39_dks28/"+service
     client_dimage = "cjj39_dks28/{0}_{1}".format(service,client)
 
-    net, ips, failures = topo_module.setup(dimage, client_dimage, failure_setup=fail_setup, setup_func=**dist_args) 
+    net, ips, failures = topo_module.setup(dimage, client_dimage, failure_setup=fail_setup) 
 
     #add client
 

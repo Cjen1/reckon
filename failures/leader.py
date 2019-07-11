@@ -9,10 +9,9 @@ def parse_resp(resp):
     assert False
     return None
 
-def failure_setup(net):
-hosts = [ net[hostname] for hostname in filter(lambda i: i[0] == 'd', net.keys())
-        ]
-ips = [host.IP() for host in hosts]
+def setup(net):
+    hosts = [ net[hostname] for hostname in filter(lambda i: i[0] == 'd', net.keys())]
+    ips = [host.IP() for host in hosts]
 
     cmd = ""
     leader_ip = parse_resp(hosts[0].cmd(cmd))

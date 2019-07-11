@@ -1,3 +1,11 @@
+build: distributions/message_pb2.py 
+
+distributions/message_pb2.py: utils/message.proto
+	protoc -I=utils --python_out=distributions/ utils/message.proto
+
+	
+
+
 all: run_tests.py clients/*
 #--------- setup proto files, gen config ----------
 

@@ -3,6 +3,16 @@ build: distributions/message_pb2.py
 distributions/message_pb2.py: utils/message.proto
 	protoc -I=utils --python_out=distributions/ utils/message.proto
 
+etcd_go: etcd_docker systems/etcd/clients/go/client.go
+	cd systems/etcd/clients/go && \
+		make build 
+
+etcd_docker:
+	cd systems/etcd && \
+		make docker
+
+
+
 	
 
 

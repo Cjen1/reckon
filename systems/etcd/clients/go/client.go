@@ -24,6 +24,7 @@ func unix_seconds(t time.Time) float64 {
 }
 
 func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWire.Response {
+	//println("CLIENT: Attempting to put")
 	// TODO implement options
 	st := time.Now()
 	_, err := cli.Put(context.Background(), string(op.Put.Key), string(op.Put.Value))
@@ -44,11 +45,13 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWir
 		Opid:			op.Put.Opid,
 	}
 
+	//println("CLIENT: Successfully put")
 	return resp
 }
 
 func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWire.Response {
 	// TODO implement options
+	//println("CLIENT: Attempting to get")
 	st := time.Now()
 	_, err := cli.Get(context.Background(), string(op.Get.Key))
 	end := time.Now()
@@ -67,6 +70,8 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWir
 		Clientid:		clientid,
 		Opid:			op.Get.Opid,
 	}
+
+	//println("CLIENT:Successfully got")
 
 	return resp
 }
@@ -90,6 +95,7 @@ func marshall_response(resp *OpWire.Response) string {
 }
 
 func main() {
+	println("Starting client") 
 	if(len(os.Args) < 4){
 		println("Incorrect number of arguments") }
 
@@ -123,6 +129,7 @@ func main() {
 	//println("Sending ready signal")
 	//print(port)
 
+	println("sending ready signals")
 	binding := "tcp://127.0.0.1:" + port
 	socket.Connect(binding)
 	socket.Send("",0)

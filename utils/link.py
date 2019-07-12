@@ -1,5 +1,5 @@
 import zmq
-from utils import message_pb2 as msg_pb
+import message_pb2 as msg_pb
 import socket
 
 class Link_Context:

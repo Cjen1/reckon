@@ -2,23 +2,14 @@ import Queue
 from Queue import Queue as queue
 from threading import Thread as Thread
 from time import time as time
+from time import sleep as sleep
 
 import argparse
 import importlib
 from os import listdir
-from subprocess import Popen
+import os
 
-
-#------- Utility functions ------------------------
-default_reads    = 0.9
-default_clients  = 1
-default_datasize = 1024
-
-def tag(reads=default_reads, servers=3, clients=default_clients, datasize=default_datasize):
-	r = int(reads*100)
-	return str(r).zfill(3) + "R_" + str(servers) + "S_" + str(clients).zfill(3) + "C_" + str(datasize).zfill(7) + "B"
-
-
+from sys import argv
 
 #------- Parse arguments --------------------------
 parser = argparse.ArgumentParser(description='Runs a benchmark of a local fault tolerant datastore')
@@ -38,6 +29,7 @@ parser.add_argument(
         help='The distribution to generate operations from')
 parser.add_argument(
         '--dist_args',
+        default="None",
         help='settings for the distribution. eg. size=5,mean=10')
 parser.add_argument(
         'failure',
@@ -69,7 +61,7 @@ fail_setup = fail_module.setup
 ## A list of benchmark configs with defaults. Change values as appropriate when we have an 
 ## idea of what values *are* appropriate.
 bench_defs = {
-        'nclients': 10, 
+        'nclients': 1, 
         'rate': 100,		# upper bound on reqs/sec 
 	'failure_interval': 10	# duration of operation sending in seconds
         }
@@ -77,13 +69,6 @@ bench_args = {} #dict([arg.split('=') for arg in args.benchmark_config.split(','
 for arg, val in bench_defs.items():
 	bench_args.setdefault(arg, val)#set as arg or as default value 
 
-tester_args_b = []
-for opt in ['--distribution', '--dist_args', '--benchmark_config']
-    try:
-        i = argv.index(opt)
-        tester_args_b.append(opt, argv[i+1])
-    except ValueError:
-        pass
 
 for system in systems:
     service, client = system.split("_")
@@ -95,21 +80,56 @@ for system in systems:
             ).setup
 
     dimage = "cjj39_dks28/"+service
-    client_dimage = "cjj39_dks28/{0}_{1}".format(service,client)
 
-    net, ips, failures = topo_module.setup(dimage, client_dimage, failure_setup=fail_setup) 
+    #TODO pass in args...
+    net, switch, hosts, ips = topo_module.setup(dimage) 
 
-    #add client
+    # Any setup of clients etc
+    if system_setup_func != None:
+        print("Configuring containers")
+        system_setup_func(hosts, ips)
+
+    failures = fail_setup(net)
+
+    client = net.addDocker(
+            'client', 
+            ip = '10.0.0.1',
+            dimage='cjj39/containernet',
+            volumes = ['/auto/homes/cjj39/mounted/Resolving-Consensus:/mnt/main:rw']
+            )
+
+    net.addLink(client, switch) 
 
     net.start()
-    #start test on client
-    #wait until right % through test before running failure functions
-    duration = (len(failures) + 1) * failure_interval
+
+    # from mininet.cli import CLI
+    # CLI(net)
+
+    duration = (len(failures) + 1) * bench_defs['failure_interval']
+
+    print("Starting Test")
+    waiter = client.popen([
+        'python', '/mnt/main/client.py', 
+            system,
+            distribution,
+            "".join(ip + "," for ip in ips)[:-1],
+            '--dist_args', dist_args,
+            '--benchmark_config', "".join(str(k)+"="+str(v)+"," for k,v in bench_args.items())[:-1],
+            '--duration', str(duration),
+                ])
     
-    Popen(['python', 'utils/tester.py'] + tester_args_b + ['--system', system, '--duration', duration])
-    
+    print("BENCHMARK: starting benchmark")
     for failure in failures:
-        time.sleep(bench_args['failure_interval'])
+        sleep(bench_args['failure_interval'])
         failure()
+    waiter.wait() # Wait for child process to finish
     
+    print("Finished Test")
+
+    result = client.cmd("cat /results.res")
+
+    with open('../results/firstTest.res', 'w') as f:
+        f.write(result)
+    
+    net.stop()
 

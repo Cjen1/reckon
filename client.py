@@ -1,4 +1,6 @@
-from utils import link, failure, message_pb2 as msg_pb
+import utils.message_pb2 as msg_pb
+from utils import link
+
 from utils.op_gen import Operation
 from os import listdir
 from subprocess import call, Popen
@@ -12,15 +14,18 @@ import zmq
 from Queue import Queue as queue
 import Queue
 
-def run_ops_list(operations, socket, ready_signals, service, store_resp_fn=(lambda *args: None)):
+import importlib
+
+def run_ops_list(operations, socket, ready_signals, store_resp_fn=(lambda *args: None)):
     #------- Send operations to each of the clients in a load balanced manner -------
     for operation in operations:
         # Get address to send to either from initial queue or from received responses
         addr = {}
         if len(ready_signals) > 0:
+            print("CONTAINER: replying to first ready signal")
             addr = ready_signals.pop()
         else:
-            addr, empty, rec = socket.recv_multipart()
+            addr, empty, rec = socket.recv_multipart(flags=0)
             resp = msg_pb.Response()
             resp.ParseFromString(rec)
             store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.opid)
@@ -28,13 +33,12 @@ def run_ops_list(operations, socket, ready_signals, service, store_resp_fn=(lamb
         socket.send_multipart([addr,b'',operation])
 
 client_port_id = 50000
-def run_test(tag, cluster_hostnames, op_obj, num_clients=1, duration=30, failures=[failure.no_fail()], sys='etcd_docker'):
+def run_test(cluster_ips, op_obj, duration=30, num_clients=1, sys='etcd_go'):
     global client_port_id
-    #t ag, cluster_hostnames, num_clients, op_obj, duration, failures = test
     opprod, opbuf, prereq = op_obj
     
-    client, service = sys, sys[:(sys.index('_'))]
-    print("Running test: " + tag)
+    service, client = sys.split('_')
+    print("Running Test")
     
     # Increment client port to ensure that there is no unencapsulated state
     client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
@@ -46,32 +50,28 @@ def run_test(tag, cluster_hostnames, op_obj, num_clients=1, duration=30, failure
             client_port = str(client_port_id)
             socket = zmq.Context().socket(zmq.ROUTER)
             socket.bind("tcp://127.0.0.1:" + client_port)
-            socket.setsockopt(zmq.LINGER, 0)
+            # socket.setsockopt(zmq.LINGER, 0)
             # Prevents infinite waits
-            socket.RCVTIMEO = 1000 * duration
+            # socket.RCVTIMEO = 1000 * duration
             break
         except zmq.ZMQError as ex:
             print(ex)
             # Increment client port to ensure that there is no unencapsulated state
             client_port_id = client_port_id + 1 if client_port_id < 60000 else 50000
 
-    #---------------- Setup system and start clients --------------------------------
-    # Ensure that the correct zookeeper system is being run
-
-    #[:-1] removes the trailing ','
-    arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
-    print("Starting cluster: " + service)
-    if 1 == call(["python", "scripts/" + service + "_setup.py", arg_hostnames]):
-        print("ERROR: setup failed, continuing")
-
+    #--------------------------------- start clients --------------------------------
     microclients = []
     for i in range(num_clients):
-        microclients.append(start_microclient("clients/"+client, client_port, cluster_hostnames, str(i)))
+        path = "/mnt/main/systems/"+service+"/clients/"+client+"/client"
+        print(path)
+        microclients.append(start_microclient(path, client_port, cluster_ips, str(i)))
 
     #------------------------------ Run Test ----------------------------------------
     #--- Satisify prerequisites -------------
+    print("Container: Awaiting ready signals")
     readys, _ = get_ready_signals(socket, num_clients)
-    run_ops_list(prereq, socket, readys, service)
+    print("Sending prerequsites")
+    run_ops_list(prereq, socket, readys)
 
     resps = []
     def store_resp_fn(resp_time, st, end, err, client_idx, op_idx):
@@ -85,22 +85,13 @@ def run_test(tag, cluster_hostnames, op_obj, num_clients=1, duration=30, failure
     #--- NOW start producing operations. Will probably still experience slightly 
     #--- bursty start but can then move the line below if necessary.
     opprod.start()
-    
-    
+
     print("Sending Operations")
-    for failure_type, failure_fn in failures:
-        print("Section: " + failure_type)
-        fail_thread = Thread(target = failure_fn, args=[service, store_fail_fn])
-        fail_thread.start()
 
-        #send operations to probe failure transition
-        while fail_thread.isAlive():
-            run_ops(opgen, socket, store_resp_fn, readys)
-
-        #send operations until time limit
-        t_end = time.time() + duration
-        while time.time() < t_end:
-            run_ops(opgen, socket, store_resp_fn, readys)
+    #send operations until time limit
+    t_end = time.time() + duration
+    while time.time() < t_end:
+        run_ops(opbuf, socket, store_resp_fn, readys)
 
     
     #---------- Collect remaining responses and make clients quit cleanly -----------
@@ -134,22 +125,16 @@ def run_test(tag, cluster_hostnames, op_obj, num_clients=1, duration=30, failure
 
     #----------------------- Write responses to disk --------------------------------
     print("Writing responses to disk")
-    test_name = tag + "_" + client
-    filename = "results/" + test_name + ".res"
+    test_name = "results"
+    filename = "/results.res"
     fres = open(filename, "w")
     data ={'test': test_name, 'resps': resps, 'fail': fails}
     json.dump(data, fres)
 
     fres.close()
 
-    arg_hostnames = "".join(host + "," for host in cluster_hostnames)[:-1]
-    print("Stopping cluster: " + service)
-    if 1 == call(["python", "scripts/" + service + "_cleanup.py", arg_hostnames]):
-        print("ERROR CLEANUP NOT COMPLETE")
-        quit()
-
 #----- Utility Functions --------------------------------------------------------
-def run_ops(opgen, socket, store_resp_fn=lambda *args:None, ready_signals=set()):
+def run_ops(opbuf, socket, store_resp_fn=lambda *args:None, ready_signals=set()):
     addr = {}
     if len(ready_signals) > 0:
         addr = ready_signals.pop()
@@ -159,7 +144,7 @@ def run_ops(opgen, socket, store_resp_fn=lambda *args:None, ready_signals=set())
         resp.ParseFromString(rec)
         store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.clientid, resp.opid)
 
-    op = opgen.get()	# If no oerations are available blocks until one is 
+    op = opbuf.get()	# If no oerations are available blocks until one is 
     
     # Reversed order because we anticipate the client to wait for the operation. 
     # With other ordering would waste time once we should be able to send the operation.
@@ -168,10 +153,9 @@ def run_ops(opgen, socket, store_resp_fn=lambda *args:None, ready_signals=set())
 
 # starts a microclient with given config
 # port: local port for communication channel
-def start_microclient(path, port, cluster_hostnames, client_id):
-    ips = [socket.gethostbyname(host) for host in cluster_hostnames]
-
-    arg_ips = "".join(ip + "," for ip in ips)[:-1]
+def start_microclient(path, port, cluster_ips, client_id):
+    arg_ips = cluster_ips
+    print("CLIENT PATH: "+path)
 
     client = {}
     if path.endswith(".jar"):
@@ -194,49 +178,65 @@ def get_ready_signals(socket, num_clients):
 
 def producer(op_gen, op_buf, rate):
     opid = 0
-        start = time()
-        while(True):
-            while time() < start + opid * 1.0/float(rate):
-                pass
-            try:
-                op_buf.put_nowait(op_gen(opid))
-            except Queue.Full:
-                pass
-            opid += 1
+    start = time.time()
+    while(True):
+        while time.time() < start + opid * 1.0/float(rate):
+            pass
+        try:
+            op_buf.put_nowait(op_gen(opid))
+        except Queue.Full:
+            pass
+        opid += 1
 
 if __name__ == "__main__":
 
     #------- Parse arguments --------------------------
     parser = argparse.ArgumentParser(description='Executes the test for the benchmark.')
     parser.add_argument(
-            '--distribution',
+            'system',
+	    help='The single system being subjected to this test.')
+    parser.add_argument(
+            'distribution',
             help='The distribution to generate operations from')
     parser.add_argument(
+            'cluster_ips',
+            help='The cluster under test')
+    parser.add_argument(
             '--dist_args',
+            default='None',
             help='settings for the distribution. eg. size=5,mean=10')
     parser.add_argument(
             '--benchmark_config',
             help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500,failure_interval=10.')
     parser.add_argument(
-            '--system',
-	    help='The single system being subjected to this test.')
-    parser.add_argument(
             '--duration',
 	    help='The duration for which to test.')
     
     args = parser.parse_args()
+
+    system = args.system
     
     # parse arguments
     distribution = args.distribution
-    dist_args = args.dist_args.split(',')
-    dist_args = dict([arg.split('=') for arg in dist_args])
-    op_gen_module = importlib.import_module('../distributions.' + distribution)
+    if args.dist_args != 'None':
+        print(args.dist_args)
+        dist_args = args.dist_args.split(',')
+        print(dist_args)
+        dist_args = dict([arg.split('=') for arg in dist_args])
+        print(dist_args)
+    else:
+        dist_args = {}
+    op_gen_module = importlib.import_module('distributions.' + distribution)
 
     op_prereq = op_gen_module.generate_prereqs(**dist_args)		
-    op_gen_gen = lambda : op_gen_module.generate_ops(**dist_args)		
+    op_gen_gen = op_gen_module.generate_ops(**dist_args)		
+
+    bench_args = dict([config.split('=') for config in args.benchmark_config.split(',')])
+
+    duration=int(args.duration)
 
     # Set up buffers etc
-    operation_buffer = queue(maxsize=3*rate) 
+    operation_buffer = queue(maxsize=3*bench_args['rate']) 
     # don't waste any memory after 3 seconds of not consuming ops.
 
     op_producer = Thread(target=producer, args=[op_gen_gen, operation_buffer, bench_args['rate']])
@@ -247,6 +247,5 @@ if __name__ == "__main__":
 
     operation_bundle = [op_producer, operation_buffer, op_prereq]
 
-    tester.run_test(tag=tag(), cluster_hostnames=cluster, op_obj=operation_bundle, num_cli=bench_args['nclients'], sys=system) 
-    #TODO: Update just how tagging works. For now always uses default values, sort the other args to run_test
+    run_test(cluster_ips=args.cluster_ips, op_obj=operation_bundle, num_clients=int(bench_args['nclients']), sys=system, duration=duration) 
 

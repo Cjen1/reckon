@@ -28,6 +28,6 @@ def generate_ops(key_range='1>10',payload_size='10', seed='0', write_ratio='0.5'
 
 def generate_prereqs(key_range='1>10'):
     krl, kru = [int(l) for l in key_range.split('>')]
-    return [ops.write(k, b'0') for k in range(krl, kru+1)]	
+    return [ops.write(k, b'0',0) for k in range(krl, kru+1)]	
 
 

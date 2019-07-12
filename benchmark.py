@@ -62,8 +62,8 @@ fail_setup = fail_module.setup
 ## idea of what values *are* appropriate.
 bench_defs = {
         'nclients': 1, 
-        'rate': 100,		# upper bound on reqs/sec 
-	'failure_interval': 10	# duration of operation sending in seconds
+        'rate': 1,		# upper bound on reqs/sec 
+	'failure_interval': 120	# duration of operation sending in seconds
         }
 bench_args = {} #dict([arg.split('=') for arg in args.benchmark_config.split(',') ])
 for arg, val in bench_defs.items():

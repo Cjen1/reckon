@@ -1,4 +1,4 @@
-import utils.message_pb2 as msg_pb
+import distributions.message_pb2 as msg_pb
 from utils import link
 
 from utils.op_gen import Operation
@@ -182,6 +182,7 @@ def producer(op_gen, op_buf, rate):
     while(True):
         while time.time() < start + opid * 1.0/float(rate):
             pass
+        print("CONTAINER: Sending Op")
         try:
             op_buf.put_nowait(op_gen(opid))
         except Queue.Full:

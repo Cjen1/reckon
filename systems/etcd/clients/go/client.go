@@ -26,10 +26,9 @@ func unix_seconds(t time.Time) float64 {
 func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWire.Response {
 	//println("CLIENT: Attempting to put")
 	// TODO implement options
-	st := time.Now()
+	st := op.Put.Start
 	_, err := cli.Put(context.Background(), string(op.Put.Key), string(op.Put.Value))
-	end := time.Now()
-	duration := end.Sub(st)
+	end := unix_seconds(time.Now())
 
 	err_msg := "None"
 	if(err != nil){
@@ -37,10 +36,10 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWir
 	}
 
 	resp := &OpWire.Response {
-		ResponseTime:		duration.Seconds(),
+		ResponseTime:		end-st,
 		Err:			err_msg,
-		Start:			unix_seconds(st),
-		End:			unix_seconds(end),
+		Start:			st,
+		End:			end,
 		Clientid:		clientid,
 		Opid:			op.Put.Opid,
 	}
@@ -52,10 +51,9 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWir
 func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWire.Response {
 	// TODO implement options
 	//println("CLIENT: Attempting to get")
-	st := time.Now()
+	st := op.Get.Start
 	_, err := cli.Get(context.Background(), string(op.Get.Key))
-	end := time.Now()
-	duration := end.Sub(st)
+	end := unix_seconds(time.Now())
 
 	err_msg := "None"
 	if(err != nil){
@@ -63,10 +61,10 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWir
 	}
 
 	resp := &OpWire.Response {
-		ResponseTime:		duration.Seconds(),
+		ResponseTime:		end-st,
 		Err:			err_msg,
-		Start:			unix_seconds(st),
-		End:			unix_seconds(end),
+		Start:			st,
+		End:			end,
 		Clientid:		clientid,
 		Opid:			op.Get.Opid,
 	}

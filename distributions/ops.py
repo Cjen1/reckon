@@ -1,24 +1,28 @@
 import message_pb2 as msg_pb
 import random
+import time
 
 def payload(num_bytes):
     return rand.bytes(num_bytes)
 
 def write(key, value, opid):
+    start = time.time()
     op = msg_pb.Operation()
     op.put.key = key
     op.put.value = value
     op.put.opid = opid
+    op.put.start = start
 
     payload = op.SerializeToString()
 
     return payload
 
 def read(key, opid):
+    start = time.time()
     op = msg_pb.Operation()
     op.get.key = key
-
     op.put.opid = opid
+    op.put.start = start
 
     payload = op.SerializeToString()
 

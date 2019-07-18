@@ -9,7 +9,7 @@ import importlib
 from os import listdir
 import os
 
-from sys import argv
+from sys import argv, stdout, stderr
 
 #------- Parse arguments --------------------------
 parser = argparse.ArgumentParser(description='Runs a benchmark of a local fault tolerant datastore')
@@ -39,14 +39,15 @@ parser.add_argument(
         help='Arguments to be passed to the failure script.')
 parser.add_argument(
         'benchmark_config',
-        help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500,failure_interval=10.')
+        help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500,duration=10.')
 
 args = parser.parse_args()
 
 systems = args.systems.split(',')
 
 topo = args.topology
-topo_args = args.topo_args
+topo_kwargs = dict([arg.split('=') for arg in args.topo_args.split(',')]) if args.topo_args != "" else {}
+print(topo, topo_kwargs)
 topo_module = importlib.import_module('topologies.' + topo)
 
 distribution = args.distribution
@@ -54,6 +55,7 @@ dist_args = args.dist_args
 
 fail_type = args.failure
 fail_args = args.fail_args
+print(fail_type, fail_args)
 fail_module = importlib.import_module('failures.' + fail_type)
 fail_setup = fail_module.setup
 
@@ -62,74 +64,52 @@ fail_setup = fail_module.setup
 ## idea of what values *are* appropriate.
 bench_defs = {
         'nclients': 1, 
-        'rate': 1,		# upper bound on reqs/sec 
-	'failure_interval': 120	# duration of operation sending in seconds
+        'rate': 100,		# upper bound on reqs/sec 
+	'duration': 10,	# duration of operation sending in seconds
+        'dest': '../results/test.res'
         }
-bench_args = {} #dict([arg.split('=') for arg in args.benchmark_config.split(',') ])
-for arg, val in bench_defs.items():
-	bench_args.setdefault(arg, val)#set as arg or as default value 
-
+bench_args = {}
+if args.benchmark_config != "":
+    bench_args = dict([arg.split('=') for arg in args.benchmark_config.split(',') ]) 
+for key, val in bench_defs.items():
+	bench_args.setdefault(key, val)#set as arg or as default value 
 
 for system in systems:
     service, client = system.split("_")
 
-    system_setup_func = (
-            importlib.import_module(
-                "systems.{0}.scripts.setup".format(service)
-                )
-            ).setup
-
-    dimage = "cjj39_dks28/"+service
-
-    #TODO pass in args...
-    net, switch, hosts, ips = topo_module.setup(dimage) 
-
-    # Any setup of clients etc
-    if system_setup_func != None:
-        print("Configuring containers")
-        system_setup_func(hosts, ips)
-
+    net, cluster_ips, [microclient] = topo_module.setup(dimage, **topo_kwargs) 
     failures = fail_setup(net)
-
-    client = net.addDocker(
-            'client', 
-            ip = '10.0.0.1',
-            dimage='cjj39/containernet',
-            volumes = ['/auto/homes/cjj39/mounted/Resolving-Consensus:/mnt/main:rw']
-            )
-
-    net.addLink(client, switch) 
-
-    net.start()
-
-    # from mininet.cli import CLI
-    # CLI(net)
-
-    duration = (len(failures) + 1) * bench_defs['failure_interval']
-
-    print("Starting Test")
-    waiter = client.popen([
-        'python', '/mnt/main/client.py', 
-            system,
-            distribution,
-            "".join(ip + "," for ip in ips)[:-1],
-            '--dist_args', dist_args,
-            '--benchmark_config', "".join(str(k)+"="+str(v)+"," for k,v in bench_args.items())[:-1],
-            '--duration', str(duration),
-                ])
     
-    print("BENCHMARK: starting benchmark")
+    duration = float(bench_args['duration'])
+    print("BENCHMARK: " + str(duration))
+
+    print("BENCHMARK: Starting Test")
+    waiter = microclient.popen(
+            [
+                'python', '/mnt/main/client.py', 
+                system,
+                distribution,
+                "".join(ip + "," for ip in cluster_ips)[:-1],
+                '--dist_args', dist_args,
+                '--benchmark_config', "".join(str(k)+"="+str(v)+"," for k,v in bench_args.items())[:-1],
+                '--duration', str(bench_args['duration']),
+            ], 
+            stdout=stdout, stderr=stderr)
+
+    sleepTime = duration / (len(failures) + 1)
     for failure in failures:
-        sleep(bench_args['failure_interval'])
+        print("BENCHMARK: sleeping for" + str(sleepTime))
+        sleep(sleepTime)
         failure()
+    print("BENCHMARK: sleeping for" + str(sleepTime))
+    sleep(sleepTime)
     waiter.wait() # Wait for child process to finish
     
     print("Finished Test")
 
-    result = client.cmd("cat /results.res")
+    result = microclient.cmd("cat /results.res")
 
-    with open('../results/firstTest.res', 'w') as f:
+    with open(bench_args['dest'], 'w') as f:
         f.write(result)
     
     net.stop()
-

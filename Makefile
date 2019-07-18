@@ -14,7 +14,13 @@ etcd_docker:
 	cd systems/etcd && \
 		make docker
 
+template_go: template_docker systems/template/clients/go/client.go
+	cd systems/template/clients/go && \
+		make build 
 
+template_docker:
+	cd systems/template && \
+		make docker
 
 	
 

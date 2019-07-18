@@ -3,10 +3,7 @@ FROM gcr.io/etcd-development/etcd:v3.3.8
 RUN apk update && apk add \
 	bash \
 	iputils \
-	iproute2 \
 	screen
 
 EXPOSE 2379
 EXPOSE 2380
-
-ENTRYPOINT /bin/bash ~/.startup.sh && /bin/bash

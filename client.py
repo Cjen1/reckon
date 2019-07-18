@@ -1,6 +1,4 @@
 import distributions.message_pb2 as msg_pb
-from utils import link
-
 from utils.op_gen import Operation
 from os import listdir
 from subprocess import call, Popen
@@ -15,22 +13,6 @@ from Queue import Queue as queue
 import Queue
 
 import importlib
-
-def run_ops_list(operations, socket, ready_signals, store_resp_fn=(lambda *args: None)):
-    #------- Send operations to each of the clients in a load balanced manner -------
-    for operation in operations:
-        # Get address to send to either from initial queue or from received responses
-        addr = {}
-        if len(ready_signals) > 0:
-            print("CONTAINER: replying to first ready signal")
-            addr = ready_signals.pop()
-        else:
-            addr, empty, rec = socket.recv_multipart(flags=0)
-            resp = msg_pb.Response()
-            resp.ParseFromString(rec)
-            store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.opid)
-
-        socket.send_multipart([addr,b'',operation])
 
 client_port_id = 50000
 def run_test(cluster_ips, op_obj, duration=30, num_clients=1, sys='etcd_go'):
@@ -74,19 +56,18 @@ def run_test(cluster_ips, op_obj, duration=30, num_clients=1, sys='etcd_go'):
     run_ops_list(prereq, socket, readys)
 
     resps = []
-    def store_resp_fn(resp_time, st, end, err, client_idx, op_idx):
-        resps.append([client_idx, resp_time, err, st, end, op_idx])
+    def store_resp_fn(resp_time, st, end, err, client_idx, op_type, target):
+        resps.append([client_idx, resp_time, err, st, end, "write" if op_type else "read", target])
 
     fails = []
     def store_fail_fn(failure_type, start, end):
         fails.append([failure_type, start, end])
 
+    print("Sending Operations")
 
     #--- NOW start producing operations. Will probably still experience slightly 
     #--- bursty start but can then move the line below if necessary.
     opprod.start()
-
-    print("Sending Operations")
 
     #send operations until time limit
     t_end = time.time() + duration
@@ -132,8 +113,25 @@ def run_test(cluster_ips, op_obj, duration=30, num_clients=1, sys='etcd_go'):
     json.dump(data, fres)
 
     fres.close()
+    print("CONTAINER: test finished exiting")
 
 #----- Utility Functions --------------------------------------------------------
+def run_ops_list(operations, socket, ready_signals, store_resp_fn=(lambda *args: None)):
+    #------- Send operations to each of the clients in a load balanced manner -------
+    for operation in operations:
+        # Get address to send to either from initial queue or from received responses
+        addr = {}
+        if len(ready_signals) > 0:
+            print("CONTAINER: replying to first ready signal")
+            addr = ready_signals.pop()
+        else:
+            addr, empty, rec = socket.recv_multipart(flags=0)
+            resp = msg_pb.Response()
+            resp.ParseFromString(rec)
+            store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.optype, resp.target)
+
+        socket.send_multipart([addr,b'',operation])
+
 def run_ops(opbuf, socket, store_resp_fn=lambda *args:None, ready_signals=set()):
     addr = {}
     if len(ready_signals) > 0:
@@ -142,7 +140,7 @@ def run_ops(opbuf, socket, store_resp_fn=lambda *args:None, ready_signals=set())
         addr, _, rec = socket.recv_multipart()
         resp = msg_pb.Response()
         resp.ParseFromString(rec)
-        store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.clientid, resp.opid)
+        store_resp_fn(resp.response_time, resp.start, resp.end, resp.err, resp.clientid, resp.optype, resp.target)
 
     op = opbuf.get()	# If no oerations are available blocks until one is 
     
@@ -182,9 +180,8 @@ def producer(op_gen, op_buf, rate):
     while(True):
         while time.time() < start + opid * 1.0/float(rate):
             pass
-        print("CONTAINER: Sending Op")
         try:
-            op_buf.put_nowait(op_gen(opid))
+            op_buf.put_nowait(op_gen())
         except Queue.Full:
             pass
         opid += 1
@@ -234,7 +231,7 @@ if __name__ == "__main__":
 
     bench_args = dict([config.split('=') for config in args.benchmark_config.split(',')])
 
-    duration=int(args.duration)
+    duration=float(args.duration)
 
     # Set up buffers etc
     operation_buffer = queue(maxsize=3*bench_args['rate']) 

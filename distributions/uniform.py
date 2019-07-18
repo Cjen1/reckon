@@ -12,22 +12,24 @@ def generate_ops(key_range='1>10',payload_size='10', seed='0', write_ratio='0.5'
     seed=int(seed)
 
     return (
-            lambda opid : (
-                rand.seed(seed),
-                ops.write(
-                    rand.random_integers(krl, kru),
-                    ops.payload(payload_size),
-		    opid
-                ) 
-                if rand.ranf() < write_ratio else
-                ops.read(
-                    rand.random_integers(krl, kru),
-		    opid
-                ) ) [-1]
+            (rand.seed(seed),
+                lambda  : (
+                    ops.write(
+                        rand.random_integers(krl, kru),
+                        ops.payload(payload_size),
+                        )
+                         
+                    if rand.ranf() < write_ratio else
+                    ops.read(
+                        rand.random_integers(krl, kru)
+                        )
+                         
+                    )
+                )[-1]
             )
 
 def generate_prereqs(key_range='1>10'):
     krl, kru = [int(l) for l in key_range.split('>')]
-    return [ops.write(k, b'0',0) for k in range(krl, kru+1)]	
+    return [ops.write(k, b'0') for k in range(krl, kru+1)]	
 
 

@@ -9,10 +9,10 @@ def setup(dockers, ips):
 
     for i, (docker, ip) in enumerate(zip(dockers, ips)):
         node_name = "etcd-node-"+str(i+1)
-        docker.cmd(
+        start_cmd = (
                     (  
                     "screen -d -S etcd_background -m /usr/local/bin/etcd " +
-                    "--data-dir=/etcd-data --name {name} " + 
+                    "--data-dir=/tmpfs_data --name {name} " + 
                     "--initial-advertise-peer-urls http://{ip}:2380 --listen-peer-urls http://0.0.0.0:2380 " + 
                     "--advertise-client-urls http://{ip}:2379 --listen-client-urls http://0.0.0.0:2379 " + 
                     "--initial-cluster {cluster} " +
@@ -26,5 +26,8 @@ def setup(dockers, ips):
                         cluster_token="urop_cluster"
                     )
                 )
+
+        docker.cmd('echo \''+start_cmd+'\' >> ~/.startup.sh')
+        docker.cmd('~/.startup.sh')
 
 

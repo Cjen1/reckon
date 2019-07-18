@@ -14,10 +14,6 @@ import (
 	"./OpWire"
 )
 
-var (
-	dialTimeout = 2 * time.Second
-	requestTimeout = 10 * time.Second
-)
 
 func unix_seconds(t time.Time) float64 {
 	return float64(t.UnixNano()) / 1e9
@@ -41,7 +37,8 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWir
 		Start:			st,
 		End:			end,
 		Clientid:		clientid,
-		Opid:			op.Put.Opid,
+		Optype:			true,
+		Target:			cli.Conn.Target(),
 	}
 
 	//println("CLIENT: Successfully put")
@@ -66,7 +63,8 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWir
 		Start:			st,
 		End:			end,
 		Clientid:		clientid,
-		Opid:			op.Get.Opid,
+		Optype:			false,
+		Target:			cli.Conn.Target(),
 	}
 
 	//println("CLIENT:Successfully got")
@@ -93,7 +91,7 @@ func marshall_response(resp *OpWire.Response) string {
 }
 
 func main() {
-	println("Starting client") 
+	println("Starting client")
 	if(len(os.Args) < 4){
 		println("Incorrect number of arguments") }
 
@@ -109,9 +107,13 @@ func main() {
 	for index, endpoint := range endpoints {
 		endpoints[index] = endpoint + ":2379"
 	}
+	dialTimeout := 2 * time.Second
 
 	cli, err := clientv3.New(clientv3.Config{
 		DialTimeout:		dialTimeout,
+		DialKeepAliveTime:	dialTimeout/2,
+		DialKeepAliveTimeout:	dialTimeout*2,
+		AutoSyncInterval:	dialTimeout/2,
 		Endpoints:		endpoints,
 	})
 	defer cli.Close()
@@ -157,7 +159,7 @@ func main() {
 				Start:			0,
 				End:			0,
 				Clientid:		clientid,
-				Opid:			0,
+				Optype:			true,
 			}
 			payload := marshall_response(resp)
 			socket.Send(payload, 0)

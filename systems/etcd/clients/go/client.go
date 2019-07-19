@@ -38,7 +38,7 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWir
 		End:			end,
 		Clientid:		clientid,
 		Optype:			true,
-		Target:			cli.Conn.Target(),
+		Target:			cli.ActiveConnection().Target(),
 	}
 
 	//println("CLIENT: Successfully put")
@@ -64,7 +64,7 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWir
 		End:			end,
 		Clientid:		clientid,
 		Optype:			false,
-		Target:			cli.Conn.Target(),
+		Target:			cli.ActiveConnection().Target(),
 	}
 
 	//println("CLIENT:Successfully got")

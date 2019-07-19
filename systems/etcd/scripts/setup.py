@@ -7,6 +7,7 @@ from mininet.log import info, setLogLevel
 def setup(dockers, ips):
     cluster = "".join("etcd-node-"+str(i+1) + "=http://"+ip+":2380," for i, ip in enumerate(ips))[:-1]
 
+    restarters = []
     for i, (docker, ip) in enumerate(zip(dockers, ips)):
         node_name = "etcd-node-"+str(i+1)
         start_cmd = (
@@ -27,7 +28,9 @@ def setup(dockers, ips):
                     )
                 )
 
-        docker.cmd('echo \''+start_cmd+'\' >> ~/.startup.sh')
-        docker.cmd('~/.startup.sh')
+        docker.cmd(start_cmd)
 
+        restarters.append(lambda:docker.cmd(start_cmd))
+
+    return restarters
 

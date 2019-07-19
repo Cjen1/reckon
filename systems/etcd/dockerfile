@@ -8,5 +8,3 @@ RUN apk update && apk add \
 
 EXPOSE 2379
 EXPOSE 2380
-
-ENTRYPOINT /bin/bash ~/.startup.sh && /bin/bash

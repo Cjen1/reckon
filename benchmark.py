@@ -77,8 +77,8 @@ for key, val in bench_defs.items():
 for system in systems:
     service, client = system.split("_")
 
-    net, cluster_ips, [microclient] = topo_module.setup(dimage, **topo_kwargs) 
-    failures = fail_setup(net)
+    net, cluster_ips, [microclient], restarters = topo_module.setup(service, client, **topo_kwargs) 
+    failures = fail_setup(net, restarters)
     
     duration = float(bench_args['duration'])
     print("BENCHMARK: " + str(duration))

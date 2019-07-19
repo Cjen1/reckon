@@ -5,12 +5,12 @@ from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 setLogLevel('info')
 
+import importlib
+
 def ip_from_int(i):
     return '10.{0:d}.{1:d}.{2:d}'.format(i/(2**16),(i%(2**16))/(2**8),i%(2**8))
 
-def setup(service, microclient):
-    dimage = 
-
+def setup(service, client, n=3):
     #- Core setup -------
 
     net = Containernet(controller=Controller)
@@ -42,9 +42,9 @@ def setup(service, microclient):
             ).setup
 
     microclient = net.addDocker(
-            'microclient', 
+            'mc', 
             ip = '10.0.0.1',
-            dimage='cjj39/script_runner',
+            dimage='cjj39/containernet',
             volumes = ['/auto/homes/cjj39/mounted/Resolving-Consensus:/mnt/main:rw']
             )
 
@@ -52,6 +52,6 @@ def setup(service, microclient):
 
     net.start()
 
-    system_setup_func(dockers, cluster_ips)
+    restarters = system_setup_func(dockers, cluster_ips)
 
-    return (net, cluster_ips, [microclient])
+    return (net, cluster_ips, [microclient], restarters)

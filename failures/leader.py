@@ -17,29 +17,41 @@ def parse_resp(resp):
     return leader
 
 def find_leader(hosts, ips):
-    cmd = "ETCDCTL_API=3 etcdctl endpoint status --cluster"
-    resp = hosts[0].cmd(cmd)
-    leader_ip = parse_resp(resp)
-    leader = hosts[ips.index(leader_ip)]
-    return leader
+    for host in hosts:
+        try:
+            cmd = "ETCDCTL_API=3 etcdctl endpoint status --cluster"
+            resp = host.cmd(cmd)
+            leader_ip = parse_resp(resp)
+            leader = hosts[ips.index(leader_ip)]
+            print("FAILURE: killing leader: "+leader_ip)
+            return leader
+        except:
+            pass
 
 leader = None
-def leader_down(net):
+res = None
+def leader_down(net, restarters):
     hosts = [ net[hostname] for hostname in filter(lambda i: i[0] == 'd', net.keys())]
     ips = [host.IP() for host in hosts]
     print(ips)
 
     global leader
+    global res
     print("FAILURE: Stopping Leader")
     leader = find_leader(hosts, ips)
+    res = restarters[hosts.index(leader)]
     call('docker kill {0}'.format('mn.'+leader.name).split(' '))
 
-def leader_up(net):
+def leader_up():
+    global leader
+    global res
     print("FAILURE: Bringing leader back up")
     call('docker start {0}'.format('mn.'+leader.name).split(' '))
+    res()
+    leader, res = None, None
 
-def setup(net, ):
+def setup(net, restarters):
     return [
-            lambda: leader_down(net),
-            lambda: leader_up(net)
+            lambda: leader_down(net, restarters),
+            lambda: leader_up()
             ]

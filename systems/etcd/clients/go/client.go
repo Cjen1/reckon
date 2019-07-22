@@ -23,8 +23,8 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWir
 	//println("CLIENT: Attempting to put")
 	// TODO implement options
 	st := op.Put.Start
-	_, err := cli.Put(context.Background(), string(op.Put.Key), string(op.Put.Value))
 	end := unix_seconds(time.Now())
+	_, err := cli.Put(context.Background(), string(op.Put.Key), string(op.Put.Value))
 
 	err_msg := "None"
 	if(err != nil){
@@ -49,8 +49,8 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWir
 	// TODO implement options
 	//println("CLIENT: Attempting to get")
 	st := op.Get.Start
-	_, err := cli.Get(context.Background(), string(op.Get.Key))
 	end := unix_seconds(time.Now())
+	_, err := cli.Get(context.Background(), string(op.Get.Key))
 
 	err_msg := "None"
 	if(err != nil){
@@ -73,7 +73,6 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWir
 }
 
 func ReceiveOp(socket *zmq.Socket) *OpWire.Operation{
-	//print("CLIENT: Awaiting Operation")
 	payload, _ := socket.Recv(0)
 	op := &OpWire.Operation{}
 	if err := proto.Unmarshal([]byte(payload), op); err != nil {
@@ -82,27 +81,31 @@ func ReceiveOp(socket *zmq.Socket) *OpWire.Operation{
 	return op
 }
 
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
 func marshall_response(resp *OpWire.Response) string {
 	payload, err := proto.Marshal(resp)
-	if err != nil {
-		log.Fatalln("Failed to encode response: " + err.Error())
-	}
+	check(err)
 	return string(payload)
 }
 
 func main() {
 	println("Starting client")
-	if(len(os.Args) < 4){
-		println("Incorrect number of arguments") }
 
-	port := os.Args[1]
-	endpoints := strings.Split(os.Args[2], ",")
-	i, err := strconv.ParseUint(os.Args[3], 10, 32)
-	if(err != nil){
-		println(err)
-		return
-	}
+	endpoints := strings.Split(os.Args[1], ",")
+	i, err := strconv.ParseUint(os.Args[2], 10, 32)
+	check(err)
+	address := os.Args[3]
+
 	clientid := uint32(i)
+
+	socket, _ := zmq.NewSocket(zmq.REQ)
+	defer socket.Close()
+	socket.Connect(address)
 
 	for index, endpoint := range endpoints {
 		endpoints[index] = endpoint + ":2379"
@@ -117,24 +120,11 @@ func main() {
 		Endpoints:		endpoints,
 	})
 	defer cli.Close()
-
-	if(err != nil){
-		println(err)
-		return
-	}
-
-	socket, _ := zmq.NewSocket(zmq.REQ)
-	defer socket.Close()
-
-	//println("Sending ready signal")
-	//print(port)
-
-	println("sending ready signals")
-	binding := "tcp://127.0.0.1:" + port
-	socket.Connect(binding)
-	socket.Send("",0)
+	check(err)
 
 	//send ready signal
+	socket.Send("",0)
+
 	for {
 		Operation := ReceiveOp(socket)
 

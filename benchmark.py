@@ -11,6 +11,7 @@ import os
 
 from sys import argv, stdout, stderr
 
+from client_runner import run_test 
 #------- Parse arguments --------------------------
 parser = argparse.ArgumentParser(description='Runs a benchmark of a local fault tolerant datastore')
 
@@ -29,7 +30,7 @@ parser.add_argument(
         help='The distribution to generate operations from')
 parser.add_argument(
         '--dist_args',
-        default="None",
+        default="",
         help='settings for the distribution. eg. size=5,mean=10')
 parser.add_argument(
         'failure',
@@ -51,7 +52,7 @@ print(topo, topo_kwargs)
 topo_module = importlib.import_module('topologies.' + topo)
 
 distribution = args.distribution
-dist_args = args.dist_args
+dist_kwargs = dict([arg.split('=') for arg in args.dist_args.split(',')]) if args.dist_args != "" else {}
 
 fail_type = args.failure
 fail_args = args.fail_args
@@ -75,41 +76,36 @@ for key, val in bench_defs.items():
 	bench_args.setdefault(key, val)#set as arg or as default value 
 
 for system in systems:
-    service, client = system.split("_")
+    service_name, client_name = system.split("_")
 
-    net, cluster_ips, [microclient], restarters = topo_module.setup(service, client, **topo_kwargs) 
+    net, cluster_ips, clients, restarters = topo_module.setup(service_name, **topo_kwargs) 
     failures = fail_setup(net, restarters)
     
     duration = float(bench_args['duration'])
     print("BENCHMARK: " + str(duration))
 
-    print("BENCHMARK: Starting Test")
-    waiter = microclient.popen(
-            [
-                'python', '/mnt/main/client.py', 
-                system,
-                distribution,
-                "".join(ip + "," for ip in cluster_ips)[:-1],
-                '--dist_args', dist_args,
-                '--benchmark_config', "".join(str(k)+"="+str(v)+"," for k,v in bench_args.items())[:-1],
-                '--duration', str(bench_args['duration']),
-            ], 
-            stdout=stdout, stderr=stderr)
+    op_gen_module = importlib.import_module('distributions.' + distribution)
+
+    ops = op_gen_module.generate_ops(**dist_kwargs)		
+    print("BENCHMARK: Starting Test, "+str((service_name, client_name)))
+    tester = Thread(target=run_test, 
+            args=[
+                clients, 
+                ops, 
+                bench_args['rate'],
+                bench_args['duration'],
+                service_name,
+                client_name,
+                cluster_ips
+            ])  
+    tester.start()
 
     sleepTime = duration / (len(failures) + 1)
-    for failure in failures:
+    for failure in (failures+[(lambda*args, **kwargs:None)]):
         print("BENCHMARK: sleeping for" + str(sleepTime))
         sleep(sleepTime)
         failure()
-    print("BENCHMARK: sleeping for" + str(sleepTime))
-    sleep(sleepTime)
-    waiter.wait() # Wait for child process to finish
     
+    tester.join()
     print("Finished Test")
-
-    result = microclient.cmd("cat /results.res")
-
-    with open(bench_args['dest'], 'w') as f:
-        f.write(result)
-    
     net.stop()

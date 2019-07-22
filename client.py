@@ -79,7 +79,7 @@ def run_test(cluster_ips, op_obj, duration=30, num_clients=1, sys='etcd_go'):
     # Don't store responses since they happened out of the timeframe
     quit_op = msg_pb.Operation()
     quit_op.quit.msg = "Quitting normally"
-    quit_op = quit_op.SerializeToString()
+    quit_op = quit_op.SeralizeToString()
     for i in range(num_clients):
         address, _, rec = socket.recv_multipart()
         # Send quit message

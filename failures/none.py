@@ -1,3 +1,3 @@
 
-def setup(net):
+def setup(net, restarters):
     return []

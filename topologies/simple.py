@@ -10,7 +10,7 @@ import importlib
 def ip_from_int(i):
     return '10.{0:d}.{1:d}.{2:d}'.format(i/(2**16),(i%(2**16))/(2**8),i%(2**8))
 
-def setup(service, client, n=3):
+def setup(service, n=3):
     #- Core setup -------
 
     net = Containernet(controller=Controller)
@@ -41,11 +41,9 @@ def setup(service, client, n=3):
                 )
             ).setup
 
-    microclient = net.addDocker(
+    microclient = net.addHost(
             'mc', 
-            ip = '10.0.0.1',
-            dimage='cjj39/containernet',
-            volumes = ['/auto/homes/cjj39/mounted/Resolving-Consensus:/mnt/main:rw']
+            ip = '10.0.0.1'
             )
 
     net.addLink(microclient, s1) 

@@ -102,11 +102,10 @@ def run_client(clients, config):
         except QEmpty:
             pass
 
-    addr = recv()
     while(not stop_flag.value): 
         try:
-            send(addr)
             addr = recv()
+            send(addr)
         except QEmpty:
             pass
 

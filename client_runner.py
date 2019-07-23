@@ -44,15 +44,13 @@ def clean_address(address):
 
 def run_prereqs(socket, operations):
     for operation in operations:
-        addr, _, rec = socket.recv_multipart()
+        addr, _, _ = socket.recv_multipart()
         socket.send_multipart([addr, b'', operation])
         
 
-def run_client(client, client_id, config):
-    client_id=str(client_id)
-
+def run_client(clients, config):
     #--- Setup ----------
-    client_address = "ipc:///tmp/benchmark_" + client_id + ".sock"
+    client_address = "ipc:///tmp/benchmark.sock"
     clean_address(client_address)
 
     socket = zmq.Context().socket(zmq.ROUTER)
@@ -68,39 +66,56 @@ def run_client(client, client_id, config):
     elif client_path.endswith(".py"):
         cmd = ['python']
     arg_ips = "".join(ip + "," for ip in config['cluster_ips'])[:-1]
-    cmd = cmd + [client_path, arg_ips, client_id, client_address]
 
-    microclient = client.popen(cmd, stdout = sys.stdout, stderr=sys.stderr, close_fds = True)
+    microclients = [
+            client.popen(
+                cmd + [client_path, arg_ips, str(client_id), client_address],
+                stdout = sys.stdout, stderr=sys.stderr, close_fds = True
+                )
+            for client_id, client in enumerate(clients)
+            ]
 
     run_prereqs(socket, config['op_prereq'])
 
-    # Recieve ready signal from microclient
-    addr, _, _ = socket.recv_multipart()
+    # Recieve ready signals from microclients
+    readys = [addr for addr, _, _ in [socket.recv_multipart() for client in clients]]
 
     #wait for all other clients to finish setup
-    #print(client_id+": Waiting")
     barrier.wait()
-    #print(client_id+": Starting")
 
+    def send(addr):
+        op = req_queue.get(timeout=2/config['rate'])
+        socket.send_multipart([addr, b'', op])
+
+    def recv():
+        addr, _, res = socket.recv_multipart()
+        res_queue.put_nowait(res)
+        return addr
 
     #-- Start Test ------
+
+    # Use up readys to allow for tight test loop with no startup
+    for ready in readys:
+        # If short duration may not get through all readys before timeout, thus block on producer
+        try:
+            send(ready)
+        except QEmpty:
+            pass
+
+    addr = recv()
     while(not stop_flag.value): 
         try:
-            op = req_queue.get(timeout=0.5)
-            #print(client_id + ": Got operation")
-            socket.send_multipart([addr, b'', op])
-
-            addr, _, res = socket.recv_multipart()
-            #print(client_id + ": Got res")
-            res_queue.put_nowait(res)
+            send(addr)
+            addr = recv()
         except QEmpty:
-            #print(client_id + ": Queue empty")
             pass
 
     quit_op = msg_pb.Operation()
     quit_op.quit.msg = "Quitting normally"
     quit_op = quit_op.SerializeToString()
-    socket.send_multipart([addr, b'', quit_op])
+    for ready in readys:
+        addr, _, _ = socket.recv_multipart()
+        socket.send_multipart([addr, b'', quit_op])
 
 def producer(op_gen, rate, duration, stop_flag):
     print("Producer: Waiting")
@@ -129,13 +144,14 @@ def run_test(clients, ops, rate, duration, service_name, client_name, ips):
         'client':client_name,
         'cluster_ips': ips,
         'duration': duration,
-        'op_prereq': op_prereq
+        'op_prereq': op_prereq,
+        'rate': rate
         }
 
     #Set up multiprocessing primitives
     m = Manager()
     global barrier
-    barrier = Barrier(m, len(clients) + 1) # one for each client, 1 for producer
+    barrier = Barrier(m, 2) # one for each client, 1 for producer
     global res_queue
     res_queue = m.Queue()
     global req_queue
@@ -152,19 +168,14 @@ def run_test(clients, ops, rate, duration, service_name, client_name, ips):
 
     #pool.close()
 
-    mcs = [
-            Thread(target=run_client, args=[client, client_id, config]) 
-            for client, client_id in zip(clients, range(len(clients)))
-            ]
-    for mc in mcs:
-        mc.start()
+    mc = Thread(target=run_client, args=[clients, config]) 
+    mc.start()
 
     op_producer.start()
-
     op_producer.join()
+
     print("waiting for microclients to finish")
-    for mc in mcs:
-        mc.join()
+    mc.join()
 
     resps = []
     while(not res_queue.empty()):

@@ -2,26 +2,16 @@ import Queue
 from Queue import Queue as queue
 from threading import Thread as Thread
 from time import time as time
+from time import sleep as sleep
 
 import argparse
 import importlib
 from os import listdir
-from subprocess import Popen
+import os
 
-import utils.tester as tester
+from sys import argv, stdout, stderr
 
-
-#------- Utility functions ------------------------
-default_reads    = 0.9
-default_clients  = 1
-default_datasize = 1024
-
-def tag(reads=default_reads, servers=3, clients=default_clients, datasize=default_datasize):
-	r = int(reads*100)
-	return str(r).zfill(3) + "R_" + str(servers) + "S_" + str(clients).zfill(3) + "C_" + str(datasize).zfill(7) + "B"
-
-
-
+from client_runner import run_test 
 #------- Parse arguments --------------------------
 parser = argparse.ArgumentParser(description='Runs a benchmark of a local fault tolerant datastore')
 
@@ -40,6 +30,7 @@ parser.add_argument(
         help='The distribution to generate operations from')
 parser.add_argument(
         '--dist_args',
+        default="",
         help='settings for the distribution. eg. size=5,mean=10')
 parser.add_argument(
         'failure',
@@ -49,71 +40,72 @@ parser.add_argument(
         help='Arguments to be passed to the failure script.')
 parser.add_argument(
         'benchmark_config',
-        help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500,failure_interval=10.')
+        help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500,duration=10.')
 
 args = parser.parse_args()
 
 systems = args.systems.split(',')
 
 topo = args.topology
-topo_args = args.topo_args
-topo_module = importlib.import_module('topologies.' + distribution)
+topo_kwargs = dict([arg.split('=') for arg in args.topo_args.split(',')]) if args.topo_args != "" else {}
+print(topo, topo_kwargs)
+topo_module = importlib.import_module('topologies.' + topo)
 
 distribution = args.distribution
-dist_args = args.dist_args
+dist_kwargs = dict([arg.split('=') for arg in args.dist_args.split(',')]) if args.dist_args != "" else {}
 
-failure_type = args.failure
-failure_args = args.fail_args
-fail_module = importlib.import_module('failures.' + failure_type)
+fail_type = args.failure
+fail_args = args.fail_args
+print(fail_type, fail_args)
+fail_module = importlib.import_module('failures.' + fail_type)
 fail_setup = fail_module.setup
 
 
 ## A list of benchmark configs with defaults. Change values as appropriate when we have an 
 ## idea of what values *are* appropriate.
 bench_defs = {
-        'nclients': 10, 
+        'nclients': 1, 
         'rate': 100,		# upper bound on reqs/sec 
-	'failure_interval': 10	# duration of operation sending in seconds
+	'duration': 10,	# duration of operation sending in seconds
+        'dest': '../results/test.res'
         }
-bench_args = dict(
-	[arg.split('=') for arg in args.benchmark_config.split(',') ]
-	)
-for arg, val in bench_defs:
-	bench_args.setdefault(arg, val)#set as arg or as default value 
-
-tester_args_b = []
-for opt in ['--distribution', '--dist_args', '--benchmark_config']
-    try:
-        i = argv.index(opt)
-        tester_args_b.append(opt, argv[i+1])
-    except ValueError:
-        pass
+bench_args = {}
+if args.benchmark_config != "":
+    bench_args = dict([arg.split('=') for arg in args.benchmark_config.split(',') ]) 
+for key, val in bench_defs.items():
+	bench_args.setdefault(key, val)#set as arg or as default value 
 
 for system in systems:
-    service, client = system.split("_")
+    service_name, client_name = system.split("_")
 
-    system_setup_func = (
-            importlib.import_module(
-                "systems.{0}.scripts.setup".format(service)
-                )
-            ).setup
-
-    dimage = "cjj39_dks28/"+service
-    client_dimage = "cjj39_dks28/{0}_{1}".format(service,client)
-
-    net, ips, failures = topo_module.setup(dimage, client_dimage, failure_setup=fail_setup, setup_func=**dist_args) 
-
-    #add client
-
-    net.start()
-    #start test on client
-    #wait until right % through test before running failure functions
-    duration = (len(failures) + 1) * failure_interval
+    net, cluster_ips, clients, restarters = topo_module.setup(service_name, **topo_kwargs) 
+    failures = fail_setup(net, restarters)
     
-    Popen(['python', 'utils/tester.py'] + tester_args_b + ['--system', system, '--duration', duration])
-    
-    for failure in failures:
-        time.sleep(bench_args['failure_interval'])
+    duration = float(bench_args['duration'])
+    print("BENCHMARK: " + str(duration))
+
+    op_gen_module = importlib.import_module('distributions.' + distribution)
+
+    ops = op_gen_module.generate_ops(**dist_kwargs)		
+    print("BENCHMARK: Starting Test, "+str((service_name, client_name)))
+    tester = Thread(target=run_test, 
+            args=[
+                clients, 
+                ops, 
+                bench_args['rate'],
+                bench_args['duration'],
+                service_name,
+                client_name,
+                cluster_ips
+            ])  
+    tester.start()
+
+    sleepTime = duration / (len(failures) + 1)
+    for failure in (failures+[(lambda*args, **kwargs:None)]):
+        print("BENCHMARK: sleeping for" + str(sleepTime))
+        sleep(sleepTime)
         failure()
     
-
+    tester.join()
+    print("Finished Test")
+    net.stop()

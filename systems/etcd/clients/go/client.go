@@ -14,21 +14,17 @@ import (
 	"./OpWire"
 )
 
-var (
-	dialTimeout = 2 * time.Second
-	requestTimeout = 10 * time.Second
-)
 
 func unix_seconds(t time.Time) float64 {
 	return float64(t.UnixNano()) / 1e9
 }
 
 func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWire.Response {
+	//println("CLIENT: Attempting to put")
 	// TODO implement options
-	st := time.Now()
+	st := op.Put.Start
+	end := unix_seconds(time.Now())
 	_, err := cli.Put(context.Background(), string(op.Put.Key), string(op.Put.Value))
-	end := time.Now()
-	duration := end.Sub(st)
 
 	err_msg := "None"
 	if(err != nil){
@@ -36,23 +32,25 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWir
 	}
 
 	resp := &OpWire.Response {
-		ResponseTime:		duration.Seconds(),
+		ResponseTime:		end-st,
 		Err:			err_msg,
-		Start:			unix_seconds(st),
-		End:			unix_seconds(end),
+		Start:			st,
+		End:			end,
 		Clientid:		clientid,
-		Opid:			op.Put.Opid,
+		Optype:			true,
+		Target:			cli.ActiveConnection().Target(),
 	}
 
+	//println("CLIENT: Successfully put")
 	return resp
 }
 
 func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWire.Response {
 	// TODO implement options
-	st := time.Now()
+	//println("CLIENT: Attempting to get")
+	st := op.Get.Start
+	end := unix_seconds(time.Now())
 	_, err := cli.Get(context.Background(), string(op.Get.Key))
-	end := time.Now()
-	duration := end.Sub(st)
 
 	err_msg := "None"
 	if(err != nil){
@@ -60,19 +58,21 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWir
 	}
 
 	resp := &OpWire.Response {
-		ResponseTime:		duration.Seconds(),
+		ResponseTime:		end-st,
 		Err:			err_msg,
-		Start:			unix_seconds(st),
-		End:			unix_seconds(end),
+		Start:			st,
+		End:			end,
 		Clientid:		clientid,
-		Opid:			op.Get.Opid,
+		Optype:			false,
+		Target:			cli.ActiveConnection().Target(),
 	}
+
+	//println("CLIENT:Successfully got")
 
 	return resp
 }
 
 func ReceiveOp(socket *zmq.Socket) *OpWire.Operation{
-	//print("CLIENT: Awaiting Operation")
 	payload, _ := socket.Recv(0)
 	op := &OpWire.Operation{}
 	if err := proto.Unmarshal([]byte(payload), op); err != nil {
@@ -81,53 +81,50 @@ func ReceiveOp(socket *zmq.Socket) *OpWire.Operation{
 	return op
 }
 
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
 func marshall_response(resp *OpWire.Response) string {
 	payload, err := proto.Marshal(resp)
-	if err != nil {
-		log.Fatalln("Failed to encode response: " + err.Error())
-	}
+	check(err)
 	return string(payload)
 }
 
 func main() {
-	if(len(os.Args) < 4){
-		println("Incorrect number of arguments") }
+	println("Starting client")
 
-	port := os.Args[1]
-	endpoints := strings.Split(os.Args[2], ",")
-	i, err := strconv.ParseUint(os.Args[3], 10, 32)
-	if(err != nil){
-		println(err)
-		return
-	}
+	endpoints := strings.Split(os.Args[1], ",")
+	i, err := strconv.ParseUint(os.Args[2], 10, 32)
+	check(err)
+	address := os.Args[3]
+
 	clientid := uint32(i)
+
+	socket, _ := zmq.NewSocket(zmq.REQ)
+	defer socket.Close()
+	socket.Connect(address)
 
 	for index, endpoint := range endpoints {
 		endpoints[index] = endpoint + ":2379"
 	}
+	dialTimeout := 2 * time.Second
 
 	cli, err := clientv3.New(clientv3.Config{
 		DialTimeout:		dialTimeout,
+		DialKeepAliveTime:	dialTimeout/2,
+		DialKeepAliveTimeout:	dialTimeout*2,
+		AutoSyncInterval:	dialTimeout/2,
 		Endpoints:		endpoints,
 	})
 	defer cli.Close()
-
-	if(err != nil){
-		println(err)
-		return
-	}
-
-	socket, _ := zmq.NewSocket(zmq.REQ)
-	defer socket.Close()
-
-	//println("Sending ready signal")
-	//print(port)
-
-	binding := "tcp://127.0.0.1:" + port
-	socket.Connect(binding)
-	socket.Send("",0)
+	check(err)
 
 	//send ready signal
+	socket.Send("",0)
+
 	for {
 		Operation := ReceiveOp(socket)
 
@@ -152,7 +149,7 @@ func main() {
 				Start:			0,
 				End:			0,
 				Clientid:		clientid,
-				Opid:			0,
+				Optype:			true,
 			}
 			payload := marshall_response(resp)
 			socket.Send(payload, 0)

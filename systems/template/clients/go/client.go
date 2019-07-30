@@ -3,86 +3,83 @@ package main
 import (
 	"log"
 	"time"
-	"context"
 	"strings"
 	"os"
 	"strconv"
 
 	zmq "github.com/pebbe/zmq4"
-	"go.etcd.io/etcd/clientv3"
 	"github.com/golang/protobuf/proto"
 	"./OpWire"
 )
 
-var (
-	dialTimeout = 2 * time.Second
-	requestTimeout = 10 * time.Second
-)
+
+func unix_seconds(t time.Time) float64 {
+	return float64(t.UnixNano()) / 1e9
+}
 
 func ReceiveOp(socket *zmq.Socket) *OpWire.Operation{
 	payload, _ := socket.Recv(0)
 	op := &OpWire.Operation{}
 	if err := proto.Unmarshal([]byte(payload), op); err != nil {
 		log.Fatalln("Failed to parse incomming operation")
- 	}
- 	return op
+	}
+	return op
 }
 
 func marshall_response(resp *OpWire.Response) string {
 	payload, err := proto.Marshal(resp)
 	if err != nil {
-		log.Fatalln("Failed to encode response: " + err.Error()) 
+		log.Fatalln("Failed to encode response: " + err.Error())
 	}
 	return string(payload)
 }
 
-func main() {
-	if(len(os.Args) < 4){
-		println("Incorrect number of arguments") }
-
-	port := os.Args[1]
-	endpoints := strings.Split(os.Args[2], ",")
-	i, err := strconv.ParseUint(os.Args[3], 10, 32)
-	if(err != nil){
-		println(err)
-		return
+func check(e error) {
+	if e != nil {
+		panic(e)
 	}
-	id := uint32(i)
+}
+
+func main() {
+
+	endpoints := strings.Split(os.Args[1], ",")
+	i, err := strconv.ParseUint(os.Args[2], 10, 32)
+	check(err)
+	address := os.Args[3]
+
+	clientid := uint32(i)
 
 	for index, endpoint := range endpoints {
 		endpoints[index] = endpoint + ":2379"
 	}
 
-	cli, err := clientv3.New(clientv3.Config{
-		DialTimeout: 	dialTimeout,
-		Endpoints: 		endpoints,
-	})
- 	defer cli.Close()
-
-	if(err != nil){
-		println(err)
-		return
-	}
-
 	socket, _ := zmq.NewSocket(zmq.REQ)
-	defer socket.Close() 
+	defer socket.Close()
+	socket.Connect(address)
 
-
-	binding := "tcp://127.0.0.1:" + port 
-	socket.Connect(binding)
-	socket.Send("",0)
+	socket.Send("", 0)
 
 	for {
 		Operation := ReceiveOp(socket)
 
-		switch op := Operation.OpType.(type) {
+		switch Operation.OpType.(type) {
 		case *OpWire.Operation_Put:
-			resp := put()
-			payload := marshall_response(resp) 
+			resp := &OpWire.Response {
+				ResponseTime:	1,
+				Start:		0,
+				End:		0,
+				Clientid:	clientid,
+			}
+			payload := marshall_response(resp)
 			socket.Send(payload, 0)
 
 		case *OpWire.Operation_Get:
-			resp := get()
+			resp := &OpWire.Response {
+				ResponseTime:   2,
+				Start:		0,
+				End:		0,
+				Clientid:	clientid,
+			}
 			payload := marshall_response(resp)
 			socket.Send(payload, 0)
 
@@ -92,10 +89,10 @@ func main() {
 		default:
 			resp := &OpWire.Response {
 				ResponseTime:  -1,
-				Err: 			"Error: Operation was not found / supported", 
-				Start: 			0,
+				Err:			"Error: Operation was not found / supported",
+				Start:			0,
 				End:			0,
-				Id:				id,
+				Clientid:		clientid,
 			}
 			payload := marshall_response(resp)
 			socket.Send(payload, 0)

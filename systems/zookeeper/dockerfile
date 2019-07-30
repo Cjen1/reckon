@@ -2,7 +2,7 @@ FROM bash
 FROM openjdk:7
 
 ADD zkconfs /zkconf
-ARG ZOO_MY_ID
+
 RUN cd / ; \
     wget http://apache.mirror.anlx.net/zookeeper/stable/zookeeper-3.4.12.tar.gz; \ 
     tar xvf zookeeper-3.4.12.tar.gz; \

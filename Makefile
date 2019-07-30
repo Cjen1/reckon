@@ -1,3 +1,30 @@
+build: distributions/message_pb2.py etcd_go utils/message_pb2.py
+
+distributions/message_pb2.py: utils/message.proto
+	protoc -I=utils --python_out=distributions/ utils/message.proto
+
+utils/message_pb2.py: utils/message.proto
+	protoc -I=utils --python_out=utils/ utils/message.proto
+
+etcd_go: etcd_docker systems/etcd/clients/go/client.go
+	cd systems/etcd/clients/go && \
+		make build 
+
+etcd_docker:
+	cd systems/etcd && \
+		make docker
+
+template_go: template_docker systems/template/clients/go/client.go
+	cd systems/template/clients/go && \
+		make build 
+
+template_docker:
+	cd systems/template && \
+		make docker
+
+	
+
+
 all: run_tests.py clients/*
 #--------- setup proto files, gen config ----------
 
@@ -36,13 +63,6 @@ build/zookeeper_java-basic:
 build/zookeeper_java-basic/external_classes: build/zookeeper_java-basic
 	cd build/zookeeper_java-basic; jar xf ../../jars/zookeeper-3.4.12.jar; jar xf ../../jars/com.google.protobuf.jar; jar xf ../../jars/com.neilalexander.jnacl.crypto.jar; \
 	jar xf ../../jars/org.zeromq.jar; jar xf ../../jars/slf4j.jar
-
-#------------ Generator prerequisites -------------
-
-utils/link.py: utils/message_pb2.py
-
-utils/message_pb2.py: build/utils/message_pb2.py 
-	cp build/utils/message_pb2.py utils/message_pb2.py
 
 #-------------- Tester Prerequisites --------------
 run_tests.py: utils/message_pb2.py

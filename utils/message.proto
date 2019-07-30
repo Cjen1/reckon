@@ -13,12 +13,12 @@ message Operation {
 	message op_put {
 		uint64 key = 1;
 		bytes value = 2;
-		uint64 opid = 3;
+		double start = 4;
 	}
 
 	message op_get {
 		uint64 key = 1;
-		uint64 opid = 3;
+		double start=4;
 	}
 
 	message op_quit {
@@ -32,5 +32,6 @@ message Response {
 	double start = 3;
 	double end = 4;
 	uint32 clientid = 5;
-	uint64 opid = 6;
+	bool optype = 6; //true = Write, false = Read
+	string target = 7; //Server a request is sent against
 }

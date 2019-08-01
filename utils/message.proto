@@ -29,9 +29,10 @@ message Operation {
 message Response {
 	double response_time = 1;
 	string err = 2;
-	double start = 3;
-	double end = 4;
-	uint32 clientid = 5;
-	bool optype = 6; //true = Write, false = Read
-	string target = 7; //Server a request is sent against
+	double client_start = 3;
+	double queue_start = 4;
+	double end = 5;
+	uint32 clientid = 6;
+	string optype = 7; 
+	string target = 8; //Server a request is sent against
 }

@@ -4,9 +4,9 @@ FROM openjdk:7
 ADD zkconfs /zkconf
 
 RUN cd / ; \
-    wget http://apache.mirror.anlx.net/zookeeper/stable/zookeeper-3.4.12.tar.gz; \ 
-    tar xvf zookeeper-3.4.12.tar.gz; \
-    mv zookeeper-3.4.12  /usr/local/zookeeper; \
+    wget http://apache.mirror.anlx.net/zookeeper/stable/apache-zookeeper-3.5.5.tar.gz; \ 
+    tar xvf apache-zookeeper-3.5.5.tar.gz; \
+    mv apache-zookeeper-3.5.5  /usr/local/zookeeper; \
     mkdir /usr/local/zookeeper/data; \
     mkdir /usr/local/zookeeper/logs; \
     cp /zkconf/zoo.cfg /usr/local/zookeeper/conf/zoo.cfg; \

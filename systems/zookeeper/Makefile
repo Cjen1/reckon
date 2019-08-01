@@ -9,7 +9,7 @@ clientjar: client
 		cd ..;\
 		rm -r tmp
 
-client: src/clients/java/Client.java protobuf
+client: src/clients/java/Client.java
 	javac -Xlint:deprecation -cp "src:jars/com.google.protobuf.jar:jars/com.neilalexander.jnacl.crypto.jar:jars/org.zeromq.jar:jars/slf4j.jar:jars/zookeeper-3.4.12.jar" -d build src/clients/java/Client.java
 
 protobuf: ../../utils/message.proto

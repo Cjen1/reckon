@@ -122,7 +122,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 		boolean quits = false;
 		OpWire.Message.Response resp = null;
 		byte[] payload;
-		socket.connect(address);
+		socket.connect("ipc://" + address);
 		socket.send("", 0);
 		while(!quits){
 			OpWire.Message.Operation opr = mainClient.receiveOp(socket);

@@ -34,7 +34,6 @@ class Barrier:
 barrier = {}
 req_queue = {}
 res_queue = {}
-config = {}
 stop_flag = None
 
 def clean_address(address):
@@ -46,35 +45,31 @@ def clean_address(address):
 
 def run_prereqs(socket, operations):
     for operation in operations:
+        print("CR: Waiting to receive")
         addr, _, _ = socket.recv_multipart()
+        print("CR: Recieved ready, sending op")
         socket.send_multipart([addr, b'', operation])
         
 def run_client(clients, config):
     #--- Setup ----------
-    client_address = "ipc://"+config['runner_address']
-    clean_address(client_address)
+    runner_address = "ipc://"+config['runner_address']
+    clean_address(runner_address)
 
     socket = zmq.Context().socket(zmq.ROUTER)
-    socket.bind(client_address)
-    socket.setsockopt(zmq.LINGER, 0)
+    socket.bind(runner_address)
+    #socket.setsockopt(zmq.LINGER, 0)
     #Prevent infinite waiting timeout is in milliseconds
-    socket.RCVTIMEO = 1000 * config['duration'] 
+    #socket.RCVTIMEO = 1000 * config['duration'] 
     
-    client_path = "/clients/"+config['client']+"/client"
-    cmd = []
-    if client_path.endswith(".jar"):
-        cmd = ['java', '-jar']
-    elif client_path.endswith(".py"):
-        cmd = ['python']
-    arg_ips = "".join(ip + "," for ip in config['cluster_ips'])[:-1]
-
     microclients = [
             config['start_client'](mnclient, client_id, config)
             for client_id, mnclient in enumerate(clients)
             ]
 
+    print("CR: Running prereqs")
     run_prereqs(socket, config['op_prereq'])
 
+    print("CR: Receiving readys")
     # Recieve ready signals from microclients
     readys = [addr for addr, _, _ in [socket.recv_multipart() for client in clients]]
 
@@ -117,7 +112,7 @@ def run_client(clients, config):
 def producer(op_gen, rate, duration, stop_flag):
     print("Producer: Waiting")
     barrier.wait()
-    print("Starting producing ops")
+    print("Producer: Started")
     opid = 0
     start = time.time()
     end = start+duration
@@ -143,10 +138,12 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
         'duration': duration,
         'op_prereq': op_prereq,
         'rate': rate,
-        'runner_address':os.path.dirname(__file__)+'/utils/sockets/benchmark.sock',
+        'runner_address':'/root/mounted/Resolving-Consensus/utils/sockets/benchmark.sock',
         'client_address':'/mnt/sockets/benchmark.sock',
         'start_client': (importlib.import_module('systems.%s.scripts.client_start' % service_name).start)
         }
+
+    print("RUNNER ADDRESS: "+ config['runner_address'])
 
     #Set up multiprocessing primitives
     m = Manager()

@@ -96,7 +96,7 @@ func marshall_response(resp *OpWire.Response) string {
 }
 
 func main() {
-	println("Starting client")
+	println("Client: Starting client")
 
 	endpoints := strings.Split(os.Args[1], ",")
 	i, err := strconv.ParseUint(os.Args[2], 10, 32)
@@ -107,6 +107,7 @@ func main() {
 
 	socket, _ := zmq.NewSocket(zmq.REQ)
 	defer socket.Close()
+	print("Client: connecting to: " + address)
 	socket.Connect(address)
 
 	for index, endpoint := range endpoints {
@@ -124,10 +125,12 @@ func main() {
 	defer cli.Close()
 	check(err)
 
+	println("Client: Sending ready signal")
 	//send ready signal
 	socket.Send("",0)
 
 	for {
+		println("Client: Waiting to recieve op")
 		Operation := ReceiveOp(socket)
 
 		switch op := Operation.OpType.(type) {

@@ -11,6 +11,8 @@ import zmq
 from Queue import Empty as QEmpty, Full as QFull
 import distributions.message_pb2 as msg_pb
 
+import importlib
+
 class Barrier:
     def __init__(self, m, n):
         self.n = n
@@ -47,10 +49,9 @@ def run_prereqs(socket, operations):
         addr, _, _ = socket.recv_multipart()
         socket.send_multipart([addr, b'', operation])
         
-
 def run_client(clients, config):
     #--- Setup ----------
-    client_address = "ipc:///tmp/benchmark.sock"
+    client_address = "ipc://"+config['runner_address']
     clean_address(client_address)
 
     socket = zmq.Context().socket(zmq.ROUTER)
@@ -59,7 +60,7 @@ def run_client(clients, config):
     #Prevent infinite waiting timeout is in milliseconds
     socket.RCVTIMEO = 1000 * config['duration'] 
     
-    client_path = "systems/"+config['service']+"/clients/"+config['client']+"/client"
+    client_path = "/clients/"+config['client']+"/client"
     cmd = []
     if client_path.endswith(".jar"):
         cmd = ['java', '-jar']
@@ -68,11 +69,8 @@ def run_client(clients, config):
     arg_ips = "".join(ip + "," for ip in config['cluster_ips'])[:-1]
 
     microclients = [
-            client.popen(
-                cmd + [client_path, arg_ips, str(client_id), client_address],
-                stdout = sys.stdout, stderr=sys.stderr, close_fds = True
-                )
-            for client_id, client in enumerate(clients)
+            config['start_client'](mnclient, client_id, config)
+            for client_id, mnclient in enumerate(clients)
             ]
 
     run_prereqs(socket, config['op_prereq'])
@@ -134,7 +132,7 @@ def producer(op_gen, rate, duration, stop_flag):
     #print("stopped: {0}s later".format(time.time() - start))
     
 
-def run_test(clients, ops, rate, duration, service_name, client_name, ips):
+def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ips):
     rate = float(rate)
     duration = int(duration)
     op_prereq, op_gen = ops
@@ -144,7 +142,10 @@ def run_test(clients, ops, rate, duration, service_name, client_name, ips):
         'cluster_ips': ips,
         'duration': duration,
         'op_prereq': op_prereq,
-        'rate': rate
+        'rate': rate,
+        'runner_address':os.path.dirname(__file__)+'/utils/sockets/benchmark.sock',
+        'client_address':'/mnt/sockets/benchmark.sock',
+        'start_client': (importlib.import_module('systems.%s.scripts.client_start' % service_name).start)
         }
 
     #Set up multiprocessing primitives
@@ -161,11 +162,6 @@ def run_test(clients, ops, rate, duration, service_name, client_name, ips):
     stop_flag = m.Value(c_bool, False)
 
     op_producer = Thread(target=producer, args=[op_gen, rate, duration, stop_flag])
-
-    #pool = Pool(processes=len(clients))
-    #pool.map(run_client, zip(clients, range(len(clients))))
-
-    #pool.close()
 
     mc = Thread(target=run_client, args=[clients, config]) 
     mc.start()
@@ -185,7 +181,8 @@ def run_test(clients, ops, rate, duration, service_name, client_name, ips):
     resps = [
                 [
                     resp.response_time,
-                    resp.start,
+                    resp.client_start,
+                    resp.queue_start,
                     resp.end,
                     resp.clientid,
                     resp.err,
@@ -196,22 +193,7 @@ def run_test(clients, ops, rate, duration, service_name, client_name, ips):
             ]
     #print("RESPS: ", resps)
 
-    with open("../results/{0}_{1}.res".format(service_name, client_name), "w") as fres:
+    print("Writing results to file")
+
+    with open(f_dest, "w") as fres:
         json.dump(resps, fres)
-
-
-#if __name__ == '__main__':
-#    from mininet.net import Mininet
-#    from mininet.topolib import TreeTopo
-#    tree = TreeTopo(depth=2,fanout=2)
-#    net = Mininet(topo=tree)
-#    net.start()
-#    clients = [net.hosts[0]]
-#
-#    import distributions.uniform as uni
-#    ops = uni.generate_ops()
-#
-#    t=Thread(target=run_test, args=[clients, ops, 1, 10, "template", "go", ["1.0.0.1, 10.0.0.2"]])
-#
-#    t.start()
-#    t.join()

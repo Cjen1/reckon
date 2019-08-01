@@ -66,10 +66,12 @@ public class Client implements org.apache.zookeeper.Watcher {
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)
-							     .setStart(start / 1E3)
+							     .setClientStart(start / 1E3)
+							     .setQueueStart(opr.getPut().getStart())
 							     .setEnd(stop / 1E3)
 							     .setClientid(clientId)
-							     .setOpid(opr.getPut().getOpid())
+							     .setOptype("Write")
+							     .setTarget("N/A")
 							     .build();
 		return resp;
 	}
@@ -91,10 +93,12 @@ public class Client implements org.apache.zookeeper.Watcher {
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
 							     .setErr(err)
-							     .setStart(start / 1E3)
+							     .setClientStart(start / 1E3)
+							     .setQueueStart(opr.getGet().getStart())
 							     .setEnd(stop / 1E3)
 							     .setClientid(clientId)
-							     .setOpid(opr.getGet().getOpid())
+							     .setOptype("Read")
+							     .setTarget("N/A")
 							     .build();
 		return resp;
 	}
@@ -102,9 +106,9 @@ public class Client implements org.apache.zookeeper.Watcher {
 
 	public static void main(String[] args) throws Exception {
 		Client mainClient = new Client();
-		String port = args[0];
-		String[] endpoints = args[1].split(",");
-		int clientId = Integer.parseInt(args[2]);
+		String[] endpoints = args[0].split(",");
+		int clientId = Integer.parseInt(args[1]);
+		String address = args[2];
 
 		ZMQ.Context context = ZMQ.context(1);			// Creates a context with 1 IOThread.
 		ZMQ.Socket socket = context.socket(SocketType.REQ);
@@ -118,8 +122,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 		boolean quits = false;
 		OpWire.Message.Response resp = null;
 		byte[] payload;
-		binding = "tcp://127.0.0.1:" + port;
-		socket.connect(binding);
+		socket.connect(address);
 		socket.send("", 0);
 		while(!quits){
 			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
@@ -138,10 +141,12 @@ public class Client implements org.apache.zookeeper.Watcher {
 					resp = OpWire.Message.Response.newBuilder()
 					      .setResponseTime(-100000.0)
 					      .setErr("Operation was not found / supported")
-					      .setStart(0.0)
+					      .setClientStart(0.0)
+					      .setQueueStart(0.0)
 					      .setEnd(0.0)
 					      .setClientid(clientId)
-					      .setOpid(0)
+					      .setOptype("N/A")
+					      .setTarget("N/A")
 					      .build();
 					quits = true;
 					break;

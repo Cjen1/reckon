@@ -1,0 +1,24 @@
+from ubuntu:trusty
+from openjdk:12
+
+ADD . /clients
+
+RUN apt update && apt install -y \
+	python \
+	autoconf \
+	automake \
+	libtool \
+	curl \
+	make \
+	g++ \
+	unzip
+
+RUN wget https://github.com/zeromq/libzmq/releases/download/v4.2.3/zeromq-4.2.3.tar.gz -O /root/zeromq-4.2.2.tar.gz && \
+        cd /root &&\
+	tar -xvzf zeromq-4.2.2.tar.gz; \
+	sudo apt-get update && sudo apt-get install -y libtool pkg-config build-essential autoconf automake uuid-dev; \
+	cd zeromq-4.2.3; \
+	./configure; \
+	sudo make install; \
+	sudo ldconfig
+

@@ -187,9 +187,9 @@ public final class Message {
       com.google.protobuf.ByteString getValue();
 
       /**
-       * <code>uint64 opid = 3;</code>
+       * <code>double start = 4;</code>
        */
-      long getOpid();
+      double getStart();
     }
     /**
      * Protobuf type {@code OpWire.Operation.op_put}
@@ -206,7 +206,7 @@ public final class Message {
       private op_put() {
         key_ = 0L;
         value_ = com.google.protobuf.ByteString.EMPTY;
-        opid_ = 0L;
+        start_ = 0D;
       }
 
       @java.lang.Override
@@ -243,9 +243,9 @@ public final class Message {
                 value_ = input.readBytes();
                 break;
               }
-              case 24: {
+              case 33: {
 
-                opid_ = input.readUInt64();
+                start_ = input.readDouble();
                 break;
               }
               default: {
@@ -298,13 +298,13 @@ public final class Message {
         return value_;
       }
 
-      public static final int OPID_FIELD_NUMBER = 3;
-      private long opid_;
+      public static final int START_FIELD_NUMBER = 4;
+      private double start_;
       /**
-       * <code>uint64 opid = 3;</code>
+       * <code>double start = 4;</code>
        */
-      public long getOpid() {
-        return opid_;
+      public double getStart() {
+        return start_;
       }
 
       private byte memoizedIsInitialized = -1;
@@ -327,8 +327,8 @@ public final class Message {
         if (!value_.isEmpty()) {
           output.writeBytes(2, value_);
         }
-        if (opid_ != 0L) {
-          output.writeUInt64(3, opid_);
+        if (start_ != 0D) {
+          output.writeDouble(4, start_);
         }
         unknownFields.writeTo(output);
       }
@@ -347,9 +347,9 @@ public final class Message {
           size += com.google.protobuf.CodedOutputStream
             .computeBytesSize(2, value_);
         }
-        if (opid_ != 0L) {
+        if (start_ != 0D) {
           size += com.google.protobuf.CodedOutputStream
-            .computeUInt64Size(3, opid_);
+            .computeDoubleSize(4, start_);
         }
         size += unknownFields.getSerializedSize();
         memoizedSize = size;
@@ -371,8 +371,10 @@ public final class Message {
             == other.getKey());
         result = result && getValue()
             .equals(other.getValue());
-        result = result && (getOpid()
-            == other.getOpid());
+        result = result && (
+            java.lang.Double.doubleToLongBits(getStart())
+            == java.lang.Double.doubleToLongBits(
+                other.getStart()));
         result = result && unknownFields.equals(other.unknownFields);
         return result;
       }
@@ -389,9 +391,9 @@ public final class Message {
             getKey());
         hash = (37 * hash) + VALUE_FIELD_NUMBER;
         hash = (53 * hash) + getValue().hashCode();
-        hash = (37 * hash) + OPID_FIELD_NUMBER;
+        hash = (37 * hash) + START_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getOpid());
+            java.lang.Double.doubleToLongBits(getStart()));
         hash = (29 * hash) + unknownFields.hashCode();
         memoizedHashCode = hash;
         return hash;
@@ -529,7 +531,7 @@ public final class Message {
 
           value_ = com.google.protobuf.ByteString.EMPTY;
 
-          opid_ = 0L;
+          start_ = 0D;
 
           return this;
         }
@@ -559,7 +561,7 @@ public final class Message {
           OpWire.Message.Operation.op_put result = new OpWire.Message.Operation.op_put(this);
           result.key_ = key_;
           result.value_ = value_;
-          result.opid_ = opid_;
+          result.start_ = start_;
           onBuilt();
           return result;
         }
@@ -614,8 +616,8 @@ public final class Message {
           if (other.getValue() != com.google.protobuf.ByteString.EMPTY) {
             setValue(other.getValue());
           }
-          if (other.getOpid() != 0L) {
-            setOpid(other.getOpid());
+          if (other.getStart() != 0D) {
+            setStart(other.getStart());
           }
           this.mergeUnknownFields(other.unknownFields);
           onChanged();
@@ -701,28 +703,28 @@ public final class Message {
           return this;
         }
 
-        private long opid_ ;
+        private double start_ ;
         /**
-         * <code>uint64 opid = 3;</code>
+         * <code>double start = 4;</code>
          */
-        public long getOpid() {
-          return opid_;
+        public double getStart() {
+          return start_;
         }
         /**
-         * <code>uint64 opid = 3;</code>
+         * <code>double start = 4;</code>
          */
-        public Builder setOpid(long value) {
+        public Builder setStart(double value) {
           
-          opid_ = value;
+          start_ = value;
           onChanged();
           return this;
         }
         /**
-         * <code>uint64 opid = 3;</code>
+         * <code>double start = 4;</code>
          */
-        public Builder clearOpid() {
+        public Builder clearStart() {
           
-          opid_ = 0L;
+          start_ = 0D;
           onChanged();
           return this;
         }
@@ -789,9 +791,9 @@ public final class Message {
       long getKey();
 
       /**
-       * <code>uint64 opid = 3;</code>
+       * <code>double start = 4;</code>
        */
-      long getOpid();
+      double getStart();
     }
     /**
      * Protobuf type {@code OpWire.Operation.op_get}
@@ -807,7 +809,7 @@ public final class Message {
       }
       private op_get() {
         key_ = 0L;
-        opid_ = 0L;
+        start_ = 0D;
       }
 
       @java.lang.Override
@@ -839,9 +841,9 @@ public final class Message {
                 key_ = input.readUInt64();
                 break;
               }
-              case 24: {
+              case 33: {
 
-                opid_ = input.readUInt64();
+                start_ = input.readDouble();
                 break;
               }
               default: {
@@ -885,13 +887,13 @@ public final class Message {
         return key_;
       }
 
-      public static final int OPID_FIELD_NUMBER = 3;
-      private long opid_;
+      public static final int START_FIELD_NUMBER = 4;
+      private double start_;
       /**
-       * <code>uint64 opid = 3;</code>
+       * <code>double start = 4;</code>
        */
-      public long getOpid() {
-        return opid_;
+      public double getStart() {
+        return start_;
       }
 
       private byte memoizedIsInitialized = -1;
@@ -911,8 +913,8 @@ public final class Message {
         if (key_ != 0L) {
           output.writeUInt64(1, key_);
         }
-        if (opid_ != 0L) {
-          output.writeUInt64(3, opid_);
+        if (start_ != 0D) {
+          output.writeDouble(4, start_);
         }
         unknownFields.writeTo(output);
       }
@@ -927,9 +929,9 @@ public final class Message {
           size += com.google.protobuf.CodedOutputStream
             .computeUInt64Size(1, key_);
         }
-        if (opid_ != 0L) {
+        if (start_ != 0D) {
           size += com.google.protobuf.CodedOutputStream
-            .computeUInt64Size(3, opid_);
+            .computeDoubleSize(4, start_);
         }
         size += unknownFields.getSerializedSize();
         memoizedSize = size;
@@ -949,8 +951,10 @@ public final class Message {
         boolean result = true;
         result = result && (getKey()
             == other.getKey());
-        result = result && (getOpid()
-            == other.getOpid());
+        result = result && (
+            java.lang.Double.doubleToLongBits(getStart())
+            == java.lang.Double.doubleToLongBits(
+                other.getStart()));
         result = result && unknownFields.equals(other.unknownFields);
         return result;
       }
@@ -965,9 +969,9 @@ public final class Message {
         hash = (37 * hash) + KEY_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
             getKey());
-        hash = (37 * hash) + OPID_FIELD_NUMBER;
+        hash = (37 * hash) + START_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getOpid());
+            java.lang.Double.doubleToLongBits(getStart()));
         hash = (29 * hash) + unknownFields.hashCode();
         memoizedHashCode = hash;
         return hash;
@@ -1103,7 +1107,7 @@ public final class Message {
           super.clear();
           key_ = 0L;
 
-          opid_ = 0L;
+          start_ = 0D;
 
           return this;
         }
@@ -1132,7 +1136,7 @@ public final class Message {
         public OpWire.Message.Operation.op_get buildPartial() {
           OpWire.Message.Operation.op_get result = new OpWire.Message.Operation.op_get(this);
           result.key_ = key_;
-          result.opid_ = opid_;
+          result.start_ = start_;
           onBuilt();
           return result;
         }
@@ -1184,8 +1188,8 @@ public final class Message {
           if (other.getKey() != 0L) {
             setKey(other.getKey());
           }
-          if (other.getOpid() != 0L) {
-            setOpid(other.getOpid());
+          if (other.getStart() != 0D) {
+            setStart(other.getStart());
           }
           this.mergeUnknownFields(other.unknownFields);
           onChanged();
@@ -1242,28 +1246,28 @@ public final class Message {
           return this;
         }
 
-        private long opid_ ;
+        private double start_ ;
         /**
-         * <code>uint64 opid = 3;</code>
+         * <code>double start = 4;</code>
          */
-        public long getOpid() {
-          return opid_;
+        public double getStart() {
+          return start_;
         }
         /**
-         * <code>uint64 opid = 3;</code>
+         * <code>double start = 4;</code>
          */
-        public Builder setOpid(long value) {
+        public Builder setStart(double value) {
           
-          opid_ = value;
+          start_ = value;
           onChanged();
           return this;
         }
         /**
-         * <code>uint64 opid = 3;</code>
+         * <code>double start = 4;</code>
          */
-        public Builder clearOpid() {
+        public Builder clearStart() {
           
-          opid_ = 0L;
+          start_ = 0D;
           onChanged();
           return this;
         }
@@ -2866,24 +2870,52 @@ public final class Message {
         getErrBytes();
 
     /**
-     * <code>double start = 3;</code>
+     * <code>double client_start = 3;</code>
      */
-    double getStart();
+    double getClientStart();
 
     /**
-     * <code>double end = 4;</code>
+     * <code>double queue_start = 4;</code>
+     */
+    double getQueueStart();
+
+    /**
+     * <code>double end = 5;</code>
      */
     double getEnd();
 
     /**
-     * <code>uint32 clientid = 5;</code>
+     * <code>uint32 clientid = 6;</code>
      */
     int getClientid();
 
     /**
-     * <code>uint64 opid = 6;</code>
+     * <code>string optype = 7;</code>
      */
-    long getOpid();
+    java.lang.String getOptype();
+    /**
+     * <code>string optype = 7;</code>
+     */
+    com.google.protobuf.ByteString
+        getOptypeBytes();
+
+    /**
+     * <pre>
+     *Server a request is sent against
+     * </pre>
+     *
+     * <code>string target = 8;</code>
+     */
+    java.lang.String getTarget();
+    /**
+     * <pre>
+     *Server a request is sent against
+     * </pre>
+     *
+     * <code>string target = 8;</code>
+     */
+    com.google.protobuf.ByteString
+        getTargetBytes();
   }
   /**
    * Protobuf type {@code OpWire.Response}
@@ -2900,10 +2932,12 @@ public final class Message {
     private Response() {
       responseTime_ = 0D;
       err_ = "";
-      start_ = 0D;
+      clientStart_ = 0D;
+      queueStart_ = 0D;
       end_ = 0D;
       clientid_ = 0;
-      opid_ = 0L;
+      optype_ = "";
+      target_ = "";
     }
 
     @java.lang.Override
@@ -2943,22 +2977,34 @@ public final class Message {
             }
             case 25: {
 
-              start_ = input.readDouble();
+              clientStart_ = input.readDouble();
               break;
             }
             case 33: {
 
-              end_ = input.readDouble();
+              queueStart_ = input.readDouble();
               break;
             }
-            case 40: {
+            case 41: {
 
-              clientid_ = input.readUInt32();
+              end_ = input.readDouble();
               break;
             }
             case 48: {
 
-              opid_ = input.readUInt64();
+              clientid_ = input.readUInt32();
+              break;
+            }
+            case 58: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              optype_ = s;
+              break;
+            }
+            case 66: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              target_ = s;
               break;
             }
             default: {
@@ -3036,40 +3082,116 @@ public final class Message {
       }
     }
 
-    public static final int START_FIELD_NUMBER = 3;
-    private double start_;
+    public static final int CLIENT_START_FIELD_NUMBER = 3;
+    private double clientStart_;
     /**
-     * <code>double start = 3;</code>
+     * <code>double client_start = 3;</code>
      */
-    public double getStart() {
-      return start_;
+    public double getClientStart() {
+      return clientStart_;
     }
 
-    public static final int END_FIELD_NUMBER = 4;
+    public static final int QUEUE_START_FIELD_NUMBER = 4;
+    private double queueStart_;
+    /**
+     * <code>double queue_start = 4;</code>
+     */
+    public double getQueueStart() {
+      return queueStart_;
+    }
+
+    public static final int END_FIELD_NUMBER = 5;
     private double end_;
     /**
-     * <code>double end = 4;</code>
+     * <code>double end = 5;</code>
      */
     public double getEnd() {
       return end_;
     }
 
-    public static final int CLIENTID_FIELD_NUMBER = 5;
+    public static final int CLIENTID_FIELD_NUMBER = 6;
     private int clientid_;
     /**
-     * <code>uint32 clientid = 5;</code>
+     * <code>uint32 clientid = 6;</code>
      */
     public int getClientid() {
       return clientid_;
     }
 
-    public static final int OPID_FIELD_NUMBER = 6;
-    private long opid_;
+    public static final int OPTYPE_FIELD_NUMBER = 7;
+    private volatile java.lang.Object optype_;
     /**
-     * <code>uint64 opid = 6;</code>
+     * <code>string optype = 7;</code>
      */
-    public long getOpid() {
-      return opid_;
+    public java.lang.String getOptype() {
+      java.lang.Object ref = optype_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        optype_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string optype = 7;</code>
+     */
+    public com.google.protobuf.ByteString
+        getOptypeBytes() {
+      java.lang.Object ref = optype_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        optype_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int TARGET_FIELD_NUMBER = 8;
+    private volatile java.lang.Object target_;
+    /**
+     * <pre>
+     *Server a request is sent against
+     * </pre>
+     *
+     * <code>string target = 8;</code>
+     */
+    public java.lang.String getTarget() {
+      java.lang.Object ref = target_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        target_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *Server a request is sent against
+     * </pre>
+     *
+     * <code>string target = 8;</code>
+     */
+    public com.google.protobuf.ByteString
+        getTargetBytes() {
+      java.lang.Object ref = target_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        target_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     private byte memoizedIsInitialized = -1;
@@ -3092,17 +3214,23 @@ public final class Message {
       if (!getErrBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, err_);
       }
-      if (start_ != 0D) {
-        output.writeDouble(3, start_);
+      if (clientStart_ != 0D) {
+        output.writeDouble(3, clientStart_);
+      }
+      if (queueStart_ != 0D) {
+        output.writeDouble(4, queueStart_);
       }
       if (end_ != 0D) {
-        output.writeDouble(4, end_);
+        output.writeDouble(5, end_);
       }
       if (clientid_ != 0) {
-        output.writeUInt32(5, clientid_);
+        output.writeUInt32(6, clientid_);
       }
-      if (opid_ != 0L) {
-        output.writeUInt64(6, opid_);
+      if (!getOptypeBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 7, optype_);
+      }
+      if (!getTargetBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 8, target_);
       }
       unknownFields.writeTo(output);
     }
@@ -3120,21 +3248,27 @@ public final class Message {
       if (!getErrBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, err_);
       }
-      if (start_ != 0D) {
+      if (clientStart_ != 0D) {
         size += com.google.protobuf.CodedOutputStream
-          .computeDoubleSize(3, start_);
+          .computeDoubleSize(3, clientStart_);
+      }
+      if (queueStart_ != 0D) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(4, queueStart_);
       }
       if (end_ != 0D) {
         size += com.google.protobuf.CodedOutputStream
-          .computeDoubleSize(4, end_);
+          .computeDoubleSize(5, end_);
       }
       if (clientid_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(5, clientid_);
+          .computeUInt32Size(6, clientid_);
       }
-      if (opid_ != 0L) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(6, opid_);
+      if (!getOptypeBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(7, optype_);
+      }
+      if (!getTargetBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, target_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -3159,17 +3293,23 @@ public final class Message {
       result = result && getErr()
           .equals(other.getErr());
       result = result && (
-          java.lang.Double.doubleToLongBits(getStart())
+          java.lang.Double.doubleToLongBits(getClientStart())
           == java.lang.Double.doubleToLongBits(
-              other.getStart()));
+              other.getClientStart()));
+      result = result && (
+          java.lang.Double.doubleToLongBits(getQueueStart())
+          == java.lang.Double.doubleToLongBits(
+              other.getQueueStart()));
       result = result && (
           java.lang.Double.doubleToLongBits(getEnd())
           == java.lang.Double.doubleToLongBits(
               other.getEnd()));
       result = result && (getClientid()
           == other.getClientid());
-      result = result && (getOpid()
-          == other.getOpid());
+      result = result && getOptype()
+          .equals(other.getOptype());
+      result = result && getTarget()
+          .equals(other.getTarget());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -3186,17 +3326,21 @@ public final class Message {
           java.lang.Double.doubleToLongBits(getResponseTime()));
       hash = (37 * hash) + ERR_FIELD_NUMBER;
       hash = (53 * hash) + getErr().hashCode();
-      hash = (37 * hash) + START_FIELD_NUMBER;
+      hash = (37 * hash) + CLIENT_START_FIELD_NUMBER;
       hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          java.lang.Double.doubleToLongBits(getStart()));
+          java.lang.Double.doubleToLongBits(getClientStart()));
+      hash = (37 * hash) + QUEUE_START_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          java.lang.Double.doubleToLongBits(getQueueStart()));
       hash = (37 * hash) + END_FIELD_NUMBER;
       hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
           java.lang.Double.doubleToLongBits(getEnd()));
       hash = (37 * hash) + CLIENTID_FIELD_NUMBER;
       hash = (53 * hash) + getClientid();
-      hash = (37 * hash) + OPID_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getOpid());
+      hash = (37 * hash) + OPTYPE_FIELD_NUMBER;
+      hash = (53 * hash) + getOptype().hashCode();
+      hash = (37 * hash) + TARGET_FIELD_NUMBER;
+      hash = (53 * hash) + getTarget().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -3334,13 +3478,17 @@ public final class Message {
 
         err_ = "";
 
-        start_ = 0D;
+        clientStart_ = 0D;
+
+        queueStart_ = 0D;
 
         end_ = 0D;
 
         clientid_ = 0;
 
-        opid_ = 0L;
+        optype_ = "";
+
+        target_ = "";
 
         return this;
       }
@@ -3370,10 +3518,12 @@ public final class Message {
         OpWire.Message.Response result = new OpWire.Message.Response(this);
         result.responseTime_ = responseTime_;
         result.err_ = err_;
-        result.start_ = start_;
+        result.clientStart_ = clientStart_;
+        result.queueStart_ = queueStart_;
         result.end_ = end_;
         result.clientid_ = clientid_;
-        result.opid_ = opid_;
+        result.optype_ = optype_;
+        result.target_ = target_;
         onBuilt();
         return result;
       }
@@ -3429,8 +3579,11 @@ public final class Message {
           err_ = other.err_;
           onChanged();
         }
-        if (other.getStart() != 0D) {
-          setStart(other.getStart());
+        if (other.getClientStart() != 0D) {
+          setClientStart(other.getClientStart());
+        }
+        if (other.getQueueStart() != 0D) {
+          setQueueStart(other.getQueueStart());
         }
         if (other.getEnd() != 0D) {
           setEnd(other.getEnd());
@@ -3438,8 +3591,13 @@ public final class Message {
         if (other.getClientid() != 0) {
           setClientid(other.getClientid());
         }
-        if (other.getOpid() != 0L) {
-          setOpid(other.getOpid());
+        if (!other.getOptype().isEmpty()) {
+          optype_ = other.optype_;
+          onChanged();
+        }
+        if (!other.getTarget().isEmpty()) {
+          target_ = other.target_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -3565,41 +3723,67 @@ public final class Message {
         return this;
       }
 
-      private double start_ ;
+      private double clientStart_ ;
       /**
-       * <code>double start = 3;</code>
+       * <code>double client_start = 3;</code>
        */
-      public double getStart() {
-        return start_;
+      public double getClientStart() {
+        return clientStart_;
       }
       /**
-       * <code>double start = 3;</code>
+       * <code>double client_start = 3;</code>
        */
-      public Builder setStart(double value) {
+      public Builder setClientStart(double value) {
         
-        start_ = value;
+        clientStart_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>double start = 3;</code>
+       * <code>double client_start = 3;</code>
        */
-      public Builder clearStart() {
+      public Builder clearClientStart() {
         
-        start_ = 0D;
+        clientStart_ = 0D;
+        onChanged();
+        return this;
+      }
+
+      private double queueStart_ ;
+      /**
+       * <code>double queue_start = 4;</code>
+       */
+      public double getQueueStart() {
+        return queueStart_;
+      }
+      /**
+       * <code>double queue_start = 4;</code>
+       */
+      public Builder setQueueStart(double value) {
+        
+        queueStart_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>double queue_start = 4;</code>
+       */
+      public Builder clearQueueStart() {
+        
+        queueStart_ = 0D;
         onChanged();
         return this;
       }
 
       private double end_ ;
       /**
-       * <code>double end = 4;</code>
+       * <code>double end = 5;</code>
        */
       public double getEnd() {
         return end_;
       }
       /**
-       * <code>double end = 4;</code>
+       * <code>double end = 5;</code>
        */
       public Builder setEnd(double value) {
         
@@ -3608,7 +3792,7 @@ public final class Message {
         return this;
       }
       /**
-       * <code>double end = 4;</code>
+       * <code>double end = 5;</code>
        */
       public Builder clearEnd() {
         
@@ -3619,13 +3803,13 @@ public final class Message {
 
       private int clientid_ ;
       /**
-       * <code>uint32 clientid = 5;</code>
+       * <code>uint32 clientid = 6;</code>
        */
       public int getClientid() {
         return clientid_;
       }
       /**
-       * <code>uint32 clientid = 5;</code>
+       * <code>uint32 clientid = 6;</code>
        */
       public Builder setClientid(int value) {
         
@@ -3634,7 +3818,7 @@ public final class Message {
         return this;
       }
       /**
-       * <code>uint32 clientid = 5;</code>
+       * <code>uint32 clientid = 6;</code>
        */
       public Builder clearClientid() {
         
@@ -3643,28 +3827,160 @@ public final class Message {
         return this;
       }
 
-      private long opid_ ;
+      private java.lang.Object optype_ = "";
       /**
-       * <code>uint64 opid = 6;</code>
+       * <code>string optype = 7;</code>
        */
-      public long getOpid() {
-        return opid_;
+      public java.lang.String getOptype() {
+        java.lang.Object ref = optype_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          optype_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
-       * <code>uint64 opid = 6;</code>
+       * <code>string optype = 7;</code>
        */
-      public Builder setOpid(long value) {
-        
-        opid_ = value;
+      public com.google.protobuf.ByteString
+          getOptypeBytes() {
+        java.lang.Object ref = optype_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          optype_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string optype = 7;</code>
+       */
+      public Builder setOptype(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        optype_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>uint64 opid = 6;</code>
+       * <code>string optype = 7;</code>
        */
-      public Builder clearOpid() {
+      public Builder clearOptype() {
         
-        opid_ = 0L;
+        optype_ = getDefaultInstance().getOptype();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string optype = 7;</code>
+       */
+      public Builder setOptypeBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        optype_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object target_ = "";
+      /**
+       * <pre>
+       *Server a request is sent against
+       * </pre>
+       *
+       * <code>string target = 8;</code>
+       */
+      public java.lang.String getTarget() {
+        java.lang.Object ref = target_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          target_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       *Server a request is sent against
+       * </pre>
+       *
+       * <code>string target = 8;</code>
+       */
+      public com.google.protobuf.ByteString
+          getTargetBytes() {
+        java.lang.Object ref = target_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          target_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *Server a request is sent against
+       * </pre>
+       *
+       * <code>string target = 8;</code>
+       */
+      public Builder setTarget(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        target_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *Server a request is sent against
+       * </pre>
+       *
+       * <code>string target = 8;</code>
+       */
+      public Builder clearTarget() {
+        
+        target_ = getDefaultInstance().getTarget();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *Server a request is sent against
+       * </pre>
+       *
+       * <code>string target = 8;</code>
+       */
+      public Builder setTargetBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        target_ = value;
         onChanged();
         return this;
       }
@@ -3755,17 +4071,18 @@ public final class Message {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\rmessage.proto\022\006OpWire\"\204\002\n\tOperation\022\'\n" +
+      "\n\rmessage.proto\022\006OpWire\"\206\002\n\tOperation\022\'\n" +
       "\003put\030\001 \001(\0132\030.OpWire.Operation.op_putH\000\022\'" +
       "\n\003get\030\002 \001(\0132\030.OpWire.Operation.op_getH\000\022" +
       ")\n\004quit\030\003 \001(\0132\031.OpWire.Operation.op_quit" +
-      "H\000\0322\n\006op_put\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\014" +
-      "\022\014\n\004opid\030\003 \001(\004\032#\n\006op_get\022\013\n\003key\030\001 \001(\004\022\014\n" +
-      "\004opid\030\003 \001(\004\032\026\n\007op_quit\022\013\n\003msg\030\001 \001(\tB\t\n\007o" +
-      "p_type\"j\n\010Response\022\025\n\rresponse_time\030\001 \001(" +
-      "\001\022\013\n\003err\030\002 \001(\t\022\r\n\005start\030\003 \001(\001\022\013\n\003end\030\004 \001" +
-      "(\001\022\020\n\010clientid\030\005 \001(\r\022\014\n\004opid\030\006 \001(\004B\010\n\006Op" +
-      "Wireb\006proto3"
+      "H\000\0323\n\006op_put\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\014" +
+      "\022\r\n\005start\030\004 \001(\001\032$\n\006op_get\022\013\n\003key\030\001 \001(\004\022\r" +
+      "\n\005start\030\004 \001(\001\032\026\n\007op_quit\022\013\n\003msg\030\001 \001(\tB\t\n" +
+      "\007op_type\"\230\001\n\010Response\022\025\n\rresponse_time\030\001" +
+      " \001(\001\022\013\n\003err\030\002 \001(\t\022\024\n\014client_start\030\003 \001(\001\022" +
+      "\023\n\013queue_start\030\004 \001(\001\022\013\n\003end\030\005 \001(\001\022\020\n\010cli" +
+      "entid\030\006 \001(\r\022\016\n\006optype\030\007 \001(\t\022\016\n\006target\030\010 " +
+      "\001(\tB\010\n\006OpWireb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -3790,13 +4107,13 @@ public final class Message {
     internal_static_OpWire_Operation_op_put_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_OpWire_Operation_op_put_descriptor,
-        new java.lang.String[] { "Key", "Value", "Opid", });
+        new java.lang.String[] { "Key", "Value", "Start", });
     internal_static_OpWire_Operation_op_get_descriptor =
       internal_static_OpWire_Operation_descriptor.getNestedTypes().get(1);
     internal_static_OpWire_Operation_op_get_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_OpWire_Operation_op_get_descriptor,
-        new java.lang.String[] { "Key", "Opid", });
+        new java.lang.String[] { "Key", "Start", });
     internal_static_OpWire_Operation_op_quit_descriptor =
       internal_static_OpWire_Operation_descriptor.getNestedTypes().get(2);
     internal_static_OpWire_Operation_op_quit_fieldAccessorTable = new
@@ -3808,7 +4125,7 @@ public final class Message {
     internal_static_OpWire_Response_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_OpWire_Response_descriptor,
-        new java.lang.String[] { "ResponseTime", "Err", "Start", "End", "Clientid", "Opid", });
+        new java.lang.String[] { "ResponseTime", "Err", "ClientStart", "QueueStart", "End", "Clientid", "Optype", "Target", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

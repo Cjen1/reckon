@@ -66,8 +66,6 @@ func main() {
 		case *OpWire.Operation_Put:
 			resp := &OpWire.Response {
 				ResponseTime:	1,
-				Start:		0,
-				End:		0,
 				Clientid:	clientid,
 			}
 			payload := marshall_response(resp)
@@ -76,8 +74,6 @@ func main() {
 		case *OpWire.Operation_Get:
 			resp := &OpWire.Response {
 				ResponseTime:   2,
-				Start:		0,
-				End:		0,
 				Clientid:	clientid,
 			}
 			payload := marshall_response(resp)
@@ -90,8 +86,6 @@ func main() {
 			resp := &OpWire.Response {
 				ResponseTime:  -1,
 				Err:			"Error: Operation was not found / supported",
-				Start:			0,
-				End:			0,
 				Clientid:		clientid,
 			}
 			payload := marshall_response(resp)

@@ -16,8 +16,8 @@ from client_runner import run_test
 parser = argparse.ArgumentParser(description='Runs a benchmark of a local fault tolerant datastore')
 
 parser.add_argument(
-        'systems',
-        help='A comma separated list of systems to test. eg. etcd_go,etcd_cli,zookeeper_java to test the go and cli clients for etcd as well as the java client for zookeeper.')
+        'system',
+        help='The system under test, with the client to use. eg etcd_go')
 parser.add_argument(
         'topology',
         help='The topology of the network under test')
@@ -39,12 +39,13 @@ parser.add_argument(
         '--fail_args',
         help='Arguments to be passed to the failure script.')
 parser.add_argument(
-        'benchmark_config',
-        help='A comma separated list of benchmark parameters, eg. nclients=20,rate=500,duration=10.')
+        '--benchmark_config',
+        default="",
+        help='A comma separated list of benchmark parameters, eg. rate=500,duration=10.')
 
 args = parser.parse_args()
 
-systems = args.systems.split(',')
+system = args.system
 
 topo = args.topology
 topo_kwargs = dict([arg.split('=') for arg in args.topo_args.split(',')]) if args.topo_args != "" else {}
@@ -65,8 +66,8 @@ fail_setup = fail_module.setup
 ## idea of what values *are* appropriate.
 bench_defs = {
         'nclients': 1, 
-        'rate': 100,		# upper bound on reqs/sec 
-	'duration': 10,	# duration of operation sending in seconds
+        'rate': 1,		# upper bound on reqs/sec 
+	'duration': 160,	# duration of operation sending in seconds
         'dest': '../results/test.res'
         }
 bench_args = {}
@@ -75,37 +76,37 @@ if args.benchmark_config != "":
 for key, val in bench_defs.items():
 	bench_args.setdefault(key, val)#set as arg or as default value 
 
-for system in systems:
-    service_name, client_name = system.split("_")
+service_name, client_name = system.split("_")
 
-    net, cluster_ips, clients, restarters = topo_module.setup(service_name, **topo_kwargs) 
-    failures = fail_setup(net, restarters)
-    
-    duration = float(bench_args['duration'])
-    print("BENCHMARK: " + str(duration))
+net, cluster_ips, clients, restarters = topo_module.setup(service_name, **topo_kwargs) 
+failures = fail_setup(net, restarters)
 
-    op_gen_module = importlib.import_module('distributions.' + distribution)
+duration = float(bench_args['duration'])
+print("BENCHMARK: " + str(duration))
 
-    ops = op_gen_module.generate_ops(**dist_kwargs)		
-    print("BENCHMARK: Starting Test, "+str((service_name, client_name)))
-    tester = Thread(target=run_test, 
-            args=[
-                clients, 
-                ops, 
-                bench_args['rate'],
-                bench_args['duration'],
-                service_name,
-                client_name,
-                cluster_ips
-            ])  
-    tester.start()
+op_gen_module = importlib.import_module('distributions.' + distribution)
 
-    sleepTime = duration / (len(failures) + 1)
-    for failure in (failures+[(lambda*args, **kwargs:None)]):
-        print("BENCHMARK: sleeping for" + str(sleepTime))
-        sleep(sleepTime)
-        failure()
-    
-    tester.join()
-    print("Finished Test")
-    net.stop()
+ops = op_gen_module.generate_ops(**dist_kwargs)		
+print("BENCHMARK: Starting Test, "+str((service_name, client_name)))
+tester = Thread(target=run_test, 
+        args=[
+            bench_args['dest'],
+            clients, 
+            ops, 
+            bench_args['rate'],
+            bench_args['duration'],
+            service_name,
+            client_name,
+            cluster_ips
+        ])  
+tester.start()
+
+sleepTime = duration / (len(failures) + 1)
+for failure in (failures+[(lambda*args, **kwargs:None)]):
+    print("BENCHMARK: sleeping for" + str(sleepTime))
+    sleep(sleepTime)
+    failure()
+
+tester.join()
+print("Finished Test")
+net.stop()

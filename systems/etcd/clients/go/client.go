@@ -22,9 +22,9 @@ func unix_seconds(t time.Time) float64 {
 func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWire.Response {
 	//println("CLIENT: Attempting to put")
 	// TODO implement options
-	st := op.Put.Start
-	end := unix_seconds(time.Now())
+	st := unix_seconds(time.Now())
 	_, err := cli.Put(context.Background(), string(op.Put.Key), string(op.Put.Value))
+	end := unix_seconds(time.Now())
 
 	err_msg := "None"
 	if(err != nil){
@@ -32,12 +32,13 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWir
 	}
 
 	resp := &OpWire.Response {
-		ResponseTime:		end-st,
+		ResponseTime:		end-op.Put.Start,
 		Err:			err_msg,
-		Start:			st,
+		ClientStart:		st,
+		QueueStart:		op.Put.Start,
 		End:			end,
 		Clientid:		clientid,
-		Optype:			true,
+		Optype:			"Write",
 		Target:			cli.ActiveConnection().Target(),
 	}
 
@@ -48,9 +49,9 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWir
 func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWire.Response {
 	// TODO implement options
 	//println("CLIENT: Attempting to get")
-	st := op.Get.Start
-	end := unix_seconds(time.Now())
+	st := unix_seconds(time.Now())
 	_, err := cli.Get(context.Background(), string(op.Get.Key))
+	end := unix_seconds(time.Now())
 
 	err_msg := "None"
 	if(err != nil){
@@ -58,12 +59,13 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWir
 	}
 
 	resp := &OpWire.Response {
-		ResponseTime:		end-st,
+		ResponseTime:		end-op.Get.Start,
 		Err:			err_msg,
-		Start:			st,
+		ClientStart:		st,
+		QueueStart:		op.Get.Start,
 		End:			end,
 		Clientid:		clientid,
-		Optype:			false,
+		Optype:			"Read",
 		Target:			cli.ActiveConnection().Target(),
 	}
 
@@ -146,10 +148,8 @@ func main() {
 			resp := &OpWire.Response {
 				ResponseTime:  -1,
 				Err:			"Error: Operation was not found / supported",
-				Start:			0,
-				End:			0,
 				Clientid:		clientid,
-				Optype:			true,
+				Optype:			"Error",
 			}
 			payload := marshall_response(resp)
 			socket.Send(payload, 0)

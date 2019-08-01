@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='OpWire',
   syntax='proto3',
   serialized_options=_b('\n\006OpWire'),
-  serialized_pb=_b('\n\rmessage.proto\x12\x06OpWire\"\x86\x02\n\tOperation\x12\'\n\x03put\x18\x01 \x01(\x0b\x32\x18.OpWire.Operation.op_putH\x00\x12\'\n\x03get\x18\x02 \x01(\x0b\x32\x18.OpWire.Operation.op_getH\x00\x12)\n\x04quit\x18\x03 \x01(\x0b\x32\x19.OpWire.Operation.op_quitH\x00\x1a\x33\n\x06op_put\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c\x12\r\n\x05start\x18\x04 \x01(\x01\x1a$\n\x06op_get\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05start\x18\x04 \x01(\x01\x1a\x16\n\x07op_quit\x12\x0b\n\x03msg\x18\x01 \x01(\tB\t\n\x07op_type\"|\n\x08Response\x12\x15\n\rresponse_time\x18\x01 \x01(\x01\x12\x0b\n\x03\x65rr\x18\x02 \x01(\t\x12\r\n\x05start\x18\x03 \x01(\x01\x12\x0b\n\x03\x65nd\x18\x04 \x01(\x01\x12\x10\n\x08\x63lientid\x18\x05 \x01(\r\x12\x0e\n\x06optype\x18\x06 \x01(\x08\x12\x0e\n\x06target\x18\x07 \x01(\tB\x08\n\x06OpWireb\x06proto3')
+  serialized_pb=_b('\n\rmessage.proto\x12\x06OpWire\"\x86\x02\n\tOperation\x12\'\n\x03put\x18\x01 \x01(\x0b\x32\x18.OpWire.Operation.op_putH\x00\x12\'\n\x03get\x18\x02 \x01(\x0b\x32\x18.OpWire.Operation.op_getH\x00\x12)\n\x04quit\x18\x03 \x01(\x0b\x32\x19.OpWire.Operation.op_quitH\x00\x1a\x33\n\x06op_put\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c\x12\r\n\x05start\x18\x04 \x01(\x01\x1a$\n\x06op_get\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05start\x18\x04 \x01(\x01\x1a\x16\n\x07op_quit\x12\x0b\n\x03msg\x18\x01 \x01(\tB\t\n\x07op_type\"\x98\x01\n\x08Response\x12\x15\n\rresponse_time\x18\x01 \x01(\x01\x12\x0b\n\x03\x65rr\x18\x02 \x01(\t\x12\x14\n\x0c\x63lient_start\x18\x03 \x01(\x01\x12\x13\n\x0bqueue_start\x18\x04 \x01(\x01\x12\x0b\n\x03\x65nd\x18\x05 \x01(\x01\x12\x10\n\x08\x63lientid\x18\x06 \x01(\r\x12\x0e\n\x06optype\x18\x07 \x01(\t\x12\x0e\n\x06target\x18\x08 \x01(\tB\x08\n\x06OpWireb\x06proto3')
 )
 
 
@@ -207,36 +207,43 @@ _RESPONSE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='start', full_name='OpWire.Response.start', index=2,
+      name='client_start', full_name='OpWire.Response.client_start', index=2,
       number=3, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='end', full_name='OpWire.Response.end', index=3,
+      name='queue_start', full_name='OpWire.Response.queue_start', index=3,
       number=4, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='clientid', full_name='OpWire.Response.clientid', index=4,
-      number=5, type=13, cpp_type=3, label=1,
+      name='end', full_name='OpWire.Response.end', index=4,
+      number=5, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='clientid', full_name='OpWire.Response.clientid', index=5,
+      number=6, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='optype', full_name='OpWire.Response.optype', index=5,
-      number=6, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
+      name='optype', full_name='OpWire.Response.optype', index=6,
+      number=7, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='target', full_name='OpWire.Response.target', index=6,
-      number=7, type=9, cpp_type=9, label=1,
+      name='target', full_name='OpWire.Response.target', index=7,
+      number=8, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -253,8 +260,8 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=290,
-  serialized_end=414,
+  serialized_start=291,
+  serialized_end=443,
 )
 
 _OPERATION_OP_PUT.containing_type = _OPERATION

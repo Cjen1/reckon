@@ -55,11 +55,12 @@ def run_client(clients, config):
     runner_address = "ipc://"+config['runner_address']
     clean_address(runner_address)
 
+    print("CR: runner address: " + runner_address)
     socket = zmq.Context().socket(zmq.ROUTER)
     socket.bind(runner_address)
-    #socket.setsockopt(zmq.LINGER, 0)
+    socket.setsockopt(zmq.LINGER, 0)
     #Prevent infinite waiting timeout is in milliseconds
-    #socket.RCVTIMEO = 1000 * config['duration'] 
+    socket.RCVTIMEO = 1000 * config['duration'] 
     
     microclients = [
             config['start_client'](mnclient, client_id, config)
@@ -175,7 +176,7 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
         resp = msg_pb.Response()
         resp.ParseFromString(rec)
         resps.append(resp)
-    resps = [
+        resps = [
                 [
                     resp.response_time,
                     resp.client_start,
@@ -185,9 +186,9 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
                     resp.err,
                     resp.target,
                     resp.optype
+                    ]
+                for resp in resps 
                 ]
-            for resp in resps 
-            ]
     #print("RESPS: ", resps)
 
     print("Writing results to file")

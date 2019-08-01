@@ -101,7 +101,7 @@ func main() {
 	endpoints := strings.Split(os.Args[1], ",")
 	i, err := strconv.ParseUint(os.Args[2], 10, 32)
 	check(err)
-	address := os.Args[3]
+	address := "ipc://" + os.Args[3]
 
 	clientid := uint32(i)
 

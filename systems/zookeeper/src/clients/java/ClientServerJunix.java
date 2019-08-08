@@ -1,6 +1,16 @@
 package clients.java;
+import com.etsy.net.JUDS;
+import com.etsy.net.UnixDomainSocket;
+import com.etsy.net.UnixDomainSocketClient;
+import org.newsclub.net.unix.AFUNIXSocket;
+import org.newsclub.net.unix.AFUNIXServerSocket;
+import org.newsclub.net.unix.AFUNIXSocketAddress;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Arrays;
 import org.zeromq.ZMQ;
-import org.zeromq.SocketType;
+//import org.zeromq.SocketType;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.*;
 import java.util.*;
@@ -30,8 +40,10 @@ public class Client implements org.apache.zookeeper.Watcher {
 	
 	public Client(){ ; }
 
-	public OpWire.Message.Operation receiveOp(ZMQ.Socket socket) throws Exception{
-		byte[] payload = socket.recv(0);
+	public OpWire.Message.Operation receiveOp(UnixDomainSocketClient socket, InputStream sockIn) throws Exception{
+		byte[] payload = new byte[1 << 16];
+		int rec = sockIn.read(payload);
+		payload = Arrays.copyOf(payload, rec);
 		OpWire.Message.Operation op = OpWire.Message.Operation.parseFrom(payload);
 		return op;
 	}
@@ -105,60 +117,50 @@ public class Client implements org.apache.zookeeper.Watcher {
 
 
 	public static void main(String[] args) throws Exception {
-/*
-        String address = "/mnt/sockets/benchmark.sock";
-
-        System.out.println("CLIENT: Parsed Address: " + address);
-	System.out.println("CLIENT: Version: " + ZMQ.getVersionString());
-
-        ZMQ.Context context = ZMQ.context(1);
-        ZMQ.Socket socket = context.socket(SocketType.REQ);
-
-        address = "tcp://127.0.0.1:10000";
-        socket.connect( address );
-        System.out.println("CLIENT: Connected to " + address);
-        for(int i = 0; i < 5; i++){
-            System.out.println("CLIENT: Ping");
-            socket.send(("Ping " + i).getBytes(), 0);
-            System.out.println("CLIENT: Sent.");
-            OpWire.Message.Operation op = OpWire.Message.Operation.parseFrom(socket.recv(0));
-	    String rep;
-	    int num = op.getOpTypeCase().getNumber();
-            rep = ((num == 1) ? "Put to key " + op.getPut().getKey() : (num == 2) ?  "Get from key " + op.getGet().getKey() : "Other op -- num " + num);
-
-            System.out.println("Op " + i + ": " + rep);
-        }
-        socket.close();
-        context.term();
-    }
-*/
-		
-		System.out.println("CLIENT: STARTING");
+		System.out.println("CLIENT: Starting, got arguments " + args[0] + " " + args[1] + " " + args[2]);
+		System.out.println("CLIENT: Running at ZMQ v"+ ZMQ.getVersionString());
 		Client mainClient = new Client();
 		String[] endpoints = args[0].split(",");
 		int clientId = Integer.parseInt(args[1]);
-		String address = "127.0.0.1:10000"; // args[2]; // for now, resort to magic constants
+		String address = args[2];
 
-		System.out.println("CLIENT: Parsed Address: " + address);
+//		ZMQ.Context context = ZMQ.context(1);			// Creates a context with 1 IOThread.
+//		ZMQ.Socket socket = context.socket(SocketType.REQ);
 
-		ZMQ.Context context = ZMQ.context(1);			// Creates a context with 1 IOThread.
-		ZMQ.Socket socket = context.socket(SocketType.REQ);
-		
+		AFUNIXServerSocket sock = AFUNIXServerSocket.newInstance();
+		sock.bind(new AFUNIXSocketAddress(new File(address)));
+		AFUNIXSocket socket = sock.accept();
+		InputStream sockIn = socket.getInputStream();
+		OutputStream sockOut = socket.getOutputStream();
+		for(int i = 0; i < 5; i++){
+			System.out.println("Pinging.");
+			sockOut.write(("Ping " + i).getBytes());
+//			byte[] payload = new byte[1 << 8];
+//			int rec = sockIn.read(payload);
+//			System.out.println("Received " + rec + " out of " + payload.length + " bytes.");
+//			payload = Arrays.copyOf(payload, rec);
+//			String rep = new String(payload);
+//			System.out.println("Reply " + i + ": " + rep);
+		}
+		socket.close();
+		sock.close();
+	/*	
 		String quorum = String.join(":" + CLIENT_PORT + ",", endpoints) + ":" + CLIENT_PORT;
 
 		ZooKeeper cli = new ZooKeeper(quorum, SESSION_TIMEOUT, new Client());
-	
+		System.out.println("CLIENT: Created ZK");
+
 		String binding;
 		boolean quits = false;
 		OpWire.Message.Response resp = null;
 		byte[] payload;
-		System.out.println("CLIENT: Connecting to socket.");
-		socket.connect("tcp://" + address);
-		System.out.println("CLIENT: Connected to socket.");
-		socket.send("", 0);
+		System.out.println("CLIENT: connected to address");
+		sockOut.write("".getBytes());
+		System.out.println("CLIENT: sent ready signal");
 		while(!quits){
-			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
-			System.out.println("CLIENT: Received Operation.");
+			System.out.println("Waiting to recieve op");
+			OpWire.Message.Operation opr = mainClient.receiveOp(socket, sockIn);
+			System.out.println("Recieved op");
 			switch(opr.getOpTypeCase().getNumber()){
 				case 1: 	//1 = Put
 					resp = mainClient.put(cli, opr, clientId);
@@ -167,8 +169,6 @@ public class Client implements org.apache.zookeeper.Watcher {
 					resp = mainClient.get(cli, opr, clientId);
 					break;				
 				case 3:		//3 = Quit
-					socket.close();
-					context.term();
 					return;
 				default:
 					resp = OpWire.Message.Response.newBuilder()
@@ -185,11 +185,8 @@ public class Client implements org.apache.zookeeper.Watcher {
 					break;
 			}
 			payload = resp.toByteArray();
-			socket.send(payload, 0);
+			sockOut.write(payload);
 		}
-	
-		socket.close();
-		context.term();
+	*/
 	}
-	
 }

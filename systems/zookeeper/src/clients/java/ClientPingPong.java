@@ -104,8 +104,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 	}
 
 
-	public static void main(String[] args) throws Exception {
-/*
+    public static void main(String[] args) throws Exception {
         String address = "/mnt/sockets/benchmark.sock";
 
         System.out.println("CLIENT: Parsed Address: " + address);
@@ -114,30 +113,25 @@ public class Client implements org.apache.zookeeper.Watcher {
         ZMQ.Context context = ZMQ.context(1);
         ZMQ.Socket socket = context.socket(SocketType.REQ);
 
-        address = "tcp://127.0.0.1:10000";
+        address = "ipc://" + address;
         socket.connect( address );
         System.out.println("CLIENT: Connected to " + address);
         for(int i = 0; i < 5; i++){
-            System.out.println("CLIENT: Ping");
-            socket.send(("Ping " + i).getBytes(), 0);
+            socket.send("Ping " + i);
             System.out.println("CLIENT: Sent.");
-            OpWire.Message.Operation op = OpWire.Message.Operation.parseFrom(socket.recv(0));
-	    String rep;
-	    int num = op.getOpTypeCase().getNumber();
-            rep = ((num == 1) ? "Put to key " + op.getPut().getKey() : (num == 2) ?  "Get from key " + op.getGet().getKey() : "Other op -- num " + num);
-
-            System.out.println("Op " + i + ": " + rep);
+            String rep = new String(socket.recv());
+            System.out.println("Reply " + i + ": " + rep);
         }
         socket.close();
         context.term();
     }
-*/
-		
+
+		/*
 		System.out.println("CLIENT: STARTING");
 		Client mainClient = new Client();
 		String[] endpoints = args[0].split(",");
 		int clientId = Integer.parseInt(args[1]);
-		String address = "127.0.0.1:10000"; // args[2]; // for now, resort to magic constants
+		String address = args[2];
 
 		System.out.println("CLIENT: Parsed Address: " + address);
 
@@ -147,14 +141,26 @@ public class Client implements org.apache.zookeeper.Watcher {
 		String quorum = String.join(":" + CLIENT_PORT + ",", endpoints) + ":" + CLIENT_PORT;
 
 		ZooKeeper cli = new ZooKeeper(quorum, SESSION_TIMEOUT, new Client());
-	
+		
+	//----- PING
+		address = "ipc://" + address;
+		socket.connect( address );
+
+		System.out.println("CLIENT: Connected to " + address);
+		for(int i = 0; i < 5; i++){
+			socket.send("Ping " + i);
+			System.out.println("CLIENT: Sent.");
+			String rep = new String(socket.recv());
+			System.out.println("Reply " + i + ": " + rep);
+		}
+	/*
 		String binding;
 		boolean quits = false;
 		OpWire.Message.Response resp = null;
 		byte[] payload;
 		System.out.println("CLIENT: Connecting to socket.");
-		socket.connect("tcp://" + address);
-		System.out.println("CLIENT: Connected to socket.");
+		socket.connect("ipc://" + address);
+		System.out.println("CLIENT: COnnected to socket.");
 		socket.send("", 0);
 		while(!quits){
 			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
@@ -191,5 +197,5 @@ public class Client implements org.apache.zookeeper.Watcher {
 		socket.close();
 		context.term();
 	}
-	
+	*/
 }

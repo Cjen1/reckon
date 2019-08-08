@@ -1,17 +1,23 @@
-FROM bash
-FROM openjdk:7
+FROM openjdk:8
 
 ADD zkconfs /zkconf
 
 RUN cd / ; \
-    wget http://apache.mirror.anlx.net/zookeeper/stable/apache-zookeeper-3.5.5.tar.gz; \ 
-    tar xvf apache-zookeeper-3.5.5.tar.gz; \
-    mv apache-zookeeper-3.5.5  /usr/local/zookeeper; \
+    wget http://apache.mirror.anlx.net/zookeeper/stable/apache-zookeeper-3.5.5-bin.tar.gz; \ 
+    tar xvf apache-zookeeper-3.5.5-bin.tar.gz; \
+    mv apache-zookeeper-3.5.5-bin  /usr/local/zookeeper; \
     mkdir /usr/local/zookeeper/data; \
     mkdir /usr/local/zookeeper/logs; \
     cp /zkconf/zoo.cfg /usr/local/zookeeper/conf/zoo.cfg; \
     cp /zkconf/java.env /usr/local/zookeeper/conf/java.env; \
-    touch /usr/local/zookeeper/data/myid
+    touch /usr/local/zookeeper/data/myid; \
+    apt-get update; \
+    apt-get install -y screen
+
+RUN apt-get update && apt-get install -y \
+    net-tools \
+    iputils-ping \
+    iproute
 
 EXPOSE 2181 
 EXPOSE 2888 

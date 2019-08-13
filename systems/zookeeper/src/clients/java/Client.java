@@ -10,7 +10,7 @@ public class Client implements org.apache.zookeeper.Watcher {
 	public static final int CLIENT_PORT = 2181;
 	public static final int QUORUM_PORT = 2888;
 	public static final int ELECTION_PORT = 3888;
-	public static final int SESSION_TIMEOUT = 10000; //Time to session timeout in ms
+	public static final int SESSION_TIMEOUT = 100000000; //Time to session timeout in ms
 	public static final Client CLIENT = new Client();
 
 	final java.util.concurrent.CountDownLatch connectedSignal = new java.util.concurrent.CountDownLatch(1);
@@ -33,35 +33,65 @@ public class Client implements org.apache.zookeeper.Watcher {
 	public OpWire.Message.Operation receiveOp(ZMQ.Socket socket) throws Exception{
 		byte[] payload = socket.recv(0);
 		OpWire.Message.Operation op = OpWire.Message.Operation.parseFrom(payload);
+//		System.out.println("CLIENT: Recieved OP.");
 		return op;
 	}
 
 
-	public OpWire.Message.Response put(ZooKeeper client, OpWire.Message.Operation opr, int clientId){
+	public OpWire.Message.Response put(ZooKeeper client, OpWire.Message.Operation opr, int clientId, String quorum) throws Exception{
 		String err = "None";
 		String path = "/" + opr.getPut().getKey();
 		String data = opr.getPut().getValue().toString();
 		long start = 0L, start2 = 0L;
 		long stop = 0L, stop2 = 0L;
-		try{
-			start = System.currentTimeMillis();
-			start2 = System.nanoTime();
-			client.setData(path, data.getBytes(), -1);
-			stop2 = System.nanoTime();
-			stop = System.currentTimeMillis();
-		} catch(KeeperException.NoNodeException n) {
-			start = System.currentTimeMillis();
-			start2 = System.nanoTime();
-			try{
-				client.create(path, data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-			} catch(Exception e) {
-				err = "Caught Exception: " + e.getMessage();
+//		System.out.println("CLIENT: About to send PUT request.");
+		do {
+			org.apache.zookeeper.ZooKeeper.States state = client.getState();
+			switch(state){
+				case ASSOCIATING:
+				case CONNECTING:
+				case CONNECTEDREADONLY:
+					while(client.getState() != ZooKeeper.States.CONNECTED){ 
+						;
+					}
+				case CONNECTED:
+					try{
+						start = System.currentTimeMillis();
+						start2 = System.nanoTime();
+						client.setData(path, data.getBytes(), -1);
+						stop2 = System.nanoTime();
+						stop = System.currentTimeMillis();
+					} catch(KeeperException.NoNodeException n) {
+						start = System.currentTimeMillis();
+						start2 = System.nanoTime();
+						try{
+							client.create(path, data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+						} catch(Exception e) {
+							err = "Caught Exception: " + e.getMessage();
+						}
+						stop2 = System.nanoTime();
+						stop = System.currentTimeMillis();
+					} catch(Exception k) {
+						err = "Caught Exception: " + k.getMessage();
+					}
+					break;
+				default:
+					start = System.currentTimeMillis();
+					start2 = System.nanoTime();
+					stop2 = System.nanoTime();
+					stop = System.currentTimeMillis();
+					err = "Bad system state: " + state;
+					break;
 			}
-			stop2 = System.nanoTime();
-			stop = System.currentTimeMillis();
-		} catch(Exception k) {
-			err = "Caught Exception: " + k.getMessage();
-		} 
+			
+			if(!err.equals("None")){
+//				System.out.println("CLIENT: Non-None Error: " + err);
+//				System.out.println("CLIENT: Making new ZooKeeper.");
+				client = new ZooKeeper(quorum, SESSION_TIMEOUT, new Client());
+			}
+
+		} while (!err.equals("None"));
+//		System.out.println("CLIENT: PUT successfully.");
 		double duration = (stop2 - start2 + 0.0) / 1E9; // Duration in seconds.
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
@@ -76,19 +106,43 @@ public class Client implements org.apache.zookeeper.Watcher {
 		return resp;
 	}
 
-
-	public OpWire.Message.Response get(ZooKeeper client, OpWire.Message.Operation opr, int clientId){
+	public OpWire.Message.Response get(ZooKeeper client, OpWire.Message.Operation opr, int clientId, String quorum) throws Exception{
 		String err = "None";
 		String path = "/" + opr.getGet().getKey();
-		long start = System.currentTimeMillis();
-		long start2 = System.nanoTime();
-		try{
-			client.getData(path, false, client.exists(path, false));
-		} catch(Exception e) {
-			err = "Caught Exception: " + e.getMessage();
+		long start, start2, stop, stop2 = 0L;
+		do{
+		org.apache.zookeeper.ZooKeeper.States state = client.getState();
+		switch(state){
+			case ASSOCIATING:
+			case CONNECTING:
+				while(client.getState() != ZooKeeper.States.CONNECTED
+				   && client.getState() != ZooKeeper.States.CONNECTEDREADONLY){ ; }
+			case CONNECTEDREADONLY:
+			case CONNECTED:
+				start = System.currentTimeMillis();
+				start2 = System.nanoTime();
+				
+				try{
+					client.getData(path, false, client.exists(path, false));
+				} catch(Exception e) {
+					err = "Caught Exception: " + e.getMessage();
+				}
+				stop2 = System.nanoTime();
+				stop = System.currentTimeMillis();
+				break;
+			default:
+				start = System.currentTimeMillis();
+				start2 = System.nanoTime();
+				stop2 = System.nanoTime();
+				stop = System.currentTimeMillis();
+				err = "Bad system state: " + state;
+				break;
 		}
-		long stop2 = System.nanoTime();
-		long stop = System.currentTimeMillis();
+
+		if(!err.equals("None"))
+			client = new ZooKeeper(quorum, SESSION_TIMEOUT, new Client());
+
+		} while(!err.equals("None"));
 		double duration = (stop2 - start2 + 0.0) / 1E9; // Duration in seconds.
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
@@ -105,66 +159,39 @@ public class Client implements org.apache.zookeeper.Watcher {
 
 
 	public static void main(String[] args) throws Exception {
-/*
-        String address = "/mnt/sockets/benchmark.sock";
 
-        System.out.println("CLIENT: Parsed Address: " + address);
-	System.out.println("CLIENT: Version: " + ZMQ.getVersionString());
-
-        ZMQ.Context context = ZMQ.context(1);
-        ZMQ.Socket socket = context.socket(SocketType.REQ);
-
-        address = "tcp://127.0.0.1:10000";
-        socket.connect( address );
-        System.out.println("CLIENT: Connected to " + address);
-        for(int i = 0; i < 5; i++){
-            System.out.println("CLIENT: Ping");
-            socket.send(("Ping " + i).getBytes(), 0);
-            System.out.println("CLIENT: Sent.");
-            OpWire.Message.Operation op = OpWire.Message.Operation.parseFrom(socket.recv(0));
-	    String rep;
-	    int num = op.getOpTypeCase().getNumber();
-            rep = ((num == 1) ? "Put to key " + op.getPut().getKey() : (num == 2) ?  "Get from key " + op.getGet().getKey() : "Other op -- num " + num);
-
-            System.out.println("Op " + i + ": " + rep);
-        }
-        socket.close();
-        context.term();
-    }
-*/
-		
-		System.out.println("CLIENT: STARTING");
 		Client mainClient = new Client();
 		String[] endpoints = args[0].split(",");
 		int clientId = Integer.parseInt(args[1]);
 		String address = "127.0.0.1:10000"; // args[2]; // for now, resort to magic constants
 
-		System.out.println("CLIENT: Parsed Address: " + address);
+
 
 		ZMQ.Context context = ZMQ.context(1);			// Creates a context with 1 IOThread.
 		ZMQ.Socket socket = context.socket(SocketType.REQ);
 		
 		String quorum = String.join(":" + CLIENT_PORT + ",", endpoints) + ":" + CLIENT_PORT;
-
+//		System.out.println("CLIENT: Creating first ZK.");
 		ZooKeeper cli = new ZooKeeper(quorum, SESSION_TIMEOUT, new Client());
+//		System.out.println("CLIENT: Connected to first ZK.");
 	
 		String binding;
 		boolean quits = false;
 		OpWire.Message.Response resp = null;
 		byte[] payload;
-		System.out.println("CLIENT: Connecting to socket.");
+		
 		socket.connect("tcp://" + address);
-		System.out.println("CLIENT: Connected to socket.");
+		
 		socket.send("", 0);
 		while(!quits){
 			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
-			System.out.println("CLIENT: Received Operation.");
+
 			switch(opr.getOpTypeCase().getNumber()){
 				case 1: 	//1 = Put
-					resp = mainClient.put(cli, opr, clientId);
+					resp = mainClient.put(cli, opr, clientId, quorum);
 					break;			
 				case 2:		//2 = Get
-					resp = mainClient.get(cli, opr, clientId);
+					resp = mainClient.get(cli, opr, clientId, quorum);
 					break;				
 				case 3:		//3 = Quit
 					socket.close();
@@ -185,9 +212,9 @@ public class Client implements org.apache.zookeeper.Watcher {
 					break;
 			}
 			payload = resp.toByteArray();
+//			System.out.println("CLIENT: SENDING RESPONSE");
 			socket.send(payload, 0);
-		}
-	
+		}	
 		socket.close();
 		context.term();
 	}

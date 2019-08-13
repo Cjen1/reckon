@@ -12,8 +12,9 @@ import utils
 def ip_from_int(i):
     return '10.{0:d}.{1:d}.{2:d}'.format(i/(2**16),(i%(2**16))/(2**8),i%(2**8))
 
-def setup(service, n=3):
+def setup(service, n=3, nc=1):
     n = int(n)
+    nc = int(nc)
     #- Core setup -------
 
     net = Containernet(controller=Controller, switch=OVSSwitch)
@@ -24,14 +25,18 @@ def setup(service, n=3):
     s1 = net.addSwitch('s1')
     
     info('*** Adding docker containers and adding links\n')
-    cluster_ips = [ip_from_int(i+2) for i in range(n)]
+    cluster_ips = [ip_from_int(nc + i+1) for i in range(n)]
     dimage = "cjj39_dks28/"+service
     print("*** Using image: " + dimage)
+    kwargs = [
+            ('volumes', ['/home/cjj39/mounted/Resolving-Consensus/:/rc'])
+            ]
     dockers = [
             net.addDocker(
                 'd' + str(i+1), 
                 ip    = cluster_ips[i], 
-                dimage=dimage
+                dimage=dimage,
+                **dict(kwargs)
                 ) 
             for i in range(n)
             ]
@@ -39,9 +44,13 @@ def setup(service, n=3):
     for d in dockers:
         net.addLink(d,s1, cls=TCLink, delay='50ms', bw=1, max_queue_size=200)
 
-    microclient = utils.addClient(net, service, 'mc', ip='10.0.0.1')
+    microclients = [
+                utils.addClient(net, service, 'mc%d' % i, ip=ip_from_int(i + 1))
+            for i in range(nc) 
+            ]
 
-    net.addLink(microclient, s1) 
+    for mc in microclients:
+        net.addLink(mc, s1) 
 
     net.start()
 
@@ -50,6 +59,8 @@ def setup(service, n=3):
                 "systems.{0}.scripts.setup".format(service)
                 )
             ).setup
+
+    #TODO add mininet restart stuff here
     restarters = system_setup_func(dockers, cluster_ips)
 
-    return (net, cluster_ips, [microclient], restarters)
+    return (net, cluster_ips, microclients, restarters)

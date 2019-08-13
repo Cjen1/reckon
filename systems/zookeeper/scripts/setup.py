@@ -16,24 +16,14 @@ def setup(dockers, ips):
 
 	for d, info in zip(dockers, cluster_infos):
             for i in info:
-                print("========================" + 
-                        "echo {info} >> /usr/local/zookeeper/conf/zoo.cfg".format(info=i) + 
-                        "\n\n\n\n\n" + 
-                        d.cmd("echo {info} >> /usr/local/zookeeper/conf/zoo.cfg".format(info=i))+
-                        "\n\n\n\n\n"
-                        + "==========================")
+                d.cmd("echo {info} >> /usr/local/zookeeper/conf/zoo.cfg".format(info=i))
 
 	for d, zkid in zip(dockers, their_ids):
-            print("..................................." + 
-                    "echo {zkid} > /usr/local/zookeeper/data/myid".format(zkid=zkid) +
-                    "\n\n\n\n\n\n\n" + 
-                    d.cmd("echo {zkid} > /usr/local/zookeeper/data/myid".format(zkid=zkid)) +
-                    "\n\n\n\n\n"
-                    "........................................")
+            d.cmd("echo {zkid} > /usr/local/zookeeper/data/myid".format(zkid=zkid))
 
 	restarters = []
 	for docker in dockers:
-		start_cmd = 'screen -d -m -S zk bash /usr/local/zookeeper/bin/zkServer.sh start-foreground'
+		start_cmd = 'screen -d -m -S zookeeper bash /usr/local/zookeeper/bin/zkServer.sh start-foreground'
                 #start_cmd = 'cat /usr/local/zookeeper/conf/zoo.cfg'
                 print(docker.cmd(start_cmd))
 		restarters.append(lambda : docker.cmd(start_cmd))

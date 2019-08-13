@@ -2,7 +2,7 @@
 def addClient(net, service, name, ip=None):
     kwargs = [
             ('dimage', 'cjj39_dks28/'+service+'_clients'),
-            ('volumes', ['/home/cjj39/mounted/Resolving-Consensus/utils/sockets:/mnt/sockets'])
+            ('volumes', ['/home/cjj39/mounted/Resolving-Consensus/:/rc'])
             ]
     if ip != None:
         kwargs.append(

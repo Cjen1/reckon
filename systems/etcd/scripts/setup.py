@@ -15,7 +15,7 @@ def setup(dockers, ips):
         node_name = "etcd-node-"+str(i+1)
 
         start_cmd = (
-                    "screen -d -S etcd_background -m etcd " +
+                    "screen -d -S etcd -m etcd " +
                     "--data-dir=/tmp/{name} " + 
                     "--name {name} " + 
                     "--initial-advertise-peer-urls http://{ip}:2380 "+

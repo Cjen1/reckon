@@ -42,6 +42,10 @@ parser.add_argument(
         '--benchmark_config',
         default="",
         help='A comma separated list of benchmark parameters, eg. rate=500,duration=10.')
+parser.add_argument(
+        '-d',
+        action='store_true',
+        help='Debug mode, sets up mininet and docker containers, then waits in Mininet.CLI')
 
 args = parser.parse_args()
 
@@ -79,34 +83,39 @@ for key, val in bench_defs.items():
 service_name, client_name = system.split("_")
 
 net, cluster_ips, clients, restarters = topo_module.setup(service_name, **topo_kwargs) 
-failures = fail_setup(net, restarters)
+failures = fail_setup(net, restarters, system.split('_')[0])
 
-duration = float(bench_args['duration'])
-print("BENCHMARK: " + str(duration))
+if args.d:
+    from mininet.cli import CLI
+    CLI(net)
+    net.stop()
+else:
+    duration = float(bench_args['duration'])
+    print("BENCHMARK: " + str(duration))
 
-op_gen_module = importlib.import_module('distributions.' + distribution)
+    op_gen_module = importlib.import_module('distributions.' + distribution)
 
-ops = op_gen_module.generate_ops(**dist_kwargs)		
-print("BENCHMARK: Starting Test, "+str((service_name, client_name)))
-tester = Thread(target=run_test, 
-        args=[
-            bench_args['dest'],
-            clients, 
-            ops, 
-            bench_args['rate'],
-            bench_args['duration'],
-            service_name,
-            client_name,
-            cluster_ips
-        ])  
-tester.start()
+    ops = op_gen_module.generate_ops(**dist_kwargs)		
+    print("BENCHMARK: Starting Test, "+str((service_name, client_name)))
+    tester = Thread(target=run_test, 
+            args=[
+                bench_args['dest'],
+                clients, 
+                ops, 
+                bench_args['rate'],
+                bench_args['duration'],
+                service_name,
+                client_name,
+                cluster_ips
+            ])  
+    tester.start()
 
-sleepTime = duration / (len(failures) + 1)
-for failure in (failures+[(lambda*args, **kwargs:None)]):
-    print("BENCHMARK: sleeping for" + str(sleepTime))
-    sleep(sleepTime)
-    failure()
+    sleepTime = duration / (len(failures) + 1)
+    for failure in (failures+[(lambda*args, **kwargs:None)]):
+        print("BENCHMARK: sleeping for" + str(sleepTime))
+        sleep(sleepTime)
+        failure()
 
-tester.join()
-print("Finished Test")
-net.stop()
+    tester.join()
+    print("Finished Test")
+    net.stop()

@@ -52,12 +52,14 @@ def run_prereqs(socket, operations):
         
 def run_client(clients, config):
     #--- Setup ----------
-    runner_address = "ipc://"+config['runner_address']
-    clean_address(runner_address)
-
-    print("CR: runner address: " + runner_address)
     socket = zmq.Context().socket(zmq.ROUTER)
+
+    runner_address = "ipc://"+config['runner_address']
+    print("CR: runner address: " + runner_address)
+    clean_address(runner_address)
+    os.umask(0o000)
     socket.bind(runner_address)
+
     socket.setsockopt(zmq.LINGER, 0)
     #Prevent infinite waiting timeout is in milliseconds
     socket.RCVTIMEO = 1000 * config['duration'] 
@@ -109,6 +111,7 @@ def run_client(clients, config):
     for ready in readys:
         addr, _, _ = socket.recv_multipart()
         socket.send_multipart([addr, b'', quit_op])
+    
 
 def producer(op_gen, rate, duration, stop_flag):
     print("Producer: Waiting")
@@ -140,7 +143,7 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
         'op_prereq': op_prereq,
         'rate': rate,
         'runner_address':'/root/mounted/Resolving-Consensus/utils/sockets/benchmark.sock',
-        'client_address':'/mnt/sockets/benchmark.sock',
+        'client_address':'/rc/utils/sockets/benchmark.sock',
         'start_client': (importlib.import_module('systems.%s.scripts.client_start' % service_name).start)
         }
 
@@ -175,8 +178,7 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
         rec = res_queue.get()
         resp = msg_pb.Response()
         resp.ParseFromString(rec)
-        resps.append(resp)
-        resps = [
+        resps.append(
                 [
                     resp.response_time,
                     resp.client_start,
@@ -187,8 +189,7 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
                     resp.target,
                     resp.optype
                     ]
-                for resp in resps 
-                ]
+                )
     #print("RESPS: ", resps)
 
     print("Writing results to file")

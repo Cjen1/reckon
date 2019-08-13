@@ -1,8 +1,8 @@
 
-def addClient(net, service, name, ip=None):
+def addClient(current_dir, net, service, name, ip=None):
     kwargs = [
             ('dimage', 'cjj39_dks28/'+service+'_clients'),
-            ('volumes', ['/home/cjj39/mounted/Resolving-Consensus/:/rc'])
+            ('volumes', [current_dir + ':/rc'])
             ]
     if ip != None:
         kwargs.append(
@@ -12,3 +12,11 @@ def addClient(net, service, name, ip=None):
             name,
             **dict(kwargs)
             )
+
+def addDocker(current_dir, net, name, ip, dimage):
+    return net.addDocker(
+            name, 
+            ip=ip,
+            dimage=dimage,
+            volumes = [current_dir + ':/rc']
+    )

@@ -142,7 +142,7 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
         'duration': duration,
         'op_prereq': op_prereq,
         'rate': rate,
-        'runner_address':'/root/mounted/Resolving-Consensus/utils/sockets/benchmark.sock',
+        'runner_address': os.getcwd() + '/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
         'client_address':'/rc/utils/sockets/benchmark.sock',
         'start_client': (importlib.import_module('systems.%s.scripts.client_start' % service_name).start)
         }

@@ -8,11 +8,12 @@ setLogLevel('info')
 import importlib
 
 import utils
+from utils import addClient, addDocker
 
 def ip_from_int(i):
     return '10.{0:d}.{1:d}.{2:d}'.format(i/(2**16),(i%(2**16))/(2**8),i%(2**8))
 
-def setup(service, n=3, nc=1):
+def setup(service, current_dir, n=3, nc=1):
     n = int(n)
     nc = int(nc)
     #- Core setup -------
@@ -28,15 +29,13 @@ def setup(service, n=3, nc=1):
     cluster_ips = [ip_from_int(nc + i+1) for i in range(n)]
     dimage = "cjj39_dks28/"+service
     print("*** Using image: " + dimage)
-    kwargs = [
-            ('volumes', ['/home/cjj39/mounted/Resolving-Consensus/:/rc'])
-            ]
     dockers = [
-            net.addDocker(
+            addDocker(
+                current_dir,
+                net,
                 'd' + str(i+1), 
-                ip    = cluster_ips[i], 
-                dimage=dimage,
-                **dict(kwargs)
+                cluster_ips[i], 
+                dimage
                 ) 
             for i in range(n)
             ]
@@ -45,7 +44,7 @@ def setup(service, n=3, nc=1):
         net.addLink(d,s1, cls=TCLink, delay='50ms', bw=1, max_queue_size=200)
 
     microclients = [
-                utils.addClient(net, service, 'mc%d' % i, ip=ip_from_int(i + 1))
+                utils.addClient(current_dir, net, service, 'mc%d' % i, ip=ip_from_int(i + 1))
             for i in range(nc) 
             ]
 
@@ -60,7 +59,6 @@ def setup(service, n=3, nc=1):
                 )
             ).setup
 
-    #TODO add mininet restart stuff here
     restarters = system_setup_func(dockers, cluster_ips)
 
     return (net, cluster_ips, microclients, restarters)

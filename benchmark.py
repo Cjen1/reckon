@@ -46,6 +46,10 @@ parser.add_argument(
         '-d',
         action='store_true',
         help='Debug mode, sets up mininet and docker containers, then waits in Mininet.CLI')
+parser.add_argument(
+        'absolute_path',
+        help="The absolute path in the host to this folder, required due to docker weirdness and zmq's ipc rules"
+        )
 
 args = parser.parse_args()
 
@@ -80,9 +84,11 @@ if args.benchmark_config != "":
 for key, val in bench_defs.items():
 	bench_args.setdefault(key, val)#set as arg or as default value 
 
+absolute_path = args.absolute_path
+
 service_name, client_name = system.split("_")
 
-net, cluster_ips, clients, restarters = topo_module.setup(service_name, **topo_kwargs) 
+net, cluster_ips, clients, restarters = topo_module.setup(service_name, absolute_path, **topo_kwargs) 
 failures = fail_setup(net, restarters, system.split('_')[0])
 
 if args.d:

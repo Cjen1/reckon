@@ -1,5 +1,5 @@
-*/build/*
-*/clients/*
+**/build/**
+**/clients/**
 */result*
 *.pyc
 *.swp
@@ -8,3 +8,4 @@
 *.gz
 .DS_Store
 *client
+

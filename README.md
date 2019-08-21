@@ -1,5 +1,40 @@
 # Concensus System Benchmark
 
+## Installation
+
+Prerequisites: Install containernet (easiest approach is to run the nested dockercontainer)
+
+## Running a test
+
+Run benchmark.py
+
+Parameters are as follows:
+
+System: The system to test, for example 'etcd_go' for etcd with a client using the go bindings
+
+Topology: The topology to use for the testing, for example an edge network or just a simple fully connected data-center
+
+	- --topo_args. Arguments to pass to the topology class, for example number of nodes, or clients
+
+Distribution: The distribution of operations to pass, currently only a particular ratio of read or write operations which are uniformly distributed accross the keys.
+	- --dist_args: Arguments to pass to the distribution, i.e. the ratio, key range or payload size
+
+Failure type: The type of failure which will be injected, currently only leader failure or no failure, but should support network partitions etc
+
+	- --fail_args: arguments for the failure, for example multiple consecutive leader failures etc
+
+--benchmark_config: configuration of the benchmark for example rate or duration
+
+-d : Debug flag to pause the test after startup and present the Mininet (Containernet) CLI for debug purposes
+
+absolute_path: The absolute path in the host to this folder. This is the path to this folder in the host if operating in a nested docker environment with this folder being mounted into it.
+
+A typical command to start a test would thus be:
+```
+python benchmark.py etcd_go simple --topo_args n=5,nc=2 uniform leader --benchmark_config rate=10,duration=15 /home/cjen1/resolving-consensus
+```
+
+
 ## Setting up a new service 
 
 ### Prerequisites

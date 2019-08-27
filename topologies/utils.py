@@ -8,7 +8,11 @@ def addClient(current_dir, net, service, name, ip=None):
         kwargs.append(
                 ('ip', ip)
                 )
-    return net.addDocker(
+    # return net.addDocker(
+    #         name,
+    #         **dict(kwargs)
+    #         )
+    return net.addHost(
             name,
             **dict(kwargs)
             )

@@ -13,7 +13,7 @@ from utils import addClient, addDocker
 def ip_from_int(i):
     return '10.{0:d}.{1:d}.{2:d}'.format(i/(2**16),(i%(2**16))/(2**8),i%(2**8))
 
-def setup(service, current_dir, n=3, nc=1):
+def setup(service, abs_path, n=3, nc=1):
     n = int(n)
     nc = int(nc)
     #- Core setup -------
@@ -29,14 +29,22 @@ def setup(service, current_dir, n=3, nc=1):
     cluster_ips = [ip_from_int(nc + i+1) for i in range(n)]
     dimage = "cjj39_dks28/"+service
     print("*** Using image: " + dimage)
+    # dockers = [
+    #         addDocker(
+    #             abs_path,
+    #             net,
+    #             'd' + str(i+1), 
+    #             cluster_ips[i], 
+    #             dimage
+    #             ) 
+    #         for i in range(n)
+    #         ]
+
     dockers = [
-            addDocker(
-                current_dir,
-                net,
-                'd' + str(i+1), 
-                cluster_ips[i], 
-                dimage
-                ) 
+            net.addHost(
+                'h' + str(i + 1),
+                ip = cluster_ips[i]
+                )
             for i in range(n)
             ]
 
@@ -44,7 +52,7 @@ def setup(service, current_dir, n=3, nc=1):
         net.addLink(d,s1, cls=TCLink, delay='50ms', bw=1, max_queue_size=200)
 
     microclients = [
-                utils.addClient(current_dir, net, service, 'mc%d' % i, ip=ip_from_int(i + 1))
+                utils.addClient(abs_path, net, service, 'mc%d' % i, ip=ip_from_int(i + 1))
             for i in range(nc) 
             ]
 
@@ -59,6 +67,8 @@ def setup(service, current_dir, n=3, nc=1):
                 )
             ).setup
 
-    restarters = system_setup_func(dockers, cluster_ips)
+    kwargs = {'rc':abs_path, 'zk_dist_dir':'{rc}/systems/zookeeper/scripts/zktmp'.format(rc=abs_path)}
 
-    return (net, cluster_ips, microclients, restarters)
+    restarters, stop_func = system_setup_func(dockers, cluster_ips, **kwargs)
+
+    return (net, cluster_ips, microclients, restarters, stop_func)

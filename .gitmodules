@@ -1,0 +1,6 @@
+[submodule "systems/ocamlpaxos/deps/ocaml-uint"]
+	path = systems/ocamlpaxos/deps/ocaml-uint
+	url = https://github.com/andrenth/ocaml-uint.git
+[submodule "systems/ocamlpaxos/deps/capnp-rpc"]
+	path = systems/ocamlpaxos/deps/capnp-rpc
+	url = https://github.com/mirage/capnp-rpc.git

@@ -88,13 +88,12 @@ absolute_path = args.absolute_path
 
 service_name, client_name = system.split("_")
 
-net, cluster_ips, clients, restarters = topo_module.setup(service_name, absolute_path, **topo_kwargs) 
+net, cluster_ips, clients, restarters, cleanup = topo_module.setup(service_name, absolute_path, **topo_kwargs) 
 failures = fail_setup(net, restarters, system.split('_')[0])
 
 if args.d:
     from mininet.cli import CLI
     CLI(net)
-    net.stop()
 else:
     duration = float(bench_args['duration'])
     print("BENCHMARK: " + str(duration))
@@ -124,4 +123,7 @@ else:
 
     tester.join()
     print("Finished Test")
-    net.stop()
+
+from subprocess import call
+cleanup()
+net.stop()

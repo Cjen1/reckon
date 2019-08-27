@@ -12,7 +12,7 @@ setLogLevel('info')
 leader = None
 res = None
 def leader_down(net, restarters, service_name):
-    hosts = [ net[hostname] for hostname in filter(lambda i: i[0] == 'd', net.keys())]
+    hosts = [ net[hostname] for hostname in filter(lambda i: i[0] == 'h', net.keys())]
     ips = [host.IP() for host in hosts]
     print(ips)
 
@@ -21,7 +21,7 @@ def leader_down(net, restarters, service_name):
     print("FAILURE: Stopping Leader")
     leader = importlib.import_module('systems.%s.scripts.find_leader' % service_name).find_leader(hosts, ips)
     res = restarters[hosts.index(leader)]
-    leader.cmd('screen -X -S %s quit' % service_name)
+    leader.cmd('screen -X -S %s quit' % (service_name + "_" + leader.name))
 
 def leader_up():
     global leader

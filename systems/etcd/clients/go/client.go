@@ -99,6 +99,12 @@ func main() {
 	println("Client: Starting client")
 
 	endpoints := strings.Split(os.Args[1], ",")
+	for index, ip := range endpoints {
+		name := ip + ":2379"
+		println(name)
+		endpoints[index] = name
+	}
+
 	i, err := strconv.ParseUint(os.Args[2], 10, 32)
 	check(err)
 	address := "ipc://" + os.Args[3]
@@ -110,9 +116,6 @@ func main() {
 	print("Client: connecting to: " + address)
 	socket.Connect(address)
 
-	for index, endpoint := range endpoints {
-		endpoints[index] = endpoint + ":2379"
-	}
 	dialTimeout := 2 * time.Second
 
 	cli, err := clientv3.New(clientv3.Config{
@@ -132,6 +135,7 @@ func main() {
 	for {
 		println("Client: Waiting to recieve op")
 		Operation := ReceiveOp(socket)
+		println("Client: Received")
 
 		switch op := Operation.OpType.(type) {
 		case *OpWire.Operation_Put:

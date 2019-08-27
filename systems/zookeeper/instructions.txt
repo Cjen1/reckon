@@ -1,0 +1,64 @@
+Once `make containernet` has finished, navigate to `~/mounted/Resolving-Consensus`, then follow the below instructions to recreate tge issues we are experiencing when inducing leader failure in zookeeper.
+
+0--
+navigate to systems/zookeeper and type `make`.
+Then navigate back.
+
+1-- 
+tester.py should contain the following code:
+```
+from subprocess import call
+import numpy as np
+from itertools import product
+
+abs_path = '/home/cjj39/mounted/Resolving-Consensus/'
+
+
+for n, r, nc in product([5], [1], [5]):
+    call(
+            [
+                'python',
+                'benchmark.py',
+                'zookeeper_java',
+                'simple',
+                '--topo_args', 'n={0},nc={1}'.format(n, nc),
+                'uniform',
+                'none',
+                '--benchmark_config',
+                'rate={r},'.format(r=r) +
+                'duration=120,'+
+                'dest=../results/zk_lf_{n}s_{nc}cli_r{r}.res'.format(n=n, r=r, nc=nc),
+                '-d',
+                abs_path
+            ]
+        )
+```
+this will make a 5-server ZK cluster be started up where each of the servers should be able to talk to each other.
+
+2--
+in containernet, clear mininet crap by typing `mn -c`, then `python tester.py`.
+
+3--
+this will after a short set-up put you in the containernet shell, where you can test that the servers have connectivity using `pingall`
+
+4-- 
+in another terminal (outside of containernet), attach to mn.d4 and mn.d5.
+if you type `echo stat | nc localhost 2181` in mn.d5, you should see that the server running there is the leader (try that command until you get some info about the local ZK server), or if it is a follower you should find the leader by iterating through the mn.dx containers.
+
+5--
+in both mn.d4 and mn.d5, you can connect to the local server using apache's client interface by navigating to /usr/local/zookeeper/bin/ and typing `bash zkCli.sh -server localhost:2181`. This should work fine; it should say "CONNECTED" once you hit enter after the watcher sees an event. 
+
+6--
+now, the way we model leader failure is that we kill the leader server in the screen that it runs in. in the container where the docker container is located, we induce failure with the command `screen -X -S zookeeper quit`. 
+
+7--
+If now you give it a second, and then type `echo stat | nc localhost 2181` in mn.d4, you should see that it has been elected leader.
+This, and running other diagnostics such as `echo ruok | nc localhost 2181`, `echo srvr | nc localhost 2181` all suggest that the cluster has come back up, but trying to connect using zkCli as in step 5 just remains in the CONNECTING state. This is the problem we're experiencing.
+
+8--
+Additionally, if you restart the former leader on mn.d5 using `screen -d -m -S zookeeper bash /usr/local/zookeeper/bin/zkServer.sh start-foreground`, it will rejoin the cluster (after some time), in that `...stat...` will come up with "...Mode: follower..." at some point.
+(the logs of the new leader at /usr/local/zookeeper/logs will reflect this joining, and also the leader election). 
+however, the cluster will not have regained connnectivity.
+
+
+

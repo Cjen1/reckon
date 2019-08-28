@@ -4,3 +4,9 @@
 [submodule "systems/ocamlpaxos/deps/capnp-rpc"]
 	path = systems/ocamlpaxos/deps/capnp-rpc
 	url = https://github.com/mirage/capnp-rpc.git
+[submodule "systems/ocamlpaxos/clients/ocaml"]
+	path = systems/ocamlpaxos/clients/ocaml
+	url = git@github.com:Cjen1/ocaml-paxos-microclient.git
+[submodule "systems/ocamlpaxos/src"]
+	path = systems/ocamlpaxos/src
+	url = git@github.com:Cjen1/OcamlPaxos.git

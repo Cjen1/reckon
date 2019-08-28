@@ -17,7 +17,7 @@ def setup(dockers, ips, **kwargs):
 
     print(dockers)
     print(ips)
-    for i, (docker, ip, node_name) in enumerate(zip(dockers, ips, node_names)):
+    for i, (docker) in enumerate(dockers):
         start_cmds = [
                     "screen -d -S op_acceptor_{name} -m ocaml-paxos-acceptor {ip}".format(
                         name = docker.name,
@@ -34,8 +34,10 @@ def setup(dockers, ips, **kwargs):
                         endpoints = endpoints
                         )
                     ]
+        def restarter():
+            for cmd in start_cmds:
+                print(docker.cmd(cmd))
 
-        restarter = (lambda:[print(docker.cmd(cmd)) for cmd in start_cmds][-1])
         restarters.append(restarter)
 
         print("Start cmd: ")

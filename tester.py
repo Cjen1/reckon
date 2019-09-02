@@ -11,15 +11,15 @@ for n, r, nc in product([5], [1], [5]):
             [
                 'python',
                 'benchmark.py',
-                'zookeeper_java',
+                'etcd_go',
                 'simple',
                 '--topo_args', 'n={0},nc={1}'.format(n, nc),
                 'uniform',
                 'none',
                 '--benchmark_config', 
                     'rate={r},'.format(r=r) +
-                    'duration=3600,'+
-                    'dest=../results/zk_lf_{n}s_{nc}cli_r{r}.res'.format(n=n, r=r, nc=nc),
+                    'duration=60,'+
+                    'dest=../results/{n}s_{nc}cli_r{r}.res'.format(n=n, r=r, nc=nc),
                 abs_path
             ]
         )
@@ -43,24 +43,23 @@ for n in xrange(24, 27, 1):
                         abs_path
                     ]
                 )
-"""
 
-for rate in sorted(set([int(i) for i in np.logspace(5,5.5,15,base=2)])):
-    for n in [2**i+1 for i in range(5,8)]:
-        for system in ['zookeeper_java','etcd_go']:
+"""
+for rate in sorted(set([int(i) for i in np.logspace(3,5.5,15,base=2)]))[2:]:
+    for n in [9]:#xrange(7, 37, 2):
+        for system in ['zookeeper_java']:
             call(
                     [
                         'python',
                         'benchmark.py',
                         system,
-                        'tree',
-                        '--topo_args', 'n={0},nc={1}'.format(n, 40),
+                        'simple',
+                        '--topo_args', 'n={0},nc={1}'.format(n, 10),
                         'uniform',
-                        'none',
+                        'leader',
                         '--benchmark_config', 'rate={0},'.format(rate) + 
-                            'duration=60,'+
-                            'dest=../results/{0}_{1}_{2}.res'.format(n, rate, system),
-                            '-d',
+                            'duration=120,'+
+                            'dest=../results/lf_{0}_{1}_{2}.res'.format(n, rate, system),
                         abs_path,
                     ]
                 )

@@ -25,4 +25,4 @@ client_docker: clientjar clients/dockerfile
 	docker build -t cjj39_dks28/zookeeper_clients clients
 
 buildfolder:
-	mkdir build
+	mkdir -p build

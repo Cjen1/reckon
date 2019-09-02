@@ -8,8 +8,9 @@ from sys import argv
 import tarfile as tf
 
 def stop(hosts):
+    node_names=['zk_' + host.name for host in hosts]
     for k,host in enumerate(hosts):
-        host.cmd("screen -X -S zk{k} quit".format(k=k))
+        host.cmd("screen -X -S zookeeper_{name} quit".format(k=k, name=node_names[k]))
 
 def start_servers(hosts, ips, zoo_src):
     restarters=[]
@@ -17,7 +18,7 @@ def start_servers(hosts, ips, zoo_src):
     for k, host in enumerate(hosts):
         zkd = '{zs}/'.format(k=k, zs=zoo_src)
         zkkd = '{zs}{k}/'.format(k=k, zs=zoo_src)
-        cmd = 'screen -d -m -S zookeeper_{name} bash {zkd}{bn} start-foreground {zkd}conf/zoo{k}.cfg'.format(k=k, bn='bin/zkServer.sh', zkd=zkd, name=node_names[k])
+        cmd = 'screen -d -m -S zookeeper_{name} bash {zkd}{bn} start-foreground {zkd}conf/zoo{k}.cfg'.format(k=k, bn='bin/zkServer.sh', zkd=zkd, name=host.name)
         host.cmd(cmd)
         restarters.append(lambda : host.cmd(cmd))
     return restarters

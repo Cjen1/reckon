@@ -44,8 +44,10 @@ public class Client implements org.apache.zookeeper.Watcher {
 		String data = opr.getPut().getValue().toString();
 		long start = 0L, start2 = 0L;
 		long stop = 0L, stop2 = 0L;
+		int tries = 0;
 //		System.out.println("CLIENT: About to send PUT request.");
 		do {
+			tries += 1;
 			org.apache.zookeeper.ZooKeeper.States state = client.getState();
 			switch(state){
 				case ASSOCIATING:
@@ -85,12 +87,13 @@ public class Client implements org.apache.zookeeper.Watcher {
 			}
 			
 			if(!err.equals("None")){
-//				System.out.println("CLIENT: Non-None Error: " + err);
-//				System.out.println("CLIENT: Making new ZooKeeper.");
+				System.out.println("CLIENT: Non-None Error: " + err);
+				System.out.println("CLIENT: Making new ZooKeeper.");
 				client = new ZooKeeper(quorum, SESSION_TIMEOUT, new Client());
+				err = "Failed: " + tries + " tries.";
 			}
 
-		} while (!err.equals("None"));
+		} while (!err.equals("None") && tries < 1);
 //		System.out.println("CLIENT: PUT successfully.");
 		double duration = (stop2 - start2 + 0.0) / 1E9; // Duration in seconds.
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
@@ -110,7 +113,9 @@ public class Client implements org.apache.zookeeper.Watcher {
 		String err = "None";
 		String path = "/" + opr.getGet().getKey();
 		long start, start2, stop, stop2 = 0L;
+		int tries = 0;
 		do{
+		tries += 1;
 		org.apache.zookeeper.ZooKeeper.States state = client.getState();
 		switch(state){
 			case ASSOCIATING:
@@ -139,10 +144,12 @@ public class Client implements org.apache.zookeeper.Watcher {
 				break;
 		}
 
-		if(!err.equals("None"))
+		if(!err.equals("None")){
+			err = "Failed: " + tries + " times.";
 			client = new ZooKeeper(quorum, SESSION_TIMEOUT, new Client());
+		}
 
-		} while(!err.equals("None"));
+		} while(!err.equals("None") && tries < 1);
 		double duration = (stop2 - start2 + 0.0) / 1E9; // Duration in seconds.
 		OpWire.Message.Response resp = OpWire.Message.Response.newBuilder()
 							     .setResponseTime(duration)
@@ -185,15 +192,20 @@ public class Client implements org.apache.zookeeper.Watcher {
 		socket.send("", 0);
 		while(!quits){
 			OpWire.Message.Operation opr = mainClient.receiveOp(socket);
-
+			System.out.println("Client: Sending op.");
 			switch(opr.getOpTypeCase().getNumber()){
 				case 1: 	//1 = Put
-					resp = mainClient.put(cli, opr, clientId, quorum);
+					do{
+						resp = mainClient.put(cli, opr, clientId, quorum);
+					} while(resp.getErr().contains("Failed"));
 					break;			
 				case 2:		//2 = Get
-					resp = mainClient.get(cli, opr, clientId, quorum);
+					do{
+						resp = mainClient.get(cli, opr, clientId, quorum);
+					} while(resp.getErr().contains("Failed"));
 					break;				
 				case 3:		//3 = Quit
+					System.out.println("CLIENT: Quitting.");
 					socket.close();
 					context.term();
 					return;

@@ -18,22 +18,24 @@ def setup(dockers, ips, **kwargs):
     print(dockers)
     print(ips)
     for i, (docker) in enumerate(dockers):
+        data_dir = "utils/data/"+str(i)
         start_cmds = [
-                    "screen -d -S op_acceptor_{name} -m ocaml-paxos-acceptor {ip}".format(
+                    "screen -d -S op_acceptor_{name} -m ocaml-paxos-acceptor {data_dir}".format(
                         name = docker.name,
-                        ip = "127.0.0.1"
+                        data_dir = data_dir + "_acceptor",
                         ),
-                    "screen -d -S op_leader_{name} -m ocaml-paxos-leader {ip} {endpoints}".format(
+                    "screen -d -S op_leader_{name} -m ocaml-paxos-leader {endpoints} {data_dir}".format(
                         name = docker.name,
-                        ip = "127.0.0.1",
-                        endpoints = endpoints
+                        endpoints = endpoints,
+                        data_dir = data_dir + "_leader",
                         ),
-                    "screen -d -S op_replica_{name} -m ocaml-paxos-replica {ip} {endpoints}".format(
+                    "screen -d -S op_replica_{name} -m ocaml-paxos-replica {endpoints} {data_dir}".format(
                         name = docker.name,
-                        ip = "127.0.0.1",
-                        endpoints = endpoints
+                        endpoints = endpoints,
+                        data_dir = data_dir + "_replica",
                         )
                     ]
+
         def restarter():
             for cmd in start_cmds:
                 print(docker.cmd(cmd))

@@ -1,3 +1,4 @@
+from subprocess import call, Popen, check_output, PIPE
 import Queue
 from Queue import Queue as queue
 from threading import Thread as Thread
@@ -8,8 +9,6 @@ import argparse
 import importlib
 from os import listdir
 import os
-
-import cgroups
 
 from sys import argv, stdout, stderr
 
@@ -60,7 +59,7 @@ system = args.system
 topo = args.topology
 topo_kwargs = dict([arg.split('=') for arg in args.topo_args.split(',')]) if args.topo_args != "" else {}
 print(topo, topo_kwargs)
-topo_module = importlib.import_module('topologies.' + topo)
+topo_module = importlib.import_module('topologies.simple')
 
 distribution = args.distribution
 dist_kwargs = dict([arg.split('=') for arg in args.dist_args.split(',')]) if args.dist_args != "" else {}
@@ -78,10 +77,7 @@ bench_defs = {
         'nclients': 1, 
         'rate': 1,		# upper bound on reqs/sec 
 	'duration': 160,	# duration of operation sending in seconds
-        'dest': '../results/test.res', 
-        'cpu_quota' : 100,
-        'memory_quota' : '4096',
-        'memory_unit' : 'megabytes'
+        'dest': '../results/test.res'
         }
 bench_args = {}
 if args.benchmark_config != "":
@@ -93,18 +89,29 @@ absolute_path = args.absolute_path
 
 service_name, client_name = system.split("_")
 
-net, cluster_ips, clients, restarters, cleanup, cgrps = topo_module.setup(service_name, absolute_path, **topo_kwargs) 
-failures = fail_setup(net, restarters, system.split('_')[0], cgrps)
+net, cluster_ips, clients, restarters = None, '', [], [] #topo_module.setup(service_name, absolute_path, **topo_kwargs) 
+failures = fail_setup(net, restarters, system.split('_')[0])
+cluster_ips=['172.17.0.2' for _ in range(int(topo_kwargs['n']))]
+pwd = os.getcwd()
+zktmp = os.path.realpath('systems/{service}/scripts/zktmp'.format(service=service_name))
+first = Popen('bash {pwd}/systems/{service}/scripts/localcleanup.sh 128 {zktmp}'.format(service=service_name,zktmp=zktmp, pwd=pwd).split(' '))
+sleep(3)
+second = Popen('bash {pwd}/systems/{service}/scripts/localcleanup.sh 128 {zktmp}'.format(service=service_name,zktmp=zktmp, pwd=pwd).split(' '))
+first.wait()
+final = Popen('bash {pwd}/systems/{service}/scripts/localcleanup.sh 128 {zktmp}'.format(service=service_name,zktmp=zktmp, pwd=pwd).split(' '))
+second.wait()
+final.wait()
+sleep(5)
 
-hosts = [h for h in net.hosts if h.name[0] == "h"]
-
-for host in hosts:
-    cgrps[host].set_cpu_limit(bench_args['cpu_quota'])
-    cgrps[host].set_memory_limit(limit=bench_args['memory_quota'], unit=bench_args['memory_unit'])
+call('python {pwd}/systems/{service}/scripts/localsetup.py {n} {pwd} {zktmp}'.format(service=service_name, n=topo_kwargs['n'], pwd=pwd, zktmp=zktmp).split(' '))
+while(not('Mode' in check_output(['nc', 'localhost', '2181'], stdin=Popen(['echo', 'stat'], stdout=PIPE).stdout))):
+    sleep(5)
 
 if args.d:
+    input()
     from mininet.cli import CLI
     CLI(net)
+    net.stop()
 else:
     duration = float(bench_args['duration'])
     print("BENCHMARK: " + str(duration))
@@ -122,8 +129,7 @@ else:
                 bench_args['duration'],
                 service_name,
                 client_name,
-                cluster_ips,
-                cgrps
+                cluster_ips
             ])  
     tester.start()
 
@@ -135,7 +141,4 @@ else:
 
     tester.join()
     print("Finished Test")
-
-from subprocess import call
-cleanup()
-net.stop()
+    net.stop()

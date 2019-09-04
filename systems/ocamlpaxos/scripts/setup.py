@@ -4,13 +4,22 @@ from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 
-def stop(dockers):
-    for docker in dockers:
-        for name_type in ["op_acceptor", "op_leader", "op_replica"]:
-            docker.cmd("screen -X -S {name_type}_{name} quit".format(name_type = name_type, name=docker.name))
+import os
+
+def stop(hosts, cgrps):
+    for hosts in hosts:
+        for pid in cgrps[host]:
+            host.cmd("kill {pid}".format(pid))
+        hosts[0].cmd("screen -wipe")
 
 
-def setup(dockers, ips, **kwargs):
+
+def contain_in_cgroup(cg):
+    pid = os.getpid()
+    cg.add(pid)
+
+
+def setup(dockers, ips, cgrps, **kwargs):
     endpoints = "".join(ip + "," for ip in ips)[:-1]
 
     restarters = []
@@ -38,7 +47,7 @@ def setup(dockers, ips, **kwargs):
 
         def restarter():
             for cmd in start_cmds:
-                print(docker.cmd(cmd))
+                print(docker.popen(cmd, preexec_fn=lambda:contain_in_cgroup(cgrps[docker])))
 
         restarters.append(restarter)
 

@@ -46,8 +46,8 @@ for n in xrange(24, 27, 1):
 
 """
 for rate in sorted(set([int(i) for i in np.logspace(3,5.5,15,base=2)]))[2:]:
-    for n in [9]:#xrange(7, 37, 2):
-        for system in ['zookeeper_java']:
+    for n in xrange(7, 37, 2):
+        for system in ['etcd_go', 'zookeeper_java']:
             call(
                     [
                         'python',
@@ -60,7 +60,7 @@ for rate in sorted(set([int(i) for i in np.logspace(3,5.5,15,base=2)]))[2:]:
                         '--benchmark_config', 'rate={0},'.format(rate) + 
                             'duration=120,'+
                             'dest=../results/lf_{0}_{1}_{2}.res'.format(n, rate, system),
-                        abs_path,
+                        abs_path
                     ]
                 )
             call(['bash', 'clean.sh'])

@@ -1,15 +1,28 @@
+from sys import stdout
+
 from mininet.net import Containernet
 from mininet.node import Controller
 from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 
-def stop(dockers):
-    for docker in dockers:
-        docker.cmd("screen -X -S etcd_{name} quit".format(name=docker.name))
+import os
+
+def stop(hosts, cgrps):
+    for host in hosts:
+        for pid in cgrps[host].pids:
+            docker.cmd("kill {pid}".format(pid=pid))
+    hosts[0].cmd('screen -wipe')
+
+def contain_in_cgroup(cg):
+    """
+    pid = os.getpid()
+    cg.add(pid)
+    """
+    pass
 
 
-def setup(dockers, ips, **kwargs):
+def setup(dockers, ips, cgrps, **kwargs):
     node_names = ["etcd_" + docker.name for docker in dockers]
     cluster = "".join(name + "=http://"+ip+":2380," for i, (ip, name) in 
             enumerate(
@@ -45,7 +58,7 @@ def setup(dockers, ips, **kwargs):
 
         print("Start cmd: " + start_cmd)
         print()
-        print(docker.cmd(start_cmd))
-        restarters.append(lambda:docker.cmd(start_cmd))
+        docker.popen(start_cmd, preexec_fn=lambda:contain_in_cgroup(cgrps[docker]), stdout=stdout)
+        restarters.append(lambda:docker.popen(start_cmd, preexec_fn=lambda:contain_in_cgroup(cgrps[docker]), stdout=stdout))
 
-    return restarters, (lambda: stop(dockers))
+    return restarters, (lambda: stop(dockers, cgrps))

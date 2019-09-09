@@ -1,5 +1,6 @@
 **/build/**
 **/_build/**
+**/systems/*/clients/**
 */result*
 *.pyc
 *.swp
@@ -9,4 +10,3 @@
 .DS_Store
 *client
 **.jar
-

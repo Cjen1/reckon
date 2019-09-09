@@ -1,5 +1,6 @@
-from mininet.net import Containernet
-from mininet.node import Controller, UserSwitch, IVSSwitch, OVSSwitch, RemoteController
+from tqdm import tqdm as tqdm
+from mininet.net import Mininet
+from mininet.node import Controller, OVSController, UserSwitch, IVSSwitch, OVSSwitch, RemoteController
 from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
@@ -10,7 +11,8 @@ import time
 import importlib
 
 import utils
-from utils import addClient, addDocker, contain_in_cgroup
+
+from utils import addClient
 
 def ip_from_int(i):
     return '10.{0:d}.{1:d}.{2:d}'.format(i/(2**16),(i%(2**16))/(2**8),i%(2**8))
@@ -21,7 +23,7 @@ def setup(service, current_dir, n=3, nc=1):
     nc = int(nc)
     #- Core setup -------
 
-    net = Containernet(controller=Controller, switch=OVSSwitch)
+    net = Mininet(controller=Controller, switch=OVSSwitch, link=TCLink)
     info('*** Adding controller\n')
     net.addController('c0')
     
@@ -30,25 +32,27 @@ def setup(service, current_dir, n=3, nc=1):
     roots = [net.addSwitch('s%s' % str(i)) for i in range(1)] # roots at the center of the tree structure
 
     # inner ring of switches, connects servers to network
-    num_inner_switches = max(n//2, nc//15)
+    num_inner_switches = max(n//4, nc//15)
     
     inner_switches = []
 
     for i in range(num_inner_switches):
         inner_switches.append(net.addSwitch('s%s' % str(i+len(roots))))
 
-    num_outer_switches = int(ceil((nc // num_inner_switches) / 5.))
-
+    num_outer_switches = int(ceil((nc // num_inner_switches) / 2.5))
+    '''
     outer_switches = {}
     for i, inner in enumerate(inner_switches):
         outer_switches[inner] = [net.addSwitch('s%s' % str(j + num_outer_switches*i+num_inner_switches+ len(roots)+ 1)) for j in range(num_outer_switches)]
-    
+    '''    
     info('*** Adding links between switches\n')
     for i,s in enumerate(inner_switches):
         print("Adding link to inner switch")
         net.addLink(s, roots[0], delay='30ms', bw=10, max_queue_size=500)
+        '''
         for o in outer_switches[s]:
             net.addLink(o, s, delay='20ms')
+        '''
 
     info('*** Adding docker containers and adding links\n')
     cluster_ips = [ip_from_int(nc + i+1) for i in range(n)]
@@ -78,7 +82,7 @@ def setup(service, current_dir, n=3, nc=1):
         cycle = did // num_inner_switches
         return did % num_inner_switches, cycle % num_outer_switches
 
-    for did,d in enumerate(dockers):
+    for did,d in tqdm(enumerate(dockers)):
         net.addLink(d, inner_switches[did % num_inner_switches], cls=TCLink, delay='10ms', bw=1, max_queue_size=200)
 
     microclients = [
@@ -86,9 +90,10 @@ def setup(service, current_dir, n=3, nc=1):
             for i in range(nc) 
             ]
 
-    for i,mc in enumerate(microclients):
+    for i,mc in tqdm(enumerate(microclients)):
         inn, out = mc_coordinates(i)
-        net.addLink(mc, outer_switches[inner_switches[inn]][out]) 
+        print('inn, out', (inn,out))
+        net.addLink(mc, inner_switches[inn], delay="2ms") 
 
     net.start()
 

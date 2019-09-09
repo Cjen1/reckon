@@ -1,6 +1,4 @@
 from sys import stdout
-
-from mininet.net import Containernet
 from mininet.node import Controller
 from mininet.cli import CLI
 from mininet.link import TCLink
@@ -38,15 +36,22 @@ def setup(dockers, ips, cgrps, **kwargs):
     for i, (docker, ip, node_name) in enumerate(zip(dockers, ips, node_names)):
         start_cmd = (
                     "screen -d -S etcd_{name} -m etcd " +
-                    "--data-dir=utils/data/etcd-{node_name} " + 
-                    "--name {node_name} " + 
-                    "--initial-advertise-peer-urls http://{ip}:2380 "+
-                    "--listen-peer-urls http://{ip}:2380 " + 
-                    "--listen-client-urls http://{ip}:2379,http://127.0.0.1:2379 " + 
-                    "--advertise-client-urls http://{ip}:2379 " + 
+                    "--data-dir=utils/data/etcd-node_name --name {node_name} " + 
+                    "--initial-advertise-peer-urls http://{ip}:2380 --listen-peer-urls http://0.0.0.0:2380 " + 
+                    "--advertise-client-urls http://{ip}:2379 --listen-client-urls http://0.0.0.0:2379 " + 
                     "--initial-cluster {cluster} " +
-                    "--initial-cluster-token {cluster_token} " +
-                    "--initial-cluster-state {cluster_state} " 
+                    "--initial-cluster-state {cluster_state} --initial-cluster-token {cluster_token}"
+
+                    #"screen -d -S etcd_{name} -m etcd " +
+                    #"--data-dir /tmp/{node_name}" + #utils/data/etcd-{node_name} " + 
+                    #"--name={node_name} " + 
+                    #"--initial-advertise-peer-urls http://127.0.0.1:2380 "+
+                    #"--listen-peer-urls http://127.0.0.1:2380 " + 
+                    #"--listen-client-urls http://{ip}:2379,http://127.0.0.1:2379 " + 
+                    #"--advertise-client-urls http://{ip}:2379 " + 
+                    #"--initial-cluster {cluster} " +
+                    #"--initial-cluster-token {cluster_token} " +
+                    #"--initial-cluster-state {cluster_state} " 
                     ).format(
                         node_name=node_name, 
                         name=docker.name,

@@ -1,4 +1,4 @@
-from mininet.net import Containernet
+from mininet.net import Mininet
 from mininet.node import Controller, UserSwitch, IVSSwitch, OVSSwitch
 from mininet.cli import CLI
 from mininet.link import TCLink
@@ -8,7 +8,7 @@ import cgroups
 import importlib
 
 import utils
-from utils import addClient, addDocker
+from utils import addClient
 
 def ip_from_int(i):
     return '10.{0:d}.{1:d}.{2:d}'.format(i/(2**16),(i%(2**16))/(2**8),i%(2**8))
@@ -18,7 +18,7 @@ def setup(service, abs_path, n=3, nc=1):
     nc = int(nc)
     #- Core setup -------
 
-    net = Containernet(controller=Controller, switch=OVSSwitch)
+    net = Mininet(controller=Controller, switch=OVSSwitch)
     info('*** Adding controller\n')
     net.addController('c0')
     

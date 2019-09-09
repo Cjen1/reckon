@@ -195,14 +195,19 @@ public class Client implements org.apache.zookeeper.Watcher {
 			System.out.println("Client: Sending op.");
 			switch(opr.getOpTypeCase().getNumber()){
 				case 1: 	//1 = Put
-					do{
+					resp = mainClient.put(cli, opr, clientId, quorum);
+					for(int iter = 0; false && resp.getErr().contains("Failed"); iter++){
+						System.out.println("Retrying for " + iter + "th time.");
+						java.util.concurrent.TimeUnit.SECONDS.sleep(20*(1 << iter));
 						resp = mainClient.put(cli, opr, clientId, quorum);
-					} while(resp.getErr().contains("Failed"));
+					}
 					break;			
 				case 2:		//2 = Get
-					do{
+					resp = mainClient.get(cli, opr, clientId, quorum);
+					for(int iter=0; resp.getErr().contains("Failed"); iter++){
+						java.util.concurrent.TimeUnit.SECONDS.sleep(20*(1 << iter));
 						resp = mainClient.get(cli, opr, clientId, quorum);
-					} while(resp.getErr().contains("Failed"));
+					}
 					break;				
 				case 3:		//3 = Quit
 					System.out.println("CLIENT: Quitting.");

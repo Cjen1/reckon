@@ -45,22 +45,22 @@ for n in xrange(24, 27, 1):
                 )
 
 """
-for rate in sorted(set([int(i) for i in np.logspace(3,5.5,15,base=2)]))[2:]:
-    for n in [9]:#xrange(7, 37, 2):
-        for system in ['zookeeper_java']:
+for rate in [3]:
+    for n in [21]:#xrange(7, 37, 2):
+        for system in ["zookeeper_java", 'etcd_go']: #'zookeeper_java']:
             call(
                     [
                         'python',
                         'benchmark.py',
                         system,
-                        'simple',
-                        '--topo_args', 'n={0},nc={1}'.format(n, 10),
+                        'tree',
+                        '--topo_args', 'n={0},nc={1}'.format(n, 30),
                         'uniform',
                         'leader',
                         '--benchmark_config', 'rate={0},'.format(rate) + 
-                            'duration=120,'+
+                        'duration=480,'+
                             'dest=../results/lf_{0}_{1}_{2}.res'.format(n, rate, system),
-                        abs_path,
+                        abs_path
                     ]
                 )
             call(['bash', 'clean.sh'])

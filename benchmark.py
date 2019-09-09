@@ -45,7 +45,7 @@ parser.add_argument(
 parser.add_argument(
         '-d',
         action='store_true',
-        help='Debug mode, sets up mininet and docker containers, then waits in Mininet.CLI')
+        help='Debug mode, sets up mininet, then waits in Mininet.CLI')
 parser.add_argument(
         'absolute_path',
         help="The absolute path in the host to this folder, required due to docker weirdness and zmq's ipc rules"

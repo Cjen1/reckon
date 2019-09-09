@@ -1,5 +1,4 @@
-build: clientjar docker client_docker
-
+build: clientjar 
 clientjar: client
 	mkdir tmp; mkdir clients; mkdir clients/java;\
 		cp src/clients/java/*.py clients/java;\

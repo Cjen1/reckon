@@ -62,7 +62,7 @@ def run_client(clients, config):
 
     socket.setsockopt(zmq.LINGER, 0)
     #Prevent infinite waiting timeout is in milliseconds
-    socket.RCVTIMEO = 1000 * config['duration'] 
+    socket.RCVTIMEO = 60*60*1000 #1000 * config['duration'] 
     
     microclients = [
             config['start_client'](mnclient, client_id, config)

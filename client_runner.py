@@ -7,6 +7,7 @@ from ctypes import c_bool
 import os
 import json
 import zmq
+import cgroups
 
 from Queue import Empty as QEmpty, Full as QFull
 import distributions.message_pb2 as msg_pb
@@ -131,7 +132,7 @@ def producer(op_gen, rate, duration, stop_flag):
     #print("stopped: {0}s later".format(time.time() - start))
     
 
-def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ips):
+def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ips, cgrps):
     rate = float(rate)
     duration = int(duration)
     op_prereq, op_gen = ops
@@ -145,7 +146,8 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
         'runner_address': os.getcwd() + '/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
         'client_address': os.getcwd() + '/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
         #'client_address':'/rc/utils/sockets/benchmark.sock',
-        'start_client': (importlib.import_module('systems.%s.scripts.client_start' % service_name).start)
+        'start_client': (importlib.import_module('systems.%s.scripts.client_start' % service_name).start),
+        'cgrps': cgrps
         }
 
     print("RUNNER ADDRESS: "+ config['runner_address'])

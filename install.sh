@@ -25,10 +25,12 @@ pip3 install --user \
 	protobuf \
 	pyzmq \
 	pathlib \
-	tqdm
+	tqdm \
+	cgroups
 
 pip install --user \
 	protobuf \
 	pyzmq \
 	pathlib \
-	tqdm 
+	tqdm \
+	cgroups

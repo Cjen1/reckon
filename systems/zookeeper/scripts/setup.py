@@ -7,20 +7,25 @@ from tqdm import tqdm as tqdm
 from sys import argv
 import tarfile as tf
 
-def stop(hosts):
-    node_names=['zk_' + host.name for host in hosts]
-    for k,host in enumerate(hosts):
-        host.cmd("screen -X -S zookeeper_{name} quit".format(k=k, name=node_names[k]))
+def contain_in_cgroup(cg):
+    pid=os.getpid()
+    cg.add(pid)
 
-def start_servers(hosts, ips, zoo_src):
+def stop(hosts, cgrps):
+    for k,host in enumerate(hosts):
+        for pid in cgrps[host].pids:
+            host.cmd("kill {pid}".format(pid=pid))
+        hosts[0].cmd("screen -wipe")
+
+def start_servers(hosts, ips, zoo_src, cgrps):
     restarters=[]
     node_names=['zk_' + host.name for host in hosts]
     for k, host in enumerate(hosts):
         zkd = '{zs}/'.format(k=k, zs=zoo_src)
         zkkd = '{zs}{k}/'.format(k=k, zs=zoo_src)
         cmd = 'screen -d -m -S zookeeper_{name} bash {zkd}{bn} start-foreground {zkd}conf/zoo{k}.cfg'.format(k=k, bn='bin/zkServer.sh', zkd=zkd, name=host.name)
-        host.cmd(cmd)
-        restarters.append(lambda : host.cmd(cmd))
+        host.popen(cmd, preexec_fn=lambda:contain_in_cgroup(cgrps[host]))
+        restarters.append(lambda : host.popen(cmd, preexec_fn=lambda:contain_in_cgroup(cgrps[host])))
     return restarters
 
 def finish_config(num_servers, ips, zoo_src):
@@ -76,7 +81,7 @@ mv {zd}/apache-zookeeper-3.5.5-bin/* {zd}
     copyfile('{rc}/systems/zookeeper/zkconfs/java.env'.format(rc=res_cons_dir), '{zd}/conf/java.env'.format(zd=zoo_dest))     #cp {rc}/systems/zookeeper/zkconfs/java.env {zd}/conf/java.env
     Path('{zd}/data/myid'.format(zd=zoo_dest)).touch()
 
-def setup(hosts, ips, rc='.', zk_dist_dir='.', **kwargs):
+def setup(hosts, ips, cgrps, rc='.', zk_dist_dir='.',**kwargs):
     n = len(ips)
     base = zk_dist_dir
     zoo = base + '/usr/local/zookeeper'
@@ -90,4 +95,4 @@ def setup(hosts, ips, rc='.', zk_dist_dir='.', **kwargs):
     print('finishing config')
     finish_config(n, ips, zoo)
     print('starting servers')
-    return start_servers(hosts, ips, zoo), (lambda : stop(hosts))
+    return start_servers(hosts, ips, zoo, cgrps), (lambda : stop(hosts, cgrps))

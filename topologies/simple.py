@@ -4,7 +4,7 @@ from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 setLogLevel('info')
-
+import cgroups
 import importlib
 
 import utils
@@ -69,6 +69,8 @@ def setup(service, abs_path, n=3, nc=1):
 
     kwargs = {'rc':abs_path, 'zk_dist_dir':'{rc}/systems/zookeeper/scripts/zktmp'.format(rc=abs_path)}
 
-    restarters, stop_func = system_setup_func(dockers, cluster_ips, **kwargs)
+    cgrps = {h : cgroups.Cgroup(h.name) for h in dockers+microclients}
 
-    return (net, cluster_ips, microclients, restarters, stop_func)
+    restarters, stop_func = system_setup_func(dockers, cluster_ips, cgrps, **kwargs)
+
+    return (net, cluster_ips, microclients, restarters, stop_func, cgrps)

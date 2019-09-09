@@ -1,4 +1,5 @@
 **/build/**
+**/_build/**
 **/systems/*/clients/**
 */result*
 *.pyc
@@ -8,4 +9,4 @@
 *.gz
 .DS_Store
 *client
-
+**.jar

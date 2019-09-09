@@ -8,4 +8,5 @@
 *.gz
 .DS_Store
 *client
+**.jar
 

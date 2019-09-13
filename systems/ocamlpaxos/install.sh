@@ -1,7 +1,7 @@
 apt update; apt install -y \
   capnproto \
   libcapnp-dev \
-  libgmp-dev
+  libgmp-dev \
   libzmq3-dev m4 perl
 
 add-apt-repository ppa:avsm/ppa

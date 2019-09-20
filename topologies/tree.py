@@ -5,16 +5,18 @@ from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 setLogLevel('info')
-
+import cgroups, os
 from math import ceil
 import time
 import importlib
 
 import utils
+
 from utils import addClient
 
 def ip_from_int(i):
     return '10.{0:d}.{1:d}.{2:d}'.format(i/(2**16),(i%(2**16))/(2**8),i%(2**8))
+
 
 def setup(service, current_dir, n=3, nc=1):
     n = int(n)
@@ -95,6 +97,8 @@ def setup(service, current_dir, n=3, nc=1):
 
     net.start()
 
+    cgrps={h : cgroups.Cgroup(h.name) for h in dockers+microclients}
+
     system_setup_func = (
             importlib.import_module(
                 "systems.{0}.scripts.setup".format(service)
@@ -103,7 +107,7 @@ def setup(service, current_dir, n=3, nc=1):
 
     kwargs = {'rc':current_dir, 'zk_dist_dir':'{rc}/systems/zookeeper/scripts/zktmp'.format(rc=current_dir)}
 
-    restarters, stop_func = system_setup_func(dockers, cluster_ips, **kwargs)
+    restarters, stop_func = system_setup_func(dockers, cluster_ips, cgrps, **kwargs)
     """  
     for d in dockers:
         d.update_resources(
@@ -111,4 +115,4 @@ def setup(service, current_dir, n=3, nc=1):
                 cpu_period=100000
                 )
     """
-    return (net, cluster_ips, microclients, restarters, stop_func)
+    return (net, cluster_ips, microclients, restarters, stop_func, cgrps)

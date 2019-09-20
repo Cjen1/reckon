@@ -40,3 +40,8 @@ def addDocker(current_dir, net, name, ip, dimage):
             dimage=dimage,
             volumes = [current_dir + ':/rc']
     )
+
+
+def contain_in_cgroup(grp):
+    pid = os.getpid()
+    grp.add(pid)

@@ -1,12 +1,3 @@
-[submodule "systems/ocamlpaxos/deps/ocaml-uint"]
-	path = systems/ocamlpaxos/deps/ocaml-uint
-	url = https://github.com/andrenth/ocaml-uint.git
-[submodule "systems/ocamlpaxos/deps/capnp-rpc"]
-	path = systems/ocamlpaxos/deps/capnp-rpc
-	url = https://github.com/mirage/capnp-rpc.git
-[submodule "systems/ocamlpaxos/clients/ocaml"]
-	path = systems/ocamlpaxos/clients/ocaml
-	url = git@github.com:Cjen1/ocaml-paxos-microclient.git
 [submodule "systems/ocamlpaxos/src"]
-	path = systems/ocamlpaxos/src
+	path = systems/ocaml-paxos/src
 	url = git@github.com:Cjen1/OcamlPaxos.git

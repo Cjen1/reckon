@@ -80,8 +80,7 @@ def run_client(clients, config):
     #wait for all other clients to finish setup
     barrier.wait()
 
-    def send(addr):
-        op = req_queue.get(timeout=2/config['rate'])
+    def send(addr, op):
         socket.send_multipart([addr, b'', op])
 
     def recv():
@@ -101,15 +100,18 @@ def run_client(clients, config):
 
     while(not stop_flag.value): 
         try:
+            op = req_queue.get(timeout=2/config['rate'])
             addr = recv()
-            send(addr)
+            send(addr, op)
         except QEmpty:
             pass
 
+    print("CR: Sending quit operations")
     quit_op = msg_pb.Operation()
     quit_op.quit.msg = "Quitting normally"
     quit_op = quit_op.SerializeToString()
-    for ready in readys:
+    for c in clients:
+        print("CR: Sending quit operations")
         addr, _, _ = socket.recv_multipart()
         socket.send_multipart([addr, b'', quit_op])
     
@@ -145,7 +147,6 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
         'rate': rate,
         'runner_address': os.getcwd() + '/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
         'client_address': os.getcwd() + '/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
-        #'client_address':'/rc/utils/sockets/benchmark.sock',
         'start_client': (importlib.import_module('systems.%s.scripts.client_start' % service_name).start),
         'cgrps': cgrps
         }

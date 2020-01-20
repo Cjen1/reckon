@@ -1,9 +1,12 @@
 SHELL := /bin/bash
+.PHONY:deps-install bins-install
 
-install: etcd-deps op-deps zookeeper-deps pip
+deps-install: etcd-deps op-deps zookeeper-deps pip
 
-#--------------------------------------------------
-.PHONY:etcd-deps go-install protoc
+bins-install: etcd_install ocaml-paxos_install zk_install
+
+#---- ETCD ----------------------------------------
+.PHONY:etcd-deps go-install protoc etcd-install
 ETCD_VER=v3.3.8
 DOWNLOAD_URL=https://storage.googleapis.com/etcd
 
@@ -17,17 +20,17 @@ etcd-deps: install-deps go-install
 go-install: install-deps
 	sudo add-apt-repository ppa:gophers/archive -y
 	sudo apt update
-	sudo apt install -y golang-1.11-go
+	sudo apt install -y golang-1.11-go golang-goprotobuf-dev
 	echo 'export GOPATH=~/go' >> ~/.bashrc
 	echo 'export PATH=$$PATH:~/go/bin' >> ~/.bashrc
 	echo 'export PATH=$$PATH:/usr/lib/go-1.11/bin' >> ~/.bashrc
 
-.PHONY:protoc
-protoc: 
-	sudo apt install golang-goprotobuf-dev -y
+etcd_install: 
+	cd systems/etcd && \
+		make install
 
 #--------------------------------------------------
-.PHONY: op-deps opam
+.PHONY: op-deps opam ocaml-paxos_install
 op-deps: install-deps opam
 	sudo apt update -y
 	sudo apt install -y \
@@ -46,13 +49,38 @@ opam:
 	opam init -a --disable-sandboxing 
 	opam switch install ocaml-paxos ocaml-base-compiler.4.08.1
 
+ocaml-paxos_install:
+	cd systems/ocaml-paxos && \
+		make install
+
 #--------------------------------------------------
-.PHONY:zookeeper-deps
+.PHONY:zookeeper-deps zk_install
+zk_install:
+	cd systems/zookeeper && \
+		make install
 zookeeper-deps: install-deps
 	sudo add-apt-repository ppa:linuxuprising/java
 	echo oracle-java13-installer shared/accepted-oracle-license-v1-2 select true | sudo /usr/bin/debconf-set-selections
 	sudo apt update -y
 	sudo apt install oracle-java13-installer -y
+
+#--------------------------------------------------
+.PHONY:pip-deps
+pip-deps: install-deps
+	python3 -m pip install virtualenv
+	sudo apt install python3-venv -y
+
+.PHONY:pip
+pip: pip-deps
+	( \
+		pip install \
+			protobuf \
+			pyzmq \
+			pathlib \
+			tqdm \
+			numpy \
+			cgroups \
+	)
 
 #--------------------------------------------------
 .PHONY:install-deps
@@ -83,21 +111,3 @@ install-deps:
 	unzip /tmp/pb.zip -d /tmp/pb
 	sudo cp /tmp/pb/bin/protoc /usr/bin
 	rm -r /tmp/pb
-
-.PHONY:pip-deps
-pip-deps:
-	python3 -m pip install virtualenv
-	sudo apt install python3-venv -y
-
-		#source ./env/bin/activate ; \
-.PHONY:pip
-pip:
-	( \
-		pip install \
-			protobuf \
-			pyzmq \
-			pathlib \
-			tqdm \
-			numpy \
-			cgroups \
-	)

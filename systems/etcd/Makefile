@@ -1,6 +1,13 @@
-install: etcd-install go-install
 
-etcd-install: /usr/bin/etcd /usr/bin/etcdctl
+ETCD_VER=v3.3.8
+DOWNLOAD_URL=https://storage.googleapis.com/etcd
+
+
+.PHONY: install
+install: client etcd
+
+.PHONY:etcd
+etcd: /usr/bin/etcd /usr/bin/etcdctl
 
 /usr/bin/etcd: /tmp/etcd-download
 	sudo cp /tmp/etcd-download/etcd /usr/bin
@@ -8,11 +15,7 @@ etcd-install: /usr/bin/etcd /usr/bin/etcdctl
 /usr/bin/etcdctl: /tmp/etcd-download
 	sudo cp /tmp/etcd-download/etcdctl /usr/bin
 
-.PHONY:/tmp/etcd-download go-install
-
-ETCD_VER=v3.3.8
-DOWNLOAD_URL=https://storage.googleapis.com/etcd
-
+.PHONY:/tmp/etcd-download
 /tmp/etcd-download:
 	sudo rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
 	sudo rm -rf /tmp/etcd-download && mkdir -p /tmp/etcd-download
@@ -21,14 +24,7 @@ DOWNLOAD_URL=https://storage.googleapis.com/etcd
 	sudo rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
 	sudo cp /tmp/etcd-download/etcd /tmp/etcd-download/etcdctl /usr/bin
 
-go-install:
-	sudo add-apt-repository ppa:gophers/archive -y
-	sudo apt update
-	sudo apt install -y golang-1.11-go
-	echo 'export GOPATH=~/go' >> ~/.bashrc
-	echo 'export PATH=$PATH:~/go/bin' >> ~/.bashrc
-	echo 'export PATH=$PATH:/usr/lib/go-1.11/bin' >> ~/.bashrc
-	sudo /usr/lib/go-1.11/bin/go get -u github.com/golang/protobuf/protoc-gen-go
 
-
-
+.PHONY:client
+client:
+	cd clients/go/ && make build

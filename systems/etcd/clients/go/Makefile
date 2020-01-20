@@ -6,5 +6,5 @@ client: client.go OpWire/message.pb.go
 	go get go.etcd.io/etcd/clientv3
 	go build -o ./client client.go
 
-OpWire/message.pb.go: ../../../../utils/message.proto
-	protoc -I ../../../../utils --go_out=OpWire ../../../../utils/message.proto
+OpWire/message.pb.go: ../../../../src/utils/message.proto
+	protoc -I ../../../../src/utils --go_out=OpWire ../../../../src/utils/message.proto

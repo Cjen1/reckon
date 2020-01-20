@@ -64,17 +64,17 @@ def copy_install(num_servers, zoo_src, res_cons_dir):
         
 
 def orig_install(res_cons_dir, zoo_dest):
-    commands = list(map(lambda s: s.split(' '), """wget http://apache.mirror.anlx.net/zookeeper/stable/apache-zookeeper-3.5.5-bin.tar.gz -O {zd}/apache-zookeeper-3.5.5-bin.tar.gz
-mv {zd}/apache-zookeeper-3.5.5-bin/* {zd}
+    commands = list(map(lambda s: s.split(' '), """wget http://apache.mirror.anlx.net/zookeeper/stable/apache-zookeeper-3.5.6-bin.tar.gz -O {zd}/apache-zookeeper-3.5.6-bin.tar.gz
+mv {zd}/apache-zookeeper-3.5.6-bin/* {zd}
          """.format(rc=res_cons_dir, zd=zoo_dest).split('\n') ))
     print(commands[0])
     while('failure' in  check_output(commands[0])):
         print('wget failed...')
-    tf.open('{zd}/apache-zookeeper-3.5.5-bin.tar.gz'.format(zd=zoo_dest), 'r:gz').extractall(zoo_dest)
+    tf.open('{zd}/apache-zookeeper-3.5.6-bin.tar.gz'.format(zd=zoo_dest), 'r:gz').extractall(zoo_dest)
     print(' '.join(commands[1]))
-    for f in os.listdir('{zd}/apache-zookeeper-3.5.5-bin/'.format(zd=zoo_dest)):
+    for f in os.listdir('{zd}/apache-zookeeper-3.5.6-bin/'.format(zd=zoo_dest)):
         print('{zd}/{f}'.format(zd=zoo_dest, f=f))
-        os.rename('{zd}/apache-zookeeper-3.5.5-bin/{f}'.format(zd=zoo_dest, f=f), '{zd}/{f}'.format(zd=zoo_dest, f=f))
+        os.rename('{zd}/apache-zookeeper-3.5.6-bin/{f}'.format(zd=zoo_dest, f=f), '{zd}/{f}'.format(zd=zoo_dest, f=f))
     os.mkdir('{zd}/data'.format(zd=zoo_dest))
     print('cp {rc}/systems/zookeeper/zkconfs/zoo_local.cfg {zd}/conf/zoo.cfg'.format(rc=res_cons_dir, zd=zoo_dest))
     copyfile('{rc}/systems/zookeeper/zkconfs/zoo_local.cfg'.format(rc=res_cons_dir), '{zd}/conf/zoo.cfg'.format(zd=zoo_dest))    #cp {rc}/systems/zookeeper/zkconfs/zoo_local.cfg {zd}/conf/zoo.cfg

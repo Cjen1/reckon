@@ -16,3 +16,5 @@ env
 
 **/systems/etcd/bin/**
 **/systems/ocaml-paxos/bin/**
+
+systems/zookeeper/clients/java/Client.jar

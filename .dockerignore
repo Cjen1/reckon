@@ -1,0 +1,7 @@
+.git
+logs
+src/utils/sockets/*
+**/_build/**
+env/**
+Dockerfile
+

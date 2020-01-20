@@ -1,7 +1,8 @@
 **/build/**
 **/_build/**
 **/systems/*/clients/**
-*/result*
+**/result**
+**/logs/**
 *.pyc
 *.swp
 *.aux
@@ -11,3 +12,7 @@
 *client
 **openflow**
 **.jar
+env
+
+**/systems/etcd/bin/**
+**/systems/ocaml-paxos/bin/**

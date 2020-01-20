@@ -1,6 +1,3 @@
-[submodule "systems/ocamlpaxos/src"]
-	path = systems/ocaml-paxos/src
-	url = git@github.com:Cjen1/OcamlPaxos.git
 [submodule "systems/ocaml-paxos/src"]
 	path = systems/ocaml-paxos/src
 	url = https://github.com/Cjen1/OcamlPaxos.git

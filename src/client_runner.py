@@ -10,7 +10,7 @@ import zmq
 import cgroups
 
 from Queue import Empty as QEmpty, Full as QFull
-import distributions.message_pb2 as msg_pb
+import src.utils.message_pb2 as msg_pb
 
 import importlib
 
@@ -75,7 +75,11 @@ def run_client(clients, config):
 
     print("CR: Receiving readys")
     # Recieve ready signals from microclients
-    readys = [addr for addr, _, _ in [socket.recv_multipart() for client in clients]]
+    readys = []
+    for i,_ in enumerate(clients):
+        addr, _, _ = socket.recv_multipart()
+        print("CR: Recv ready, n = %d" %i)
+        readys.append(addr)
 
     #wait for all other clients to finish setup
     barrier.wait()
@@ -94,7 +98,8 @@ def run_client(clients, config):
     for ready in readys:
         # If short duration may not get through all readys before timeout, thus block on producer
         try:
-            send(ready)
+            op = req_queue.get(timeout=2/config['rate'])
+            send(ready, op)
         except QEmpty:
             pass
 
@@ -110,9 +115,8 @@ def run_client(clients, config):
     quit_op = msg_pb.Operation()
     quit_op.quit.msg = "Quitting normally"
     quit_op = quit_op.SerializeToString()
-    for c in clients:
+    for addr in readys:
         print("CR: Sending quit operations")
-        addr, _, _ = socket.recv_multipart()
         socket.send_multipart([addr, b'', quit_op])
     
 
@@ -130,11 +134,12 @@ def producer(op_gen, rate, duration, stop_flag):
         #print("Putting op, current count: ", (req_queue.qsize()))
         opid += 1
 
+    print("Producer: Finished")
     stop_flag.value = True
     #print("stopped: {0}s later".format(time.time() - start))
     
 
-def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ips, cgrps):
+def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ips):
     rate = float(rate)
     duration = int(duration)
     op_prereq, op_gen = ops
@@ -145,10 +150,9 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
         'duration': duration,
         'op_prereq': op_prereq,
         'rate': rate,
-        'runner_address': os.getcwd() + '/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
-        'client_address': os.getcwd() + '/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
+        'runner_address': os.getcwd() + '/src/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
+        'client_address': os.getcwd() + '/src/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
         'start_client': (importlib.import_module('systems.%s.scripts.client_start' % service_name).start),
-        'cgrps': cgrps
         }
 
     print("RUNNER ADDRESS: "+ config['runner_address'])

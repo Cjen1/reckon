@@ -1,5 +1,5 @@
 import numpy.random as rand
-import ops
+import src.utils.ops as ops
 
 def generate_ops(key_range='1>10',payload_size='10', seed='0', write_ratio='0.5'):
     krl, kru = key_range.split('>')

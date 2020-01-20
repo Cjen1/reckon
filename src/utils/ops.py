@@ -1,4 +1,4 @@
-import message_pb2 as msg_pb
+import src.utils.message_pb2 as msg_pb
 import random
 import time
 import numpy.random as rand

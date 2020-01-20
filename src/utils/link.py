@@ -1,6 +1,5 @@
 import zmq
 import message_pb2 as msg_pb
-import socket
 
 class Link_Context:
     def __init__(self, port):

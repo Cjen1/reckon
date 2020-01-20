@@ -7,7 +7,7 @@ setLogLevel('info')
 
 import importlib
 
-import utils
+from src.utils.topo import addClient
 
 def ip_from_int(i):
     return '10.{0:d}.{1:d}.{2:d}'.format(i/(2**16),(i%(2**16))/(2**8),i%(2**8))
@@ -52,7 +52,7 @@ def setup(service, n=3):
     for d in dockers:
         net.addLink(d,s1, cls=TCLink, delay='50ms', bw=1, max_queue_size=200)
 
-    microclient = utils.addClient(net, service, 'mc', ip='10.0.0.1')
+    microclient = addClient(net, service, 'mc', ip='10.0.0.1')
 
     net.addLink(microclient, s1) 
 

@@ -1,0 +1,103 @@
+SHELL := /bin/bash
+
+install: etcd-deps op-deps zookeeper-deps pip
+
+#--------------------------------------------------
+.PHONY:etcd-deps go-install protoc
+ETCD_VER=v3.3.8
+DOWNLOAD_URL=https://storage.googleapis.com/etcd
+
+etcd-deps: install-deps go-install
+	sudo rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -rf /tmp/etcd-download 
+	mkdir -p /tmp/etcd-download
+	sudo curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+	sudo tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download --strip-components=1
+	sudo rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+
+go-install: install-deps
+	sudo add-apt-repository ppa:gophers/archive -y
+	sudo apt update
+	sudo apt install -y golang-1.11-go
+	echo 'export GOPATH=~/go' >> ~/.bashrc
+	echo 'export PATH=$$PATH:~/go/bin' >> ~/.bashrc
+	echo 'export PATH=$$PATH:/usr/lib/go-1.11/bin' >> ~/.bashrc
+
+.PHONY:protoc
+protoc: 
+	sudo apt install golang-goprotobuf-dev -y
+
+#--------------------------------------------------
+.PHONY: op-deps opam
+op-deps: install-deps opam
+	sudo apt update -y
+	sudo apt install -y \
+	  libgmp-dev \
+	  libzmq3-dev \
+	  m4  \
+	  perl \
+	  libev-dev
+	LWT_DISCOVER_ARGUMENTS="--use-libev true" opam install -y dune ounit core yojson uri ocaml-protoc zmq-lwt lwt_ppx utop logs fmt conf-libev
+	eval `opam env`
+
+opam:
+	sudo add-apt-repository ppa:avsm/ppa -y
+	sudo apt update -y
+	sudo apt install opam -y
+	opam init -a --disable-sandboxing 
+	opam switch install ocaml-paxos ocaml-base-compiler.4.08.1
+
+#--------------------------------------------------
+.PHONY:zookeeper-deps
+zookeeper-deps: install-deps
+	sudo add-apt-repository ppa:linuxuprising/java
+	echo oracle-java13-installer shared/accepted-oracle-license-v1-2 select true | sudo /usr/bin/debconf-set-selections
+	sudo apt update -y
+	sudo apt install oracle-java13-installer -y
+
+#--------------------------------------------------
+.PHONY:install-deps
+install-deps:
+	sudo add-apt-repository ppa:deadsnakes/ppa -y
+	sudo apt update --yes
+	sudo DEBIAN_FRONTEND=noninteractive apt upgrade --yes
+	sudo apt install -y \
+		python3 \
+		python \
+		python3-numpy \
+		python-numpy \
+		python3-pip \
+		python-pip \
+		autoconf \
+		automake \
+		libtool \
+		curl \
+		make \
+		g++ \
+		unzip \
+		libzmq3-dev \
+		tmux \
+		screen \
+		psmisc 
+	
+	curl -L "https://github.com/protocolbuffers/protobuf/releases/download/v3.9.1/protoc-3.9.1-linux-x86_64.zip" > /tmp/pb.zip
+	unzip /tmp/pb.zip -d /tmp/pb
+	sudo cp /tmp/pb/bin/protoc /usr/bin
+	rm -r /tmp/pb
+
+.PHONY:pip-deps
+pip-deps:
+	python3 -m pip install virtualenv
+	sudo apt install python3-venv -y
+
+		#source ./env/bin/activate ; \
+.PHONY:pip
+pip:
+	( \
+		pip install \
+			protobuf \
+			pyzmq \
+			pathlib \
+			tqdm \
+			numpy \
+			cgroups \
+	)

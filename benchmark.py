@@ -1,5 +1,3 @@
-import Queue
-from Queue import Queue as queue
 from threading import Thread as Thread
 from time import time as time
 from time import sleep as sleep
@@ -9,11 +7,9 @@ import importlib
 from os import listdir
 import os
 
-import cgroups
-
 from sys import argv, stdout, stderr
 
-from client_runner import run_test 
+from src.client_runner import run_test 
 #------- Parse arguments --------------------------
 parser = argparse.ArgumentParser(description='Runs a benchmark of a local fault tolerant datastore')
 
@@ -60,7 +56,7 @@ system = args.system
 topo = args.topology
 topo_kwargs = dict([arg.split('=') for arg in args.topo_args.split(',')]) if args.topo_args != "" else {}
 print(topo, topo_kwargs)
-topo_module = importlib.import_module('topologies.' + topo)
+topo_module = importlib.import_module('src.topologies.' + topo)
 
 distribution = args.distribution
 dist_kwargs = dict([arg.split('=') for arg in args.dist_args.split(',')]) if args.dist_args != "" else {}
@@ -68,7 +64,7 @@ dist_kwargs = dict([arg.split('=') for arg in args.dist_args.split(',')]) if arg
 fail_type = args.failure
 fail_args = args.fail_args
 print(fail_type, fail_args)
-fail_module = importlib.import_module('failures.' + fail_type)
+fail_module = importlib.import_module('src.failures.' + fail_type)
 fail_setup = fail_module.setup
 
 
@@ -79,6 +75,7 @@ bench_defs = {
         'rate': 1,		# upper bound on reqs/sec 
 	'duration': 160,	# duration of operation sending in seconds
         'dest': '../results/test.res', 
+        'logs': '../logs/test.log', 
         'cpu_quota' : 100,
         'memory_quota' : '4096',
         'memory_unit' : 'megabytes'
@@ -89,18 +86,20 @@ if args.benchmark_config != "":
 for key, val in bench_defs.items():
 	bench_args.setdefault(key, val)#set as arg or as default value 
 
+print(bench_args)
+
 absolute_path = args.absolute_path
 
 service_name, client_name = system.split("_")
 
-net, cluster_ips, clients, restarters, cleanup, cgrps = topo_module.setup(service_name, absolute_path, **topo_kwargs) 
-failures = fail_setup(net, restarters, system.split('_')[0], cgrps)
+net, cluster_ips, clients, restarters, cleanup = topo_module.setup(service_name, absolute_path, logs=bench_args['logs'], **topo_kwargs) 
+failures = fail_setup(net, restarters, system.split('_')[0])
 
 hosts = [h for h in net.hosts if h.name[0] == "h"]
 
-for host in hosts:
-    cgrps[host].set_cpu_limit(bench_args['cpu_quota'])
-    cgrps[host].set_memory_limit(limit=bench_args['memory_quota'], unit=bench_args['memory_unit'])
+#for host in hosts:
+#    cgrps[host].set_cpu_limit(bench_args['cpu_quota'])
+#    cgrps[host].set_memory_limit(limit=bench_args['memory_quota'], unit=bench_args['memory_unit'])
 
 if args.d:
     from mininet.cli import CLI
@@ -109,9 +108,13 @@ else:
     duration = float(bench_args['duration'])
     print("BENCHMARK: " + str(duration))
 
-    op_gen_module = importlib.import_module('distributions.' + distribution)
+    op_gen_module = importlib.import_module('src.distributions.' + distribution)
 
     ops = op_gen_module.generate_ops(**dist_kwargs)		
+
+    print("Benchmark: Waiting for network to settle")
+    sleep(60)
+
     print("BENCHMARK: Starting Test, "+str((service_name, client_name)))
     tester = Thread(target=run_test, 
             args=[
@@ -123,7 +126,6 @@ else:
                 service_name,
                 client_name,
                 cluster_ips,
-                cgrps
             ])  
     tester.start()
 

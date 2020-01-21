@@ -21,7 +21,7 @@ go-install: install-deps
 	sudo add-apt-repository ppa:gophers/archive -y
 	sudo apt update
 	sudo apt install -y golang-1.11-go golang-goprotobuf-dev
-	echo 'export GOPATH=~/go' >> ~/.bashrc
+	echo 'export GOPATH=$$HOME/go' >> ~/.bashrc
 	echo 'export PATH=$$PATH:~/go/bin' >> ~/.bashrc
 	echo 'export PATH=$$PATH:/usr/lib/go-1.11/bin' >> ~/.bashrc
 
@@ -46,7 +46,7 @@ opam:
 	sudo add-apt-repository ppa:avsm/ppa -y
 	sudo apt update -y
 	sudo apt install opam -y
-	opam init -a --disable-sandboxing 
+	opam init -a --bare --disable-sandboxing
 	opam switch install ocaml-paxos ocaml-base-compiler.4.08.1
 
 ocaml-paxos_install:

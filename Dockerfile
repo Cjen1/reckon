@@ -18,9 +18,16 @@ RUN apt update && apt install software-properties-common build-essential sudo -y
 ADD scripts/install/deps-Makefile Makefile
 
 RUN make pip
-RUN make etcd-deps
+
 RUN make op-deps
+
 RUN make zookeeper-deps
+
+ENV GOPATH /root/go
+ENV PATH $PATH:/usr/lib/go-1.11/bin
+ENV PATH $PATH:/root/go/bin
+RUN mkdir go
+RUN make etcd-deps
 
 #-------- Install binaries ------------------------
 ADD src/utils src/utils

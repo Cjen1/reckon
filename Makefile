@@ -9,7 +9,7 @@ docker: build
 	docker run -it --rm --privileged -e DISPLAY \
              -v /lib/modules:/lib/modules \
 	     --network host --name rc_test \
-	     --tmpfs /:rw \
+	     --tmpfs /tmpfs:rw \
 	     cjen1/rc:latest
 
 runtest: build

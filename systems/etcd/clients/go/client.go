@@ -8,8 +8,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"bufio"
+	"io"
+	"encoding/binary"
+	"encoding/hex"
 
-	"./OpWire"
+	"client/OpWire"
 	"github.com/golang/protobuf/proto"
 	zmq "github.com/pebbe/zmq4"
 	"go.etcd.io/etcd/clientv3"
@@ -19,8 +23,7 @@ func unix_seconds(t time.Time) float64 {
 	return float64(t.UnixNano()) / 1e9
 }
 
-func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWire.Response {
-	//println("CLIENT: Attempting to put")
+func put(res_ch chan *OpWire.Response, cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) {
 	// TODO implement options
 	st := unix_seconds(time.Now())
 	_, err := cli.Put(context.Background(), string(op.Put.Key), string(op.Put.Value))
@@ -28,7 +31,7 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWir
 
 	err_msg := "None"
 	if err != nil {
-		err_msg = err.Error()
+		err_msg = "ERROR WAS FOUND: " + err.Error()
 	}
 
 	resp := &OpWire.Response{
@@ -43,11 +46,11 @@ func put(cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) *OpWir
 	}
 
 	println("CLIENT: Successfully put")
-	return resp
+
+	res_ch <- resp
 }
 
-func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWire.Response {
-	// TODO implement options
+func get(res_ch chan *OpWire.Response, cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) {
 	//println("CLIENT: Attempting to get")
 	st := unix_seconds(time.Now())
 	_, err := cli.Get(context.Background(), string(op.Get.Key))
@@ -55,7 +58,7 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWir
 
 	err_msg := "None"
 	if err != nil {
-		err_msg = err.Error()
+		err_msg = "ERROR WAS FOUND: " + err.Error()
 	}
 
 	resp := &OpWire.Response{
@@ -71,21 +74,12 @@ func get(cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) *OpWir
 
 	println("CLIENT:Successfully got")
 
-	return resp
-}
-
-func ReceiveOp(socket *zmq.Socket) *OpWire.Operation {
-	payload, _ := socket.Recv(0)
-	op := &OpWire.Operation{}
-	if err := proto.Unmarshal([]byte(payload), op); err != nil {
-		log.Fatalln("Failed to parse incomming operation")
-	}
-	return op
+	res_ch <- resp
 }
 
 func check(e error) {
 	if e != nil {
-		panic(e)
+		log.Fatal(e)
 	}
 }
 
@@ -93,6 +87,52 @@ func marshall_response(resp *OpWire.Response) string {
 	payload, err := proto.Marshal(resp)
 	check(err)
 	return string(payload)
+}
+
+func send(socket *zmq.Socket, msg string){
+	socket.Send(msg, 0)
+}
+
+func recv_loop(quit_ch chan interface{}, res_ch chan *OpWire.Response, cli *clientv3.Client, clientid uint32){
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		println("Trying to read len")
+		var size uint32
+		if err := binary.Read(reader, binary.LittleEndian, &size); err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("Size = %v\n", size)
+
+		payload := make([]byte, size)
+		if _, err := io.ReadFull(reader, payload); err != nil {
+			log.Fatal(err) }
+		fmt.Printf("payload = \n%s\n-------", (hex.EncodeToString(payload)))
+
+		println("Client: Received")
+		op := &OpWire.Operation{}
+		if err := proto.Unmarshal([]byte(payload), op); err != nil {
+			log.Fatal("Failed to parse incomming operation")
+		}
+		switch op := op.OpType.(type) {
+		case *OpWire.Operation_Put:
+			go put(res_ch, cli, op, clientid)
+		case *OpWire.Operation_Get:
+			go get(res_ch, cli, op, clientid)
+		case *OpWire.Operation_Quit:
+			quit_ch <- true
+			return
+		default:
+			resp := &OpWire.Response{
+				ResponseTime: -1,
+				Err:          fmt.Sprintf("Error: Operation (%v) was not found / supported", op),
+				Clientid:     clientid,
+				Optype:       "Error",
+			}
+			res_ch <- resp
+		}
+	}
 }
 
 func main() {
@@ -107,7 +147,7 @@ func main() {
 
 	clientid := uint32(i)
 
-	socket, _ := zmq.NewSocket(zmq.REQ)
+	socket, _ := zmq.NewSocket(zmq.DEALER)
 	defer socket.Close()
 	fmt.Printf("Client: connecting to: %s\n", address)
 	socket.Connect(address)
@@ -126,42 +166,20 @@ func main() {
 
 	println("Client: Sending ready signal")
 	//send ready signal
-	socket.Send("", 0)
+	send(socket, "")
+
+	res_ch := make(chan *OpWire.Response, 5)
+	quit_ch := make(chan interface{}, 5)
+
+	go recv_loop(quit_ch, res_ch, cli, clientid)
 
 	for {
-		println("Client: Waiting to recieve op")
-		Operation := ReceiveOp(socket)
-		println("Client: Received")
-
-		switch op := Operation.OpType.(type) {
-		case *OpWire.Operation_Put:
-			go func(){
-				resp := put(cli, op, clientid)
-				payload := marshall_response(resp)
-				socket.Send(payload, 0)
-			}()
-
-		case *OpWire.Operation_Get:
-			go func(){
-				resp := get(cli, op, clientid)
-				payload := marshall_response(resp)
-				socket.Send(payload, 0)
-			}()
-
-		case *OpWire.Operation_Quit:
+		select {
+		case msg := <-res_ch:
+			payload := marshall_response(msg)
+			send(socket, payload)
+		case <-quit_ch:
 			return
-
-		default:
-			go func(){
-				resp := &OpWire.Response{
-					ResponseTime: -1,
-					Err:          "Error: Operation was not found / supported",
-					Clientid:     clientid,
-					Optype:       "Error",
-				}
-				payload := marshall_response(resp)
-				socket.Send(payload, 0)
-			}()
 		}
 	}
 }

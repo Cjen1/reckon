@@ -1,10 +1,21 @@
 import sys
+import subprocess
+import os 
+import shlex
 
 def run(cmd, tag, host):
     logs = "etcd"
-    cmd = "screen -dmS {tag} bash -c \"{command} 2>&1 | tee logs/{logs}_{tag}\"".format(tag=tag,command=cmd, logs=logs)
+    #cmd = "{command} 2>&1 | tee logs/{logs}_{tag}".format(tag=tag,command=cmd, logs=logs)
 
-    return host.popen(cmd, shell=True)
+    cmd = shlex.split(cmd)
+    sp = host.popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    FNULL = open(os.devnull, 'w')
+    tee = host.popen(['tee', 'logs/{logs}_{tag}_stdout'.format(logs=logs, tag=tag)], stdin = sp.stdout, stdout = FNULL, stderr=FNULL)
+    tee = host.popen(['tee', 'logs/{logs}_{tag}_stderr'.format(logs=logs, tag=tag)], stdin = sp.stderr, stdout = FNULL, stderr=FNULL)
+
+    return sp
+
 
 def start(mn_client, client_id, config):
     client_path = "systems/etcd/clients/"+config['client']+"/client"

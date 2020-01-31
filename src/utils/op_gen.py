@@ -88,7 +88,8 @@ def Op_put(key, value):
     op.put.key = key
     op.put.value = value
 
-    payload = op.SerializeToString()
+    #payload = op.SerializeToString()
+    payload = op
 
     return payload
 
@@ -96,7 +97,8 @@ def Op_get(key):
     op = msg_pb.Operation()
     op.get.key = key
 
-    payload = op.SerializeToString()
+    #payload = op.SerializeToString()
+    payload = op
 
     return payload
 
@@ -104,6 +106,7 @@ def Op_quit():
     op = msg_pb.Operation()
     op.quit.msg = "Quit"
 
-    payload = op.SerializeToString()
+    #payload = op.SerializeToString()
+    payload = op
     
     return payload

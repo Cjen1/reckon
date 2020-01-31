@@ -113,11 +113,10 @@ else:
     ops = op_gen_module.generate_ops(**dist_kwargs)		
 
     print("Benchmark: Waiting for network to settle")
-    sleep(60)
+    sleep(10)
 
     print("BENCHMARK: Starting Test, "+str((service_name, client_name)))
-    tester = Thread(target=run_test, 
-            args=[
+    run_test(
                 bench_args['dest'],
                 clients, 
                 ops, 
@@ -126,16 +125,9 @@ else:
                 service_name,
                 client_name,
                 cluster_ips,
-            ])  
-    tester.start()
+                failures,
+            )  
 
-    sleepTime = duration / (len(failures) + 1)
-    for failure in (failures+[(lambda*args, **kwargs:None)]):
-        print("BENCHMARK: sleeping for" + str(sleepTime))
-        sleep(sleepTime)
-        failure()
-
-    tester.join()
     print("Finished Test")
 
 from subprocess import call

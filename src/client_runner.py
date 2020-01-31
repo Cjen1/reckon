@@ -8,33 +8,34 @@ import os
 import json
 import zmq
 import cgroups
+import random
 
 from Queue import Empty as QEmpty, Full as QFull
 import src.utils.message_pb2 as msg_pb
 
 import importlib
 
+from struct import pack
+
 class Barrier:
-    def __init__(self, m, n):
-        self.n = n
-        self.count = m.Value('i', 0)
-        self.mutex = m.Semaphore(1)
-        self.bar = m.Semaphore(0)
+      def __init__(self, m, n):
+          self.n = n
+          self.count = m.Value('i', 0)
+          self.mutex = m.Semaphore(1)
+          self.bar = m.Semaphore(0)
 
-    def wait(self):
-        self.mutex.acquire()
-        self.count.value += 1
-        self.mutex.release()
+      def wait(self):
+          self.mutex.acquire()
+          self.count.value += 1
+          self.mutex.release()
 
-        if self.count.value == self.n:
-            self.bar.release()
+          if self.count.value == self.n:
+              self.bar.release()
 
-        self.bar.acquire()
-        self.bar.release()
+          self.bar.acquire()
+          self.bar.release()
 
 barrier = {}
-req_queue = {}
-res_queue = {}
 stop_flag = None
 
 def clean_address(address):
@@ -44,102 +45,109 @@ def clean_address(address):
         if os.path.exists(address):
             raise
 
-def run_prereqs(socket, operations):
+def run_prereqs(socket, send, clients, operations):
     for operation in operations:
-        print("CR: Waiting to receive")
-        addr, _, _ = socket.recv_multipart()
-        print("CR: Recieved ready, sending op")
-        socket.send_multipart([addr, b'', operation])
-        
-def run_client(clients, config):
-    #--- Setup ----------
-    socket = zmq.Context().socket(zmq.ROUTER)
+        _ = socket.recv_multipart()
+        send(random.choice(clients), operation)
+
+def setup_socket(config):
+    socket = zmq.Context().socket(zmq.DEALER)
 
     runner_address = "ipc://"+config['runner_address']
-    print("CR: runner address: " + runner_address)
     clean_address(runner_address)
-    os.umask(0o000)
-    socket.bind(runner_address)
 
     socket.setsockopt(zmq.LINGER, 0)
-    #Prevent infinite waiting timeout is in milliseconds
     socket.RCVTIMEO = 60*60*1000 #1000 * config['duration'] 
-    
+
+    os.umask(0o000)
+    socket.bind(runner_address)
+    return socket
+
+def recv_loop(socket, config):
+    resps = []
+    while(not stop_flag.value):
+        if socket.poll(5000, zmq.POLLIN):
+            recv = socket.recv(zmq.NOBLOCK)
+            print("received output")
+            sys.stdout.flush()
+            resp = msg_pb.Response()
+            resp.ParseFromString(recv)
+            resps.append(
+                    {
+                        "Resp_time": resp.response_time,
+                        "Cli_start": resp.client_start,
+                        "Q_start": resp.queue_start,
+                        "End": resp.end,
+                        "Client_id": resp.clientid,
+                        "Error": resp.err,
+                        "Target": resp.target,
+                        "Op_type": resp.optype
+                        }
+                    )
+
+    with open(config['f_dest'], "w") as fres:
+        json.dump(resps, fres)
+
+def setup_start_test(mnclients, config):
+    print("Setting up microclients")
+    sys.stdout.flush()
     microclients = [
             config['start_client'](mnclient, client_id, config)
-            for client_id, mnclient in enumerate(clients)
+            for client_id, mnclient in enumerate(mnclients)
             ]
 
+    def send(client, op):
+        cli = client
+        size = pack('<L',op.ByteSize())
+        cli.stdin.write(size)
+        payload = op.SerializeToString()
+        cli.stdin.write(payload)
+
+    print("Configuring socket")
+    sys.stdout.flush()
+    socket = setup_socket(config)
     print("CR: Running prereqs")
-    run_prereqs(socket, config['op_prereq'])
+    sys.stdout.flush()
+    run_prereqs(socket, send, microclients, config['op_prereq'])
 
-    print("CR: Receiving readys")
-    # Recieve ready signals from microclients
-    readys = []
-    for i,_ in enumerate(clients):
-        addr, _, _ = socket.recv_multipart()
-        print("CR: Recv ready, n = %d" %i)
-        readys.append(addr)
+    t_recv = Thread(target=recv_loop, args=[socket, config])
+    t_recv.daemon = True
+    t_recv.start()
 
-    #wait for all other clients to finish setup
     barrier.wait()
 
-    def send(addr, op):
-        socket.send_multipart([addr, b'', op])
+    start = time.time()
+    end = start + config['duration']
 
-    def recv():
-        addr, _, res = socket.recv_multipart()
-        res_queue.put_nowait(res)
-        return addr
+    rate = float(config['rate'])
+    op_gen = config['op_gen']
 
-    #-- Start Test ------
-
-    # Use up readys to allow for tight test loop with no startup
-    for ready in readys:
-        # If short duration may not get through all readys before timeout, thus block on producer
-        try:
-            op = req_queue.get(timeout=2/config['rate'])
-            send(ready, op)
-        except QEmpty:
+    opid = 0
+    while(time.time() < end):
+        #Busy wait until time for op
+        while time.time() < start + opid * 1.0/rate:
             pass
+        opid = opid + 1
+        print("sending")
+        sys.stdout.flush()
+        send(random.choice(microclients), op_gen())
 
-    while(not stop_flag.value): 
-        try:
-            op = req_queue.get(timeout=2/config['rate'])
-            addr = recv()
-            send(addr, op)
-        except QEmpty:
-            pass
+    print("CR: Finished")
+    sys.stdout.flush()
+    stop_flag.value = True
 
     print("CR: Sending quit operations")
+    sys.stdout.flush()
     quit_op = msg_pb.Operation()
     quit_op.quit.msg = "Quitting normally"
-    quit_op = quit_op.SerializeToString()
-    for addr in readys:
-        print("CR: Sending quit operations")
-        socket.send_multipart([addr, b'', quit_op])
-    
+    for client in microclients:
+        send(client, quit_op)
 
-def producer(op_gen, rate, duration, stop_flag):
-    print("Producer: Waiting")
-    barrier.wait()
-    print("Producer: Started")
-    opid = 0
-    start = time.time()
-    end = start+duration
-    while(time.time() < end):
-        while time.time() < start + opid * 1.0/float(rate):
-            pass
-        req_queue.put_nowait(op_gen())
-        #print("Putting op, current count: ", (req_queue.qsize()))
-        opid += 1
+    print("CR: Waiting for receive loop to join")
+    sys.stdout.flush()
+    t_recv.join()
 
-    print("Producer: Finished")
-    stop_flag.value = True
-    #print("stopped: {0}s later".format(time.time() - start))
-    
-
-def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ips):
+def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ips, failures):
     rate = float(rate)
     duration = int(duration)
     op_prereq, op_gen = ops
@@ -149,58 +157,35 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
         'cluster_ips': ips,
         'duration': duration,
         'op_prereq': op_prereq,
+        'op_gen': op_gen,
         'rate': rate,
         'runner_address': os.getcwd() + '/src/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
         'client_address': os.getcwd() + '/src/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
         'start_client': (importlib.import_module('systems.%s.scripts.client_start' % service_name).start),
+        'f_dest': f_dest
         }
 
     print("RUNNER ADDRESS: "+ config['runner_address'])
+    sys.stdout.flush()
 
     #Set up multiprocessing primitives
     m = Manager()
-    global barrier
-    barrier = Barrier(m, 2) # one for each client, 1 for producer
-    global res_queue
-    res_queue = m.Queue()
-    global req_queue
-    req_queue = m.Queue()
-    global cluster_ips
-    cluster_ips = ips
     global stop_flag
     stop_flag = m.Value(c_bool, False)
+    global barrier
+    barrier = Barrier(m, 2) # one for failures, one for generator
 
-    op_producer = Thread(target=producer, args=[op_gen, rate, duration, stop_flag])
+    t_test = Thread(target=setup_start_test, args = [clients, config])
+    t_test.daemon = True
+    t_test.start()
 
-    mc = Thread(target=run_client, args=[clients, config]) 
-    mc.start()
+    barrier.wait()
 
-    op_producer.start()
-    op_producer.join()
+    sleepTime = duration / (len(failures) + 1)
+    for failure in (failures+[(lambda*args, **kwargs:None)]):
+        print("BENCHMARK: sleeping for" + str(sleepTime))
+        sys.stdout.flush()
+        time.sleep(sleepTime)
+        failure()
 
-    print("waiting for microclients to finish")
-    mc.join()
-
-    resps = []
-    while(not res_queue.empty()):
-        rec = res_queue.get()
-        resp = msg_pb.Response()
-        resp.ParseFromString(rec)
-        resps.append(
-                [
-                    resp.response_time,
-                    resp.client_start,
-                    resp.queue_start,
-                    resp.end,
-                    resp.clientid,
-                    resp.err,
-                    resp.target,
-                    resp.optype
-                    ]
-                )
-    #print("RESPS: ", resps)
-
-    print("Writing results to file")
-
-    with open(f_dest, "w") as fres:
-        json.dump(resps, fres)
+    t_test.join()

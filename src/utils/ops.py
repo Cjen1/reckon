@@ -13,9 +13,7 @@ def write(key, value):
     op.put.value = value
     op.put.start = start
 
-    payload = op.SerializeToString()
-
-    return payload
+    return op 
 
 def read(key):
     start = time.time()
@@ -23,14 +21,10 @@ def read(key):
     op.get.key = key
     op.get.start = start
 
-    payload = op.SerializeToString()
-
-    return payload
+    return op
 
 def quit():
     op = msg_pb.Operation()
     op.quit.msg = "Quit"
 
-    payload = op.SerializeToString()
-    
-    return payload
+    return op

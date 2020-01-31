@@ -19,7 +19,6 @@ def generate_ops(key_range='1>10',payload_size='10', seed='0', write_ratio='0.5'
                         rand.random_integers(krl, kru),
                         ops.payload(payload_size),
                         )
-                         
                     if rand.ranf() < write_ratio else
                     ops.read(
                         rand.random_integers(krl, kru)

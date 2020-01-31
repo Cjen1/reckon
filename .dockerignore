@@ -5,3 +5,5 @@ src/utils/sockets/*
 env/**
 Dockerfile
 
+**/clients/*/client
+

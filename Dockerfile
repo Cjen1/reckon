@@ -34,17 +34,17 @@ ADD src/utils src/utils
 ADD systems/etcd systems/etcd
 RUN make etcd_install
 
-ADD systems/zookeeper systems/zookeeper
-RUN make zk_install
-
-ADD systems/ocaml-paxos systems/ocaml-paxos
-RUN make ocaml-paxos_install
+#ADD systems/zookeeper systems/zookeeper
+#RUN make zk_install
+#
+#ADD systems/ocaml-paxos systems/ocaml-paxos
+#RUN make ocaml-paxos_install
 
 #--------- Install tools --------------------------
 
 ADD . .
 RUN mkdir /results
 
-RUN mkdir bins
+RUN mkdir bins logs
 COPY --from=benchmark /etcdbin/* bins/
 RUN echo 'export PATH=$PATH:~/bins/' >> ~/.bashrc

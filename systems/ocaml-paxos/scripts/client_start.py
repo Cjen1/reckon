@@ -1,4 +1,24 @@
-import sys
+import subprocess
+import os
+import shlex
+
+def clean_address(address):
+    try:
+        os.unlink(address)
+    except OSError:
+        if os.path.exists(address):
+            raise
+
+def new_pipe(address):
+    print("Cleaning address")
+    clean_address(address)
+    print("creating fifo")
+    os.mkfifo(address)
+    print("created fifo")
+    f= os.open(address, os.O_RDONLY | os.O_NONBLOCK)
+    print("opened file")
+    return f
+
 def start(mn_client, client_id, config):
     ips = config['cluster_ips']
     client_path = "systems/ocaml-paxos/clients/"+config['client']+"/client"

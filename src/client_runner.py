@@ -12,10 +12,11 @@ import random
 
 from Queue import Empty as QEmpty, Full as QFull
 import src.utils.message_pb2 as msg_pb
+import select
 
 import importlib
 
-from struct import pack
+from struct import pack, unpack
 
 class Barrier:
       def __init__(self, m, n):
@@ -36,57 +37,79 @@ class Barrier:
           self.bar.release()
 
 barrier = {}
-stop_flag = None
 
-def clean_address(address):
-    try:
-        os.unlink(address)
-    except OSError:
-        if os.path.exists(address):
-            raise
+def send(client, op):
+    in_pipe, out_pipe = client
+    size = pack('<L',op.ByteSize())
+    payload = op.SerializeToString()
+    in_pipe.write(size+payload)
 
-def run_prereqs(socket, send, clients, operations):
-    for operation in operations:
-        _ = socket.recv_multipart()
-        send(random.choice(clients), operation)
+def read_packet(pipe):
+    print(pipe)
+    size = os.read(pipe, 4)
+    print(size.encode('hex'))
+    if size:
+        size = unpack('<L', size) 
+        print(size)
+        # unpack returns a tuple even if a single value
+        payload = os.read(pipe,size[0])
+        return payload
+    else:
+        return None
 
-def setup_socket(config):
-    socket = zmq.Context().socket(zmq.DEALER)
+def read_payload(pipe):
+    payload = read_packet(pipe)
+    if payload:
+        resp = msg_pb.Response()
+        resp.ParseFromString(payload)
+        print("CR: Read from pipe successfully")
+        return resp 
+    else:
+        return None
 
-    runner_address = "ipc://"+config['runner_address']
-    clean_address(runner_address)
-
-    socket.setsockopt(zmq.LINGER, 0)
-    socket.RCVTIMEO = 60*60*1000 #1000 * config['duration'] 
-
-    os.umask(0o000)
-    socket.bind(runner_address)
-    return socket
-
-def recv_loop(socket, config):
+def recv_loop(pipes, config):
     resps = []
-    while(not stop_flag.value):
-        if socket.poll(5000, zmq.POLLIN):
-            recv = socket.recv(zmq.NOBLOCK)
-            print("received output")
-            sys.stdout.flush()
-            resp = msg_pb.Response()
-            resp.ParseFromString(recv)
-            resps.append(
-                    {
-                        "Resp_time": resp.response_time,
-                        "Cli_start": resp.client_start,
-                        "Q_start": resp.queue_start,
-                        "End": resp.end,
-                        "Client_id": resp.clientid,
-                        "Error": resp.err,
-                        "Target": resp.target,
-                        "Op_type": resp.optype
-                        }
-                    )
+    inputs = pipes
+    while inputs:
+        readable, _, _ = select.select(pipes, [], pipes)
+        for pipe in readable:
+            resp = read_payload(pipe)
+            if not resp: # resp = None
+                inputs.remove(pipe)
+            else:
+                resps.append(
+                        {
+                            "Resp_time": resp.response_time,
+                            "Cli_start": resp.client_start,
+                            "Q_start": resp.queue_start,
+                            "End": resp.end,
+                            "Client_id": resp.clientid,
+                            "Error": resp.err,
+                            "Target": resp.target,
+                            "Op_type": resp.optype
+                            }
+                        )
 
     with open(config['f_dest'], "w") as fres:
         json.dump(resps, fres)
+
+def run_prereqs(clients, operations):
+    for operation in operations:
+        send(random.choice(clients), operation)
+
+def wait_for_readys(n, pipes):
+    print("CR: waiting for readys")
+    def recv_one(): 
+        readable, _, execeptional = select.select(pipes, [], pipes)
+        print("CR: received at least one: ")
+        print(readable)
+        return read_packet(readable[0])
+    for _ in range(n):
+        recv_one()
+
+def receive_readys_and_prereqs(clients, prereqs):
+    run_prereqs(clients, prereqs)
+    wait_for_readys(len(clients) + len(prereqs), [out_pipe for (in_pipe, out_pipe) in clients])
 
 def setup_start_test(mnclients, config):
     print("Setting up microclients")
@@ -96,21 +119,15 @@ def setup_start_test(mnclients, config):
             for client_id, mnclient in enumerate(mnclients)
             ]
 
-    def send(client, op):
-        cli = client
-        size = pack('<L',op.ByteSize())
-        cli.stdin.write(size)
-        payload = op.SerializeToString()
-        cli.stdin.write(payload)
 
     print("Configuring socket")
     sys.stdout.flush()
-    socket = setup_socket(config)
     print("CR: Running prereqs")
     sys.stdout.flush()
-    run_prereqs(socket, send, microclients, config['op_prereq'])
 
-    t_recv = Thread(target=recv_loop, args=[socket, config])
+    receive_readys_and_prereqs(microclients, config['op_prereq'])
+
+    t_recv = Thread(target=recv_loop, args=[[out_pipe for (in_pipe, out_pipe) in microclients], config])
     t_recv.daemon = True
     t_recv.start()
 
@@ -129,12 +146,10 @@ def setup_start_test(mnclients, config):
             pass
         opid = opid + 1
         print("sending")
-        sys.stdout.flush()
         send(random.choice(microclients), op_gen())
 
-    print("CR: Finished")
+    print("CR: Finished, awaiting results")
     sys.stdout.flush()
-    stop_flag.value = True
 
     print("CR: Sending quit operations")
     sys.stdout.flush()
@@ -170,8 +185,6 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ip
 
     #Set up multiprocessing primitives
     m = Manager()
-    global stop_flag
-    stop_flag = m.Value(c_bool, False)
     global barrier
     barrier = Barrier(m, 2) # one for failures, one for generator
 

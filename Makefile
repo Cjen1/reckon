@@ -8,13 +8,14 @@ build:
 docker: build
 	docker run -it --rm --privileged -e DISPLAY \
              -v /lib/modules:/lib/modules \
+	     --tmpfs /data \
 	     --network host --name rc_test \
-	     --tmpfs /tmpfs:rw \
 	     cjen1/rc:latest
 
 runtest: build
 	docker run -it --rm --privileged -e DISPLAY \
              -v /lib/modules:/lib/modules \
+	     -v /local/scratch-ssd/cjj39/data:/data \
 	     --name resolving_consensus_test \
 	     --network host \
 	     cjen1/rc:latest ./scripts/run.sh &&\

@@ -68,6 +68,6 @@ def setup(service, current_dir, logs, n='3', nc='10'):
 
     cluster_ips = [host.IP() for host in cluster]
 
-    restarters, stop_func = system_setup_func(cluster, cluster_ips, logs=logs, **kwargs)
+    restarters, cleanup_func = system_setup_func(cluster, cluster_ips, logs=logs, **kwargs)
 
-    return (net, cluster_ips, clients, restarters, stop_func)
+    return (net, cluster_ips, clients, restarters, cleanup_func)

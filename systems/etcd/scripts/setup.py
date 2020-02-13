@@ -28,7 +28,7 @@ def setup(hosts, cgrps, logs, **kwargs):
     for host in hosts:
         start_cmd = (
                     "systems/etcd/bin/etcd " +
-                    "--data-dir=utils/data/{tag} " + 
+                    "--data-dir=/data/{tag} " + 
                     "--name {tag} " + 
                     "--initial-advertise-peer-urls http://{ip}:2380 "+
                     "--listen-peer-urls http://{ip}:2380 " + 
@@ -36,7 +36,9 @@ def setup(hosts, cgrps, logs, **kwargs):
                     "--advertise-client-urls http://{ip}:2379 " + 
                     "--initial-cluster {cluster} " +
                     "--initial-cluster-token {cluster_token} " +
-                    "--initial-cluster-state {cluster_state} " 
+                    "--initial-cluster-state {cluster_state} " +
+                    "--heartbeat-interval=100 " +
+                    "--election-timeout=500"
                     ).format(
                         tag=tag(host),
                         ip=host.IP(), 

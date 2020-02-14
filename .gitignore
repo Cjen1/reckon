@@ -1,6 +1,6 @@
 **/build/**
 **/_build/**
-**/systems/*/clients/**
+**/systems/*/clients/*/client
 **/result**
 **/logs/**
 *.pyc

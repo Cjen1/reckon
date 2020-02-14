@@ -12,6 +12,7 @@ import (
 	"io"
 	"encoding/binary"
 	"encoding/hex"
+	"sync"
 
 	"client/OpWire"
 	"github.com/golang/protobuf/proto"
@@ -22,7 +23,7 @@ func unix_seconds(t time.Time) float64 {
 	return float64(t.UnixNano()) / 1e9
 }
 
-func put(res_ch chan *OpWire.Response, cli *clientv3.Client, op *OpWire.Operation_Put, clientid uint32) {
+func put(res_ch chan *OpWire.Response, cli *clientv3.Client, op *OpWire.Request_Operation_Put, clientid uint32, start float64) {
 	// TODO implement options
 	st := unix_seconds(time.Now())
 	_, err := cli.Put(context.Background(), string(op.Put.Key), string(op.Put.Value))
@@ -34,10 +35,10 @@ func put(res_ch chan *OpWire.Response, cli *clientv3.Client, op *OpWire.Operatio
 	}
 
 	resp := &OpWire.Response{
-		ResponseTime: end - op.Put.Start,
+		ResponseTime: end - start,
 		Err:          err_msg,
 		ClientStart:  st,
-		QueueStart:   op.Put.Start,
+		QueueStart:   start,
 		End:          end,
 		Clientid:     clientid,
 		Optype:       "Write",
@@ -49,7 +50,7 @@ func put(res_ch chan *OpWire.Response, cli *clientv3.Client, op *OpWire.Operatio
 	res_ch <- resp
 }
 
-func get(res_ch chan *OpWire.Response, cli *clientv3.Client, op *OpWire.Operation_Get, clientid uint32) {
+func get(res_ch chan *OpWire.Response, cli *clientv3.Client, op *OpWire.Request_Operation_Get, clientid uint32, start float64) {
 	st := unix_seconds(time.Now())
 	_, err := cli.Get(context.Background(), string(op.Get.Key))
 	end := unix_seconds(time.Now())
@@ -60,10 +61,10 @@ func get(res_ch chan *OpWire.Response, cli *clientv3.Client, op *OpWire.Operatio
 	}
 
 	resp := &OpWire.Response{
-		ResponseTime: end - op.Get.Start,
+		ResponseTime: end - start,
 		Err:          err_msg,
 		ClientStart:  st,
-		QueueStart:   op.Get.Start,
+		QueueStart:   start,
 		End:          end,
 		Clientid:     clientid,
 		Optype:       "Read",
@@ -81,46 +82,48 @@ func check(e error) {
 	}
 }
 
-func recv_loop(quit_ch chan interface{}, res_ch chan *OpWire.Response, cli *clientv3.Client, clientid uint32){
-	reader := bufio.NewReader(os.Stdin)
-
-	for {
-		log.Print("Trying to read len")
-		var size uint32
-		if err := binary.Read(reader, binary.LittleEndian, &size); err != nil {
-			log.Fatal(err)
+func perform(op *OpWire.Request_Operation, res_ch chan *OpWire.Response, cli *clientv3.Client, clientid uint32, wg sync.WaitGroup) {
+	start := op.Start
+	switch op_t := op.OpType.(type) {
+	case *OpWire.Request_Operation_Put:
+		put(res_ch, cli, op_t, clientid, start)
+	case *OpWire.Request_Operation_Get:
+		get(res_ch, cli, op_t, clientid, start)
+	default:
+		resp := &OpWire.Response{
+			ResponseTime: -1,
+			Err:          fmt.Sprintf("Error: Operation (%v) was not found / supported", op),
+			Clientid:     clientid,
+			Optype:       "Error",
 		}
-
-		log.Printf("received size = %d\n", size)
-
-		payload := make([]byte, size)
-		if _, err := io.ReadFull(reader, payload); err != nil {
-			log.Fatal(err) }
-		log.Printf("-------\nreceived payload = %s\n-------", (hex.EncodeToString(payload)))
-
-		log.Print("Client: Received")
-		op := &OpWire.Operation{}
-		if err := proto.Unmarshal([]byte(payload), op); err != nil {
-			log.Fatal("Failed to parse incomming operation")
-		}
-		switch op := op.OpType.(type) {
-		case *OpWire.Operation_Put:
-			go put(res_ch, cli, op, clientid)
-		case *OpWire.Operation_Get:
-			go get(res_ch, cli, op, clientid)
-		case *OpWire.Operation_Quit:
-			quit_ch <- true
-			return
-		default:
-			resp := &OpWire.Response{
-				ResponseTime: -1,
-				Err:          fmt.Sprintf("Error: Operation (%v) was not found / supported", op),
-				Clientid:     clientid,
-				Optype:       "Error",
-			}
-			res_ch <- resp
-		}
+		res_ch <- resp
 	}
+	wg.Done()
+}
+
+func recv(reader *bufio.Reader) *OpWire.Request{
+	log.Print("Trying to read len")
+	var size uint32
+	if err := binary.Read(reader, binary.LittleEndian, &size); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("received size = %d\n", size)
+
+	payload := make([]byte, size)
+	if _, err := io.ReadFull(reader, payload); err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("-------\nreceived payload = %s\n-------", (hex.EncodeToString(payload)))
+
+	op := &OpWire.Request{}
+	if err := proto.Unmarshal([]byte(payload), op); err != nil {
+		log.Fatal("Failed to parse incomming operation")
+	}
+	return op
+}
+
+func recv_loop(quit_ch chan interface{}, res_ch chan *OpWire.Response, cli *clientv3.Client, clientid uint32){
 }
 
 func marshall_response(resp *OpWire.Response) []byte {
@@ -146,6 +149,14 @@ func send(writer *bufio.Writer, msg []byte){
 func init() {
 	log.SetOutput(os.Stderr)
 	log.SetFlags(log.Ltime | log.Lmicroseconds)
+}
+
+func result_loop(res_ch chan *OpWire.Response, out *bufio.Writer, done chan bool) {
+	for res := range res_ch {
+		payload := marshall_response(res)
+		send(out, payload)
+	}
+	done <- true
 }
 
 func main() {
@@ -180,22 +191,70 @@ func main() {
 	defer cli.Close()
 	check(err)
 
-	log.Print("Client: Sending ready signal")
-	//send ready signal
-	send(out_writer, []byte(""))
+	res_ch := make(chan *OpWire.Response, 5000)
 
-	res_ch := make(chan *OpWire.Response, 50000)
-	quit_ch := make(chan interface{})
+	reader := bufio.NewReader(os.Stdin)
 
-	go recv_loop(quit_ch, res_ch, cli, clientid)
-
+	//Phase 1: preload
+	log.Print("Phase 1: preload")
+	prereq_ch := make(chan *OpWire.Response)
+	prereqs_dispatched := 0
+	var ops []*OpWire.Request_Operation
+	var wg_null sync.WaitGroup //ignore this
 	for {
-		select {
-		case msg := <-res_ch:
-			payload := marshall_response(msg)
-			send(out_writer, payload)
-		case <-quit_ch:
-			return
+		op := recv(reader)
+
+		switch op.Kind.(type) {
+		case *OpWire.Request_Op:
+			if op.GetOp().Prereq {
+				perform(op.GetOp(), prereq_ch, cli, clientid, wg_null)
+				prereqs_dispatched ++
+			} else {
+				ops = append(ops, op.GetOp())
+			}
+		case *OpWire.Request_Finalise_:
+			break
+		default:
+			log.Fatal("Got unrecognised message...")
 		}
 	}
+
+	//Phase 2: Readying
+	log.Print("Phase 2: Readying")
+	for received := 0; received < prereqs_dispatched; received++ {
+		<-prereq_ch
+	}
+	send(out_writer, []byte(""))
+
+	//Phase 3: Execute
+	log.Print("Phase 3: Execute")
+	var start_time time.Time
+	for {
+		op := recv(reader)
+		switch op.Kind.(type) {
+		case *OpWire.Request_Start_:
+			start_time = time.Now()
+			break
+		default:
+			log.Fatal("Got a message which wasn't a start!")
+		}
+	}
+
+	done := make(chan bool)
+	go result_loop(res_ch, out_writer, done)
+
+	var wg_perform sync.WaitGroup
+	for _, op := range ops {
+		time.Sleep(time.Until(start_time.Add(time.Duration(op.Start * float64(time.Second)))))
+		wg_perform.Add(1)
+		go perform(op, res_ch, cli, clientid, wg_perform)
+	}
+
+	//Wait to complete ops
+	wg_perform.Wait()
+
+	//Signal end of results 
+	close(res_ch)
+	//Wait for results to be written
+	<-done
 }

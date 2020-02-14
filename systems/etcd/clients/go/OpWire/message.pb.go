@@ -8,7 +8,7 @@ It is generated from these files:
 	message.proto
 
 It has these top-level messages:
-	Operation
+	Request
 	Response
 */
 package OpWire
@@ -28,146 +28,146 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type Operation struct {
-	// Types that are valid to be assigned to OpType:
-	//	*Operation_Put
-	//	*Operation_Get
-	//	*Operation_Quit
-	OpType isOperation_OpType `protobuf_oneof:"op_type"`
+type Request struct {
+	// Types that are valid to be assigned to Kind:
+	//	*Request_Op
+	//	*Request_Finalise_
+	//	*Request_Start_
+	Kind isRequest_Kind `protobuf_oneof:"kind"`
 }
 
-func (m *Operation) Reset()                    { *m = Operation{} }
-func (m *Operation) String() string            { return proto.CompactTextString(m) }
-func (*Operation) ProtoMessage()               {}
-func (*Operation) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (m *Request) Reset()                    { *m = Request{} }
+func (m *Request) String() string            { return proto.CompactTextString(m) }
+func (*Request) ProtoMessage()               {}
+func (*Request) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
-type isOperation_OpType interface{ isOperation_OpType() }
+type isRequest_Kind interface{ isRequest_Kind() }
 
-type Operation_Put struct {
-	Put *OperationOpPut `protobuf:"bytes,1,opt,name=put,oneof"`
+type Request_Op struct {
+	Op *Request_Operation `protobuf:"bytes,1,opt,name=op,oneof"`
 }
-type Operation_Get struct {
-	Get *OperationOpGet `protobuf:"bytes,2,opt,name=get,oneof"`
+type Request_Finalise_ struct {
+	Finalise *Request_Finalise `protobuf:"bytes,2,opt,name=finalise,oneof"`
 }
-type Operation_Quit struct {
-	Quit *OperationOpQuit `protobuf:"bytes,3,opt,name=quit,oneof"`
+type Request_Start_ struct {
+	Start *Request_Start `protobuf:"bytes,3,opt,name=start,oneof"`
 }
 
-func (*Operation_Put) isOperation_OpType()  {}
-func (*Operation_Get) isOperation_OpType()  {}
-func (*Operation_Quit) isOperation_OpType() {}
+func (*Request_Op) isRequest_Kind()        {}
+func (*Request_Finalise_) isRequest_Kind() {}
+func (*Request_Start_) isRequest_Kind()    {}
 
-func (m *Operation) GetOpType() isOperation_OpType {
+func (m *Request) GetKind() isRequest_Kind {
 	if m != nil {
-		return m.OpType
+		return m.Kind
 	}
 	return nil
 }
 
-func (m *Operation) GetPut() *OperationOpPut {
-	if x, ok := m.GetOpType().(*Operation_Put); ok {
-		return x.Put
+func (m *Request) GetOp() *Request_Operation {
+	if x, ok := m.GetKind().(*Request_Op); ok {
+		return x.Op
 	}
 	return nil
 }
 
-func (m *Operation) GetGet() *OperationOpGet {
-	if x, ok := m.GetOpType().(*Operation_Get); ok {
-		return x.Get
+func (m *Request) GetFinalise() *Request_Finalise {
+	if x, ok := m.GetKind().(*Request_Finalise_); ok {
+		return x.Finalise
 	}
 	return nil
 }
 
-func (m *Operation) GetQuit() *OperationOpQuit {
-	if x, ok := m.GetOpType().(*Operation_Quit); ok {
-		return x.Quit
+func (m *Request) GetStart() *Request_Start {
+	if x, ok := m.GetKind().(*Request_Start_); ok {
+		return x.Start
 	}
 	return nil
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*Operation) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Operation_OneofMarshaler, _Operation_OneofUnmarshaler, _Operation_OneofSizer, []interface{}{
-		(*Operation_Put)(nil),
-		(*Operation_Get)(nil),
-		(*Operation_Quit)(nil),
+func (*Request) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Request_OneofMarshaler, _Request_OneofUnmarshaler, _Request_OneofSizer, []interface{}{
+		(*Request_Op)(nil),
+		(*Request_Finalise_)(nil),
+		(*Request_Start_)(nil),
 	}
 }
 
-func _Operation_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Operation)
-	// op_type
-	switch x := m.OpType.(type) {
-	case *Operation_Put:
+func _Request_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Request)
+	// kind
+	switch x := m.Kind.(type) {
+	case *Request_Op:
 		b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Put); err != nil {
+		if err := b.EncodeMessage(x.Op); err != nil {
 			return err
 		}
-	case *Operation_Get:
+	case *Request_Finalise_:
 		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Get); err != nil {
+		if err := b.EncodeMessage(x.Finalise); err != nil {
 			return err
 		}
-	case *Operation_Quit:
+	case *Request_Start_:
 		b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Quit); err != nil {
+		if err := b.EncodeMessage(x.Start); err != nil {
 			return err
 		}
 	case nil:
 	default:
-		return fmt.Errorf("Operation.OpType has unexpected type %T", x)
+		return fmt.Errorf("Request.Kind has unexpected type %T", x)
 	}
 	return nil
 }
 
-func _Operation_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Operation)
+func _Request_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Request)
 	switch tag {
-	case 1: // op_type.put
+	case 1: // kind.op
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(OperationOpPut)
+		msg := new(Request_Operation)
 		err := b.DecodeMessage(msg)
-		m.OpType = &Operation_Put{msg}
+		m.Kind = &Request_Op{msg}
 		return true, err
-	case 2: // op_type.get
+	case 2: // kind.finalise
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(OperationOpGet)
+		msg := new(Request_Finalise)
 		err := b.DecodeMessage(msg)
-		m.OpType = &Operation_Get{msg}
+		m.Kind = &Request_Finalise_{msg}
 		return true, err
-	case 3: // op_type.quit
+	case 3: // kind.start
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(OperationOpQuit)
+		msg := new(Request_Start)
 		err := b.DecodeMessage(msg)
-		m.OpType = &Operation_Quit{msg}
+		m.Kind = &Request_Start_{msg}
 		return true, err
 	default:
 		return false, nil
 	}
 }
 
-func _Operation_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Operation)
-	// op_type
-	switch x := m.OpType.(type) {
-	case *Operation_Put:
-		s := proto.Size(x.Put)
+func _Request_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Request)
+	// kind
+	switch x := m.Kind.(type) {
+	case *Request_Op:
+		s := proto.Size(x.Op)
 		n += proto.SizeVarint(1<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
-	case *Operation_Get:
-		s := proto.Size(x.Get)
+	case *Request_Finalise_:
+		s := proto.Size(x.Finalise)
 		n += proto.SizeVarint(2<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
-	case *Operation_Quit:
-		s := proto.Size(x.Quit)
+	case *Request_Start_:
+		s := proto.Size(x.Start)
 		n += proto.SizeVarint(3<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
@@ -178,77 +178,196 @@ func _Operation_OneofSizer(msg proto.Message) (n int) {
 	return n
 }
 
-type OperationOpPut struct {
-	Key   uint64  `protobuf:"varint,1,opt,name=key" json:"key,omitempty"`
-	Value []byte  `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
-	Start float64 `protobuf:"fixed64,4,opt,name=start" json:"start,omitempty"`
+type Request_Operation struct {
+	Prereq bool    `protobuf:"varint,1,opt,name=prereq" json:"prereq,omitempty"`
+	Start  float64 `protobuf:"fixed64,2,opt,name=start" json:"start,omitempty"`
+	// Types that are valid to be assigned to OpType:
+	//	*Request_Operation_Put
+	//	*Request_Operation_Get
+	OpType isRequest_Operation_OpType `protobuf_oneof:"Op_type"`
 }
 
-func (m *OperationOpPut) Reset()                    { *m = OperationOpPut{} }
-func (m *OperationOpPut) String() string            { return proto.CompactTextString(m) }
-func (*OperationOpPut) ProtoMessage()               {}
-func (*OperationOpPut) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
+func (m *Request_Operation) Reset()                    { *m = Request_Operation{} }
+func (m *Request_Operation) String() string            { return proto.CompactTextString(m) }
+func (*Request_Operation) ProtoMessage()               {}
+func (*Request_Operation) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
 
-func (m *OperationOpPut) GetKey() uint64 {
+type isRequest_Operation_OpType interface{ isRequest_Operation_OpType() }
+
+type Request_Operation_Put struct {
+	Put *Request_Operation_OpPut `protobuf:"bytes,3,opt,name=put,oneof"`
+}
+type Request_Operation_Get struct {
+	Get *Request_Operation_OpGet `protobuf:"bytes,4,opt,name=get,oneof"`
+}
+
+func (*Request_Operation_Put) isRequest_Operation_OpType() {}
+func (*Request_Operation_Get) isRequest_Operation_OpType() {}
+
+func (m *Request_Operation) GetOpType() isRequest_Operation_OpType {
+	if m != nil {
+		return m.OpType
+	}
+	return nil
+}
+
+func (m *Request_Operation) GetPrereq() bool {
+	if m != nil {
+		return m.Prereq
+	}
+	return false
+}
+
+func (m *Request_Operation) GetStart() float64 {
+	if m != nil {
+		return m.Start
+	}
+	return 0
+}
+
+func (m *Request_Operation) GetPut() *Request_Operation_OpPut {
+	if x, ok := m.GetOpType().(*Request_Operation_Put); ok {
+		return x.Put
+	}
+	return nil
+}
+
+func (m *Request_Operation) GetGet() *Request_Operation_OpGet {
+	if x, ok := m.GetOpType().(*Request_Operation_Get); ok {
+		return x.Get
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Request_Operation) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Request_Operation_OneofMarshaler, _Request_Operation_OneofUnmarshaler, _Request_Operation_OneofSizer, []interface{}{
+		(*Request_Operation_Put)(nil),
+		(*Request_Operation_Get)(nil),
+	}
+}
+
+func _Request_Operation_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Request_Operation)
+	// Op_type
+	switch x := m.OpType.(type) {
+	case *Request_Operation_Put:
+		b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Put); err != nil {
+			return err
+		}
+	case *Request_Operation_Get:
+		b.EncodeVarint(4<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Get); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Request_Operation.OpType has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Request_Operation_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Request_Operation)
+	switch tag {
+	case 3: // Op_type.put
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Request_Operation_OpPut)
+		err := b.DecodeMessage(msg)
+		m.OpType = &Request_Operation_Put{msg}
+		return true, err
+	case 4: // Op_type.get
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Request_Operation_OpGet)
+		err := b.DecodeMessage(msg)
+		m.OpType = &Request_Operation_Get{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _Request_Operation_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Request_Operation)
+	// Op_type
+	switch x := m.OpType.(type) {
+	case *Request_Operation_Put:
+		s := proto.Size(x.Put)
+		n += proto.SizeVarint(3<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Request_Operation_Get:
+		s := proto.Size(x.Get)
+		n += proto.SizeVarint(4<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
+type Request_Operation_OpPut struct {
+	Key   uint64 `protobuf:"varint,1,opt,name=key" json:"key,omitempty"`
+	Value []byte `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+}
+
+func (m *Request_Operation_OpPut) Reset()                    { *m = Request_Operation_OpPut{} }
+func (m *Request_Operation_OpPut) String() string            { return proto.CompactTextString(m) }
+func (*Request_Operation_OpPut) ProtoMessage()               {}
+func (*Request_Operation_OpPut) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0, 0} }
+
+func (m *Request_Operation_OpPut) GetKey() uint64 {
 	if m != nil {
 		return m.Key
 	}
 	return 0
 }
 
-func (m *OperationOpPut) GetValue() []byte {
+func (m *Request_Operation_OpPut) GetValue() []byte {
 	if m != nil {
 		return m.Value
 	}
 	return nil
 }
 
-func (m *OperationOpPut) GetStart() float64 {
-	if m != nil {
-		return m.Start
-	}
-	return 0
+type Request_Operation_OpGet struct {
+	Key uint64 `protobuf:"varint,1,opt,name=key" json:"key,omitempty"`
 }
 
-type OperationOpGet struct {
-	Key   uint64  `protobuf:"varint,1,opt,name=key" json:"key,omitempty"`
-	Start float64 `protobuf:"fixed64,4,opt,name=start" json:"start,omitempty"`
-}
+func (m *Request_Operation_OpGet) Reset()                    { *m = Request_Operation_OpGet{} }
+func (m *Request_Operation_OpGet) String() string            { return proto.CompactTextString(m) }
+func (*Request_Operation_OpGet) ProtoMessage()               {}
+func (*Request_Operation_OpGet) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0, 1} }
 
-func (m *OperationOpGet) Reset()                    { *m = OperationOpGet{} }
-func (m *OperationOpGet) String() string            { return proto.CompactTextString(m) }
-func (*OperationOpGet) ProtoMessage()               {}
-func (*OperationOpGet) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 1} }
-
-func (m *OperationOpGet) GetKey() uint64 {
+func (m *Request_Operation_OpGet) GetKey() uint64 {
 	if m != nil {
 		return m.Key
 	}
 	return 0
 }
 
-func (m *OperationOpGet) GetStart() float64 {
-	if m != nil {
-		return m.Start
-	}
-	return 0
+type Request_Finalise struct {
 }
 
-type OperationOpQuit struct {
-	Msg string `protobuf:"bytes,1,opt,name=msg" json:"msg,omitempty"`
+func (m *Request_Finalise) Reset()                    { *m = Request_Finalise{} }
+func (m *Request_Finalise) String() string            { return proto.CompactTextString(m) }
+func (*Request_Finalise) ProtoMessage()               {}
+func (*Request_Finalise) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 1} }
+
+type Request_Start struct {
 }
 
-func (m *OperationOpQuit) Reset()                    { *m = OperationOpQuit{} }
-func (m *OperationOpQuit) String() string            { return proto.CompactTextString(m) }
-func (*OperationOpQuit) ProtoMessage()               {}
-func (*OperationOpQuit) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 2} }
-
-func (m *OperationOpQuit) GetMsg() string {
-	if m != nil {
-		return m.Msg
-	}
-	return ""
-}
+func (m *Request_Start) Reset()                    { *m = Request_Start{} }
+func (m *Request_Start) String() string            { return proto.CompactTextString(m) }
+func (*Request_Start) ProtoMessage()               {}
+func (*Request_Start) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 2} }
 
 type Response struct {
 	ResponseTime float64 `protobuf:"fixed64,1,opt,name=response_time,json=responseTime" json:"response_time,omitempty"`
@@ -323,37 +442,42 @@ func (m *Response) GetTarget() string {
 }
 
 func init() {
-	proto.RegisterType((*Operation)(nil), "OpWire.Operation")
-	proto.RegisterType((*OperationOpPut)(nil), "OpWire.Operation.op_put")
-	proto.RegisterType((*OperationOpGet)(nil), "OpWire.Operation.op_get")
-	proto.RegisterType((*OperationOpQuit)(nil), "OpWire.Operation.op_quit")
+	proto.RegisterType((*Request)(nil), "OpWire.Request")
+	proto.RegisterType((*Request_Operation)(nil), "OpWire.Request.Operation")
+	proto.RegisterType((*Request_Operation_OpPut)(nil), "OpWire.Request.Operation.Op_put")
+	proto.RegisterType((*Request_Operation_OpGet)(nil), "OpWire.Request.Operation.Op_get")
+	proto.RegisterType((*Request_Finalise)(nil), "OpWire.Request.Finalise")
+	proto.RegisterType((*Request_Start)(nil), "OpWire.Request.Start")
 	proto.RegisterType((*Response)(nil), "OpWire.Response")
 }
 
 func init() { proto.RegisterFile("message.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 338 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x92, 0xc1, 0x4a, 0xf3, 0x40,
-	0x14, 0x85, 0x9b, 0xa6, 0x4d, 0x93, 0xdb, 0x16, 0x7e, 0x86, 0x1f, 0x19, 0xeb, 0xc2, 0x5a, 0x37,
-	0x5d, 0x48, 0x14, 0x7d, 0x83, 0x2e, 0xa4, 0xbb, 0xc2, 0x28, 0xb8, 0x0c, 0xd1, 0x5e, 0xc2, 0x60,
-	0x93, 0x4c, 0x27, 0x13, 0xa1, 0xaf, 0xe6, 0xeb, 0xf8, 0x22, 0x72, 0xef, 0xc4, 0xe2, 0xa2, 0xb8,
-	0xbb, 0xf7, 0xcc, 0x77, 0xce, 0x1c, 0x92, 0x81, 0x69, 0x89, 0x4d, 0x93, 0x17, 0x98, 0x1a, 0x5b,
-	0xbb, 0x5a, 0x44, 0x1b, 0xf3, 0xa2, 0x2d, 0x2e, 0x3e, 0xfb, 0x90, 0x6c, 0x0c, 0xda, 0xdc, 0xe9,
-	0xba, 0x12, 0x37, 0x10, 0x9a, 0xd6, 0xc9, 0x60, 0x1e, 0x2c, 0xc7, 0xf7, 0x32, 0xf5, 0x4c, 0x7a,
-	0x3c, 0x4f, 0x6b, 0x93, 0x99, 0xd6, 0xad, 0x7b, 0x8a, 0x30, 0xa2, 0x0b, 0x74, 0xb2, 0xff, 0x07,
-	0x5d, 0x20, 0xd3, 0x05, 0x3a, 0x71, 0x0b, 0x83, 0x7d, 0xab, 0x9d, 0x0c, 0x19, 0x3f, 0x3f, 0x89,
-	0x13, 0xb0, 0xee, 0x29, 0x06, 0x67, 0x8f, 0x10, 0xf9, 0xfb, 0xc4, 0x3f, 0x08, 0xdf, 0xf1, 0xc0,
-	0xb5, 0x06, 0x8a, 0x46, 0xf1, 0x1f, 0x86, 0x1f, 0xf9, 0xae, 0x45, 0xbe, 0x7c, 0xa2, 0xfc, 0x42,
-	0x6a, 0xe3, 0x72, 0xeb, 0xe4, 0x60, 0x1e, 0x2c, 0x03, 0xe5, 0x97, 0xd9, 0x1d, 0xe7, 0x50, 0x85,
-	0x93, 0x39, 0x27, 0x1c, 0x17, 0x30, 0xea, 0xca, 0x90, 0xa5, 0x6c, 0x0a, 0xb6, 0x24, 0x8a, 0xc6,
-	0x55, 0xc2, 0x87, 0xee, 0x60, 0x70, 0xf1, 0x15, 0x40, 0xac, 0xb0, 0x31, 0x75, 0xd5, 0xa0, 0xb8,
-	0x86, 0xa9, 0xed, 0xe6, 0xcc, 0xe9, 0x12, 0xd9, 0x13, 0xa8, 0xc9, 0x8f, 0xf8, 0xac, 0x4b, 0xa4,
-	0x38, 0xb4, 0x96, 0x5b, 0x27, 0x8a, 0x46, 0x71, 0x05, 0x93, 0xb7, 0x9d, 0xc6, 0xca, 0x65, 0xbe,
-	0x48, 0xc8, 0xae, 0xb1, 0xd7, 0x9e, 0x48, 0x12, 0x97, 0x30, 0xde, 0xb7, 0xd8, 0x62, 0xf6, 0xbb,
-	0x2a, 0xb0, 0xe4, 0x01, 0x4a, 0xad, 0xb6, 0x72, 0xc8, 0x07, 0x34, 0x8a, 0x19, 0xc4, 0x3e, 0x41,
-	0x6f, 0x65, 0x34, 0x0f, 0x96, 0x53, 0x75, 0xdc, 0xc5, 0x19, 0x7d, 0x0f, 0xea, 0x2f, 0x47, 0x5c,
-	0xa3, 0xdb, 0x48, 0x77, 0xb9, 0xa5, 0x3f, 0x1a, 0x7b, 0xdd, 0x6f, 0xab, 0x18, 0xba, 0xc7, 0xf2,
-	0x1a, 0xf1, 0xdb, 0x79, 0xf8, 0x0e, 0x00, 0x00, 0xff, 0xff, 0xac, 0x5b, 0xc3, 0x06, 0x4c, 0x02,
-	0x00, 0x00,
+	// 399 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x52, 0xcd, 0x6a, 0xdb, 0x40,
+	0x10, 0xf6, 0x5a, 0xb2, 0x24, 0x8f, 0x6d, 0x28, 0x4b, 0x5b, 0xb6, 0xba, 0xd4, 0x75, 0x2f, 0x86,
+	0x52, 0x51, 0xda, 0x92, 0x07, 0xf0, 0x21, 0xf8, 0x26, 0xd8, 0x04, 0x72, 0x14, 0x4a, 0x3c, 0x11,
+	0x8b, 0x6d, 0x69, 0xbd, 0x5a, 0x05, 0xfc, 0x6c, 0x79, 0x9c, 0xbc, 0x47, 0x08, 0xfb, 0x23, 0x07,
+	0x4c, 0x02, 0xb9, 0xcd, 0xcf, 0xf7, 0xcd, 0xf7, 0xed, 0xec, 0xc0, 0x6c, 0x8f, 0x6d, 0x5b, 0x56,
+	0x98, 0x49, 0xd5, 0xe8, 0x86, 0x46, 0xb9, 0xbc, 0x11, 0x0a, 0x17, 0x8f, 0x01, 0xc4, 0x1c, 0x0f,
+	0x1d, 0xb6, 0x9a, 0xfe, 0x82, 0x61, 0x23, 0x19, 0x99, 0x93, 0xe5, 0xe4, 0xef, 0xb7, 0xcc, 0x01,
+	0x32, 0xdf, 0xcc, 0x72, 0x89, 0xaa, 0xd4, 0xa2, 0xa9, 0xd7, 0x03, 0x3e, 0x6c, 0x24, 0xbd, 0x80,
+	0xe4, 0x5e, 0xd4, 0xe5, 0x4e, 0xb4, 0xc8, 0x86, 0x96, 0xc2, 0xce, 0x29, 0x97, 0xbe, 0xbf, 0x1e,
+	0xf0, 0x13, 0x96, 0xfe, 0x86, 0x51, 0xab, 0x4b, 0xa5, 0x59, 0x60, 0x49, 0x5f, 0xce, 0x49, 0x57,
+	0xa6, 0xb9, 0x1e, 0x70, 0x87, 0x4a, 0x9f, 0x09, 0x8c, 0x4f, 0xd2, 0xf4, 0x2b, 0x44, 0x52, 0xa1,
+	0xc2, 0x83, 0x75, 0x99, 0x70, 0x9f, 0xd1, 0xcf, 0xfd, 0x50, 0xe3, 0x84, 0x78, 0x2e, 0xfd, 0x0f,
+	0x81, 0xec, 0x7a, 0xa1, 0xf9, 0xbb, 0x0f, 0xca, 0x72, 0x59, 0xc8, 0xce, 0x68, 0x1a, 0xb8, 0x61,
+	0x55, 0xa8, 0x59, 0xf8, 0x01, 0x56, 0x85, 0x96, 0x55, 0xa1, 0x4e, 0xff, 0x40, 0xe4, 0xc6, 0xd0,
+	0x4f, 0x10, 0x6c, 0xf1, 0x68, 0x0d, 0x86, 0xdc, 0x84, 0xc6, 0xdd, 0x43, 0xb9, 0xeb, 0xdc, 0x9e,
+	0xa6, 0xdc, 0x25, 0x69, 0x6a, 0x19, 0x15, 0xbe, 0xc1, 0x58, 0x8d, 0x21, 0xce, 0x65, 0xa1, 0x8f,
+	0x12, 0x53, 0x80, 0xa4, 0xdf, 0x63, 0x1a, 0xc3, 0xc8, 0xae, 0x67, 0x15, 0x41, 0xb8, 0x15, 0xf5,
+	0x66, 0xf1, 0x44, 0x20, 0xe1, 0xd8, 0xca, 0xa6, 0x6e, 0x91, 0xfe, 0x84, 0x99, 0xf2, 0x71, 0xa1,
+	0xc5, 0x1e, 0xed, 0x40, 0xc2, 0xa7, 0x7d, 0xf1, 0x5a, 0xec, 0xd1, 0x68, 0xa1, 0x52, 0xd6, 0xc9,
+	0x98, 0x9b, 0x90, 0xfe, 0x80, 0xe9, 0xdd, 0x4e, 0x60, 0xad, 0x8b, 0xd7, 0x7f, 0x21, 0x7c, 0xe2,
+	0x6a, 0x56, 0x8e, 0x7e, 0x87, 0xc9, 0xa1, 0xc3, 0x0e, 0x3d, 0x22, 0xb4, 0x08, 0xb0, 0x25, 0x07,
+	0x30, 0x53, 0xeb, 0x0d, 0x1b, 0xd9, 0x86, 0x09, 0x69, 0x0a, 0x89, 0x9b, 0x20, 0x36, 0x2c, 0x9a,
+	0x93, 0xe5, 0x8c, 0x9f, 0x72, 0xf3, 0x8b, 0x8d, 0x34, 0x8f, 0x63, 0xb1, 0xb5, 0xe1, 0x33, 0x53,
+	0xd7, 0xa5, 0x32, 0xcb, 0x4f, 0x5c, 0xdd, 0x65, 0xab, 0x04, 0xfc, 0xb5, 0xde, 0x46, 0xf6, 0x78,
+	0xff, 0xbd, 0x04, 0x00, 0x00, 0xff, 0xff, 0x3e, 0x1f, 0x79, 0xf1, 0xcd, 0x02, 0x00, 0x00,
 }

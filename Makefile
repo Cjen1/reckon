@@ -21,3 +21,6 @@ runtest: build
 	     cjen1/rc:latest ./scripts/run.sh &&\
 	docker logs resolving_consensus_test 
 
+.PHONY: protobuf
+protobuf:
+	cd src && make build

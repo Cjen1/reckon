@@ -1,12 +1,13 @@
 def parse_resp(resp):
+    print("--------------------------------------------------")
+    print(resp)
+    print("--------------------------------------------------")
     endpoint_statuses = resp.split('\n')[0:-1]
     leader = ''
     for endpoint in endpoint_statuses:
         endpoint_ip = endpoint.split(',')[0].split('://')[-1].split(':')[0]
         if(endpoint.split(',')[4].strip() == 'true'):
-            leader = endpoint_ip
-            break
-    return leader
+            return endpoint_ip
 
 def find_leader(hosts, ips):
     for host in hosts:

@@ -4,29 +4,39 @@ from mininet.node import Controller
 from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
+from subprocess import call
+import shlex
 
 import os
 
 def tag(host):
-    return "etcd_"+host.name
+    return host.name
+
+def kill(host):
+    cmd = ("screen -X -S {0} quit").format(host.name)
+    print("calling: " + cmd)
+    call(shlex.split(cmd))
+
 
 def setup(hosts, cgrps, logs, **kwargs):
-    cluster = "".join(tag(host) + "=http://"+host.IP()+":2380," for i, host in 
+    cluster = "".join(tag(host) + "=http://"+host.IP()+":2380," for i, host in
             enumerate(hosts)
                 )[:-1]
 
-    restarters = []
+    restarters = {}
+    stoppers = {}
 
     print(hosts)
     print([host.IP() for host in hosts])
 
     def run(cmd, tag, host):
-        cmd = "screen -dmS {tag} bash -c \"{command} 2>&1 | tee logs/{logs}_{tag}\"".format(tag=tag,command=cmd, logs=logs)
+        cmd = "screen -dmS {tag} bash -c \"{command} 2>&1 | tee -a logs/{logs}_{tag}\"".format(tag=tag,command=cmd, logs=logs)
         host.popen(cmd, shell=True, stdout=stdout)
         return cmd
 
     for host in hosts:
-        start_cmd = (
+        def start_cmd(cluster_state): 
+           return (
                     "systems/etcd/bin/etcd " +
                     "--data-dir=/data/{tag} " + 
                     "--name {tag} " + 
@@ -43,13 +53,14 @@ def setup(hosts, cgrps, logs, **kwargs):
                         tag=tag(host),
                         ip=host.IP(), 
                         cluster=cluster, 
-                        cluster_state="new", 
+                        cluster_state=cluster_state, 
                         cluster_token="urop_cluster"
                     )
 
-        start_cmd = run(start_cmd, tag(host), host)
-        print("Start cmd: " + start_cmd)
-        print()
-        restarters.append(lambda:run(start_cmd, tag(host), host))
+        run(start_cmd("new"), tag(host), host)
+        print("Start cmd: " + start_cmd("new"))
 
-    return restarters, (lambda: ())
+        restarters[tag(host)] = lambda:run(start_cmd("existing"), tag(host), host)
+        stoppers[host.name] = shlex.split(("screen -X -S {0} quit").format(host.name))
+
+    return restarters, stoppers

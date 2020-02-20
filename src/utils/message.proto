@@ -29,8 +29,13 @@ message Request {
 		}
 	}
 
-	message Finalise {}
-	message Start {}
+	message Finalise {
+		string msg = 1;
+	}
+
+	message Start {
+		string msg = 1;
+	}
 }
 
 message Response {

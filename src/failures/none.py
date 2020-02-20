@@ -1,2 +1,2 @@
-def setup(net, restarters, service_name):
+def setup(net, restarters, stoppers, service_name):
     return []

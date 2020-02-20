@@ -12,7 +12,9 @@ SHELL ["/bin/bash", "-c", "-l"]
 #Need correct controller
 RUN ln /usr/bin/ovs-testcontroller /usr/bin/controller
 
-RUN apt update && apt install software-properties-common build-essential sudo -y
+ARG TZ=Europe/London
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt update && apt install software-properties-common build-essential sudo tzdata -y
 
 #-------- Install dependencies --------------------
 ADD scripts/install/deps-Makefile Makefile
@@ -38,13 +40,15 @@ RUN make etcd_install
 #RUN make zk_install
 
 #ADD systems/ocaml-paxos systems/ocaml-paxos
+#RUN opam install ppx_deriving_protobuf -y
 #RUN make ocaml-paxos_install
 
 #--------- Install tools --------------------------
 
-ADD . .
 RUN mkdir /results
 
 RUN mkdir bins logs
 COPY --from=benchmark /etcdbin/* bins/
 RUN echo 'export PATH=$PATH:~/bins/' >> ~/.bashrc
+
+ADD . .

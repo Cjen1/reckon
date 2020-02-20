@@ -39,7 +39,8 @@ op-deps: install-deps opam
 	  m4  \
 	  perl \
 	  libev-dev
-	LWT_DISCOVER_ARGUMENTS="--use-libev true" opam install -y dune ounit core yojson uri ocaml-protoc zmq-lwt lwt_ppx utop logs fmt conf-libev
+	opam update
+	LWT_DISCOVER_ARGUMENTS="--use-libev true" opam install -y dune ounit core yojson uri ocaml-protoc zmq-lwt lwt_ppx utop logs fmt conf-libev lwt-pipe
 	eval `opam env`
 
 opam:
@@ -51,7 +52,7 @@ opam:
 
 ocaml-paxos_install:
 	cd systems/ocaml-paxos && \
-		make install
+		make build 
 
 #--------------------------------------------------
 .PHONY:zookeeper-deps zk_install

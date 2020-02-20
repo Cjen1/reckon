@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .PHONY:build docker runtest
 
-build:
+build: protobuf
 	docker build -t cjen1/rc:latest .
 
 docker: build
@@ -23,4 +23,4 @@ runtest: build
 
 .PHONY: protobuf
 protobuf:
-	cd src && make build
+	cd src && make protobuf

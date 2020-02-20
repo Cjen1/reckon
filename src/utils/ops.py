@@ -6,25 +6,17 @@ import numpy.random as rand
 def payload(num_bytes):
     return rand.bytes(num_bytes)
 
-def write(key, value):
-    start = time.time()
-    op = msg_pb.Operation()
-    op.put.key = key
-    op.put.value = value
-    op.put.start = start
+def write(key, value, start):
+    op = msg_pb.Request()
+    op.op.put.key = key
+    op.op.put.value = value
+    op.op.start = start
 
     return op 
 
-def read(key):
-    start = time.time()
-    op = msg_pb.Operation()
-    op.get.key = key
-    op.get.start = start
-
-    return op
-
-def quit():
-    op = msg_pb.Operation()
-    op.quit.msg = "Quit"
+def read(key, start):
+    op = msg_pb.Request()
+    op.op.get.key = key
+    op.op.start = start
 
     return op

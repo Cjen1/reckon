@@ -7,21 +7,21 @@ setLogLevel('info')
 import cgroups
 import importlib
 
-switch_num = 0
+switch_num = 1
 def add_switch(net):
     global switch_num
     res = 's%s' %str(switch_num)
     switch_num += 1
     return net.addSwitch(res)
 
-host_num = 0
+host_num = 1
 def add_host(net):
     global host_num
     res = 'h%s' %str(host_num)
     host_num += 1
     return net.addHost(res)
 
-client_num = 0
+client_num = 1
 def add_client(net):
     global client_num
     res = 'mc%s' %str(client_num)
@@ -68,6 +68,6 @@ def setup(service, current_dir, logs, n='3', nc='10'):
 
     cluster_ips = [host.IP() for host in cluster]
 
-    restarters, cleanup_func = system_setup_func(cluster, cluster_ips, logs=logs, **kwargs)
+    restarters, stoppers = system_setup_func(cluster, cluster_ips, logs=logs, **kwargs)
 
-    return (net, cluster_ips, clients, restarters, cleanup_func)
+    return (net, cluster_ips, clients, restarters, stoppers)

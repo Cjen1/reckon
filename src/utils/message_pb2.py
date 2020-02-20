@@ -20,40 +20,33 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='OpWire',
   syntax='proto3',
   serialized_options=_b('\n\006OpWire'),
-  serialized_pb=_b('\n\rmessage.proto\x12\x06OpWire\"\x89\x02\n\tOperation\x12\x0e\n\x06prereq\x18\x01 \x01(\x08\x12\'\n\x03put\x18\x02 \x01(\x0b\x32\x18.OpWire.Operation.op_putH\x00\x12\'\n\x03get\x18\x03 \x01(\x0b\x32\x18.OpWire.Operation.op_getH\x00\x12)\n\x04quit\x18\x04 \x01(\x0b\x32\x19.OpWire.Operation.op_quitH\x00\x1a\x33\n\x06op_put\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c\x12\r\n\x05start\x18\x04 \x01(\x01\x1a$\n\x06op_get\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05start\x18\x04 \x01(\x01\x1a\t\n\x07op_quitB\t\n\x07op_type\"\x98\x01\n\x08Response\x12\x15\n\rresponse_time\x18\x01 \x01(\x01\x12\x0b\n\x03\x65rr\x18\x02 \x01(\t\x12\x14\n\x0c\x63lient_start\x18\x03 \x01(\x01\x12\x13\n\x0bqueue_start\x18\x04 \x01(\x01\x12\x0b\n\x03\x65nd\x18\x05 \x01(\x01\x12\x10\n\x08\x63lientid\x18\x06 \x01(\r\x12\x0e\n\x06optype\x18\x07 \x01(\t\x12\x0e\n\x06target\x18\x08 \x01(\tB\x08\n\x06OpWireb\x06proto3')
+  serialized_pb=_b('\n\rmessage.proto\x12\x06OpWire\"\x96\x03\n\x07Request\x12\'\n\x02op\x18\x01 \x01(\x0b\x32\x19.OpWire.Request.OperationH\x00\x12,\n\x08\x66inalise\x18\x02 \x01(\x0b\x32\x18.OpWire.Request.FinaliseH\x00\x12&\n\x05start\x18\x03 \x01(\x0b\x32\x15.OpWire.Request.StartH\x00\x1a\xd4\x01\n\tOperation\x12\x0e\n\x06prereq\x18\x01 \x01(\x08\x12\r\n\x05start\x18\x02 \x01(\x01\x12/\n\x03put\x18\x03 \x01(\x0b\x32 .OpWire.Request.Operation.Op_putH\x00\x12/\n\x03get\x18\x04 \x01(\x0b\x32 .OpWire.Request.Operation.Op_getH\x00\x1a$\n\x06Op_put\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c\x1a\x15\n\x06Op_get\x12\x0b\n\x03key\x18\x01 \x01(\x04\x42\t\n\x07Op_type\x1a\x17\n\x08\x46inalise\x12\x0b\n\x03msg\x18\x01 \x01(\t\x1a\x14\n\x05Start\x12\x0b\n\x03msg\x18\x01 \x01(\tB\x06\n\x04kind\"\x98\x01\n\x08Response\x12\x15\n\rresponse_time\x18\x01 \x01(\x01\x12\x0b\n\x03\x65rr\x18\x02 \x01(\t\x12\x14\n\x0c\x63lient_start\x18\x03 \x01(\x01\x12\x13\n\x0bqueue_start\x18\x04 \x01(\x01\x12\x0b\n\x03\x65nd\x18\x05 \x01(\x01\x12\x10\n\x08\x63lientid\x18\x06 \x01(\r\x12\x0e\n\x06optype\x18\x07 \x01(\t\x12\x0e\n\x06target\x18\x08 \x01(\tB\x08\n\x06OpWireb\x06proto3')
 )
 
 
 
 
-_OPERATION_OP_PUT = _descriptor.Descriptor(
-  name='op_put',
-  full_name='OpWire.Operation.op_put',
+_REQUEST_OPERATION_OP_PUT = _descriptor.Descriptor(
+  name='Op_put',
+  full_name='OpWire.Request.Operation.Op_put',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='OpWire.Operation.op_put.key', index=0,
+      name='key', full_name='OpWire.Request.Operation.Op_put.key', index=0,
       number=1, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='value', full_name='OpWire.Operation.op_put.value', index=1,
+      name='value', full_name='OpWire.Request.Operation.Op_put.value', index=1,
       number=2, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='start', full_name='OpWire.Operation.op_put.start', index=2,
-      number=4, type=1, cpp_type=5, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -66,31 +59,24 @@ _OPERATION_OP_PUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=180,
-  serialized_end=231,
+  serialized_start=307,
+  serialized_end=343,
 )
 
-_OPERATION_OP_GET = _descriptor.Descriptor(
-  name='op_get',
-  full_name='OpWire.Operation.op_get',
+_REQUEST_OPERATION_OP_GET = _descriptor.Descriptor(
+  name='Op_get',
+  full_name='OpWire.Request.Operation.Op_get',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='OpWire.Operation.op_get.key', index=0,
+      name='key', full_name='OpWire.Request.Operation.Op_get.key', index=0,
       number=1, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='start', full_name='OpWire.Operation.op_get.start', index=1,
-      number=4, type=1, cpp_type=5, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -103,63 +89,40 @@ _OPERATION_OP_GET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=233,
-  serialized_end=269,
+  serialized_start=345,
+  serialized_end=366,
 )
 
-_OPERATION_OP_QUIT = _descriptor.Descriptor(
-  name='op_quit',
-  full_name='OpWire.Operation.op_quit',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=271,
-  serialized_end=280,
-)
-
-_OPERATION = _descriptor.Descriptor(
+_REQUEST_OPERATION = _descriptor.Descriptor(
   name='Operation',
-  full_name='OpWire.Operation',
+  full_name='OpWire.Request.Operation',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='prereq', full_name='OpWire.Operation.prereq', index=0,
+      name='prereq', full_name='OpWire.Request.Operation.prereq', index=0,
       number=1, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='put', full_name='OpWire.Operation.put', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
+      name='start', full_name='OpWire.Request.Operation.start', index=1,
+      number=2, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='get', full_name='OpWire.Operation.get', index=2,
+      name='put', full_name='OpWire.Request.Operation.put', index=2,
       number=3, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='quit', full_name='OpWire.Operation.quit', index=3,
+      name='get', full_name='OpWire.Request.Operation.get', index=3,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -168,7 +131,7 @@ _OPERATION = _descriptor.Descriptor(
   ],
   extensions=[
   ],
-  nested_types=[_OPERATION_OP_PUT, _OPERATION_OP_GET, _OPERATION_OP_QUIT, ],
+  nested_types=[_REQUEST_OPERATION_OP_PUT, _REQUEST_OPERATION_OP_GET, ],
   enum_types=[
   ],
   serialized_options=None,
@@ -177,11 +140,118 @@ _OPERATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
     _descriptor.OneofDescriptor(
-      name='op_type', full_name='OpWire.Operation.op_type',
+      name='Op_type', full_name='OpWire.Request.Operation.Op_type',
+      index=0, containing_type=None, fields=[]),
+  ],
+  serialized_start=165,
+  serialized_end=377,
+)
+
+_REQUEST_FINALISE = _descriptor.Descriptor(
+  name='Finalise',
+  full_name='OpWire.Request.Finalise',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='msg', full_name='OpWire.Request.Finalise.msg', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=379,
+  serialized_end=402,
+)
+
+_REQUEST_START = _descriptor.Descriptor(
+  name='Start',
+  full_name='OpWire.Request.Start',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='msg', full_name='OpWire.Request.Start.msg', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=404,
+  serialized_end=424,
+)
+
+_REQUEST = _descriptor.Descriptor(
+  name='Request',
+  full_name='OpWire.Request',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='op', full_name='OpWire.Request.op', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='finalise', full_name='OpWire.Request.finalise', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='start', full_name='OpWire.Request.start', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[_REQUEST_OPERATION, _REQUEST_FINALISE, _REQUEST_START, ],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+    _descriptor.OneofDescriptor(
+      name='kind', full_name='OpWire.Request.kind',
       index=0, containing_type=None, fields=[]),
   ],
   serialized_start=26,
-  serialized_end=291,
+  serialized_end=432,
 )
 
 
@@ -260,59 +330,85 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=294,
-  serialized_end=446,
+  serialized_start=435,
+  serialized_end=587,
 )
 
-_OPERATION_OP_PUT.containing_type = _OPERATION
-_OPERATION_OP_GET.containing_type = _OPERATION
-_OPERATION_OP_QUIT.containing_type = _OPERATION
-_OPERATION.fields_by_name['put'].message_type = _OPERATION_OP_PUT
-_OPERATION.fields_by_name['get'].message_type = _OPERATION_OP_GET
-_OPERATION.fields_by_name['quit'].message_type = _OPERATION_OP_QUIT
-_OPERATION.oneofs_by_name['op_type'].fields.append(
-  _OPERATION.fields_by_name['put'])
-_OPERATION.fields_by_name['put'].containing_oneof = _OPERATION.oneofs_by_name['op_type']
-_OPERATION.oneofs_by_name['op_type'].fields.append(
-  _OPERATION.fields_by_name['get'])
-_OPERATION.fields_by_name['get'].containing_oneof = _OPERATION.oneofs_by_name['op_type']
-_OPERATION.oneofs_by_name['op_type'].fields.append(
-  _OPERATION.fields_by_name['quit'])
-_OPERATION.fields_by_name['quit'].containing_oneof = _OPERATION.oneofs_by_name['op_type']
-DESCRIPTOR.message_types_by_name['Operation'] = _OPERATION
+_REQUEST_OPERATION_OP_PUT.containing_type = _REQUEST_OPERATION
+_REQUEST_OPERATION_OP_GET.containing_type = _REQUEST_OPERATION
+_REQUEST_OPERATION.fields_by_name['put'].message_type = _REQUEST_OPERATION_OP_PUT
+_REQUEST_OPERATION.fields_by_name['get'].message_type = _REQUEST_OPERATION_OP_GET
+_REQUEST_OPERATION.containing_type = _REQUEST
+_REQUEST_OPERATION.oneofs_by_name['Op_type'].fields.append(
+  _REQUEST_OPERATION.fields_by_name['put'])
+_REQUEST_OPERATION.fields_by_name['put'].containing_oneof = _REQUEST_OPERATION.oneofs_by_name['Op_type']
+_REQUEST_OPERATION.oneofs_by_name['Op_type'].fields.append(
+  _REQUEST_OPERATION.fields_by_name['get'])
+_REQUEST_OPERATION.fields_by_name['get'].containing_oneof = _REQUEST_OPERATION.oneofs_by_name['Op_type']
+_REQUEST_FINALISE.containing_type = _REQUEST
+_REQUEST_START.containing_type = _REQUEST
+_REQUEST.fields_by_name['op'].message_type = _REQUEST_OPERATION
+_REQUEST.fields_by_name['finalise'].message_type = _REQUEST_FINALISE
+_REQUEST.fields_by_name['start'].message_type = _REQUEST_START
+_REQUEST.oneofs_by_name['kind'].fields.append(
+  _REQUEST.fields_by_name['op'])
+_REQUEST.fields_by_name['op'].containing_oneof = _REQUEST.oneofs_by_name['kind']
+_REQUEST.oneofs_by_name['kind'].fields.append(
+  _REQUEST.fields_by_name['finalise'])
+_REQUEST.fields_by_name['finalise'].containing_oneof = _REQUEST.oneofs_by_name['kind']
+_REQUEST.oneofs_by_name['kind'].fields.append(
+  _REQUEST.fields_by_name['start'])
+_REQUEST.fields_by_name['start'].containing_oneof = _REQUEST.oneofs_by_name['kind']
+DESCRIPTOR.message_types_by_name['Request'] = _REQUEST
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-Operation = _reflection.GeneratedProtocolMessageType('Operation', (_message.Message,), {
+Request = _reflection.GeneratedProtocolMessageType('Request', (_message.Message,), {
 
-  'op_put' : _reflection.GeneratedProtocolMessageType('op_put', (_message.Message,), {
-    'DESCRIPTOR' : _OPERATION_OP_PUT,
+  'Operation' : _reflection.GeneratedProtocolMessageType('Operation', (_message.Message,), {
+
+    'Op_put' : _reflection.GeneratedProtocolMessageType('Op_put', (_message.Message,), {
+      'DESCRIPTOR' : _REQUEST_OPERATION_OP_PUT,
+      '__module__' : 'message_pb2'
+      # @@protoc_insertion_point(class_scope:OpWire.Request.Operation.Op_put)
+      })
+    ,
+
+    'Op_get' : _reflection.GeneratedProtocolMessageType('Op_get', (_message.Message,), {
+      'DESCRIPTOR' : _REQUEST_OPERATION_OP_GET,
+      '__module__' : 'message_pb2'
+      # @@protoc_insertion_point(class_scope:OpWire.Request.Operation.Op_get)
+      })
+    ,
+    'DESCRIPTOR' : _REQUEST_OPERATION,
     '__module__' : 'message_pb2'
-    # @@protoc_insertion_point(class_scope:OpWire.Operation.op_put)
+    # @@protoc_insertion_point(class_scope:OpWire.Request.Operation)
     })
   ,
 
-  'op_get' : _reflection.GeneratedProtocolMessageType('op_get', (_message.Message,), {
-    'DESCRIPTOR' : _OPERATION_OP_GET,
+  'Finalise' : _reflection.GeneratedProtocolMessageType('Finalise', (_message.Message,), {
+    'DESCRIPTOR' : _REQUEST_FINALISE,
     '__module__' : 'message_pb2'
-    # @@protoc_insertion_point(class_scope:OpWire.Operation.op_get)
+    # @@protoc_insertion_point(class_scope:OpWire.Request.Finalise)
     })
   ,
 
-  'op_quit' : _reflection.GeneratedProtocolMessageType('op_quit', (_message.Message,), {
-    'DESCRIPTOR' : _OPERATION_OP_QUIT,
+  'Start' : _reflection.GeneratedProtocolMessageType('Start', (_message.Message,), {
+    'DESCRIPTOR' : _REQUEST_START,
     '__module__' : 'message_pb2'
-    # @@protoc_insertion_point(class_scope:OpWire.Operation.op_quit)
+    # @@protoc_insertion_point(class_scope:OpWire.Request.Start)
     })
   ,
-  'DESCRIPTOR' : _OPERATION,
+  'DESCRIPTOR' : _REQUEST,
   '__module__' : 'message_pb2'
-  # @@protoc_insertion_point(class_scope:OpWire.Operation)
+  # @@protoc_insertion_point(class_scope:OpWire.Request)
   })
-_sym_db.RegisterMessage(Operation)
-_sym_db.RegisterMessage(Operation.op_put)
-_sym_db.RegisterMessage(Operation.op_get)
-_sym_db.RegisterMessage(Operation.op_quit)
+_sym_db.RegisterMessage(Request)
+_sym_db.RegisterMessage(Request.Operation)
+_sym_db.RegisterMessage(Request.Operation.Op_put)
+_sym_db.RegisterMessage(Request.Operation.Op_get)
+_sym_db.RegisterMessage(Request.Finalise)
+_sym_db.RegisterMessage(Request.Start)
 
 Response = _reflection.GeneratedProtocolMessageType('Response', (_message.Message,), {
   'DESCRIPTOR' : _RESPONSE,

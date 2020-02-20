@@ -92,14 +92,10 @@ absolute_path = args.absolute_path
 
 service_name, client_name = system.split("_")
 
-net, cluster_ips, clients, restarters, cleanup = topo_module.setup(service_name, absolute_path, logs=bench_args['logs'], **topo_kwargs) 
-failures = fail_setup(net, restarters, system.split('_')[0])
+net, cluster_ips, clients, restarters, stoppers = topo_module.setup(service_name, absolute_path, logs=bench_args['logs'], **topo_kwargs) 
+failures = fail_setup(net, restarters, stoppers, system.split('_')[0])
 
 hosts = [h for h in net.hosts if h.name[0] == "h"]
-
-#for host in hosts:
-#    cgrps[host].set_cpu_limit(bench_args['cpu_quota'])
-#    cgrps[host].set_memory_limit(limit=bench_args['memory_quota'], unit=bench_args['memory_unit'])
 
 if args.d:
     from mininet.cli import CLI
@@ -113,8 +109,7 @@ else:
     ops = op_gen_module.generate_ops(**dist_kwargs)		
 
     print("Benchmark: Waiting for network to settle")
-    sleep(10)
-
+    sleep(10) 
     print("BENCHMARK: Starting Test, "+str((service_name, client_name)))
     run_test(
                 bench_args['dest'],
@@ -129,7 +124,3 @@ else:
             )  
 
     print("Finished Test")
-
-from subprocess import call
-cleanup()
-net.stop()

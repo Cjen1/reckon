@@ -40,7 +40,8 @@ op-deps: install-deps opam
 	  perl \
 	  libev-dev
 	opam update
-	LWT_DISCOVER_ARGUMENTS="--use-libev true" opam install -y dune ounit core yojson uri ocaml-protoc zmq-lwt lwt_ppx utop logs fmt conf-libev lwt-pipe
+	LWT_DISCOVER_ARGUMENTS="--use-libev true" opam install -y dune ounit core yojson uri ocaml-protoc zmq-lwt \
+			       lwt_ppx utop logs fmt conf-libev lwt-pipe ppx_deriving_protobuf
 	eval `opam env`
 
 opam:

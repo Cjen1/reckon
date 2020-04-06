@@ -12,7 +12,7 @@ def parse_resp(resp):
 def find_leader(hosts, ips):
     for host in hosts:
         try:
-            cmd = "ETCDCTL_API=3 etcdctl endpoint status --cluster"
+            cmd = "ETCDCTL_API=3 systems/etcd/bin/etcdctl endpoint status --cluster"
             resp = host.cmd(cmd)
             leader_ip = parse_resp(resp)
             leader = hosts[ips.index(leader_ip)]

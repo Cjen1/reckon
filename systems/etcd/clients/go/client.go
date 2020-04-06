@@ -87,9 +87,7 @@ func check(e error) {
 	}
 }
 
-func perform(op *OpWire.Request_Operation, res_ch chan *OpWire.Response, cli *clientv3.Client, clientid uint32, start_time time.Time) {
-	//defer wg.Done()
-
+func perform(op OpWire.Request_Operation, res_ch chan *OpWire.Response, cli *clientv3.Client, clientid uint32, start_time time.Time) {
 	start := op.Start + unix_seconds(start_time)
 	switch op_t := op.OpType.(type) {
 	case *OpWire.Request_Operation_Put:
@@ -182,8 +180,6 @@ func main() {
 	check(err)
 	clientid := uint32(i)
 
-	//num_channels := 1000
-
 	log.Printf("Client: creating file")
 	result_pipe := os.Args[3]
 	log.Print(result_pipe)
@@ -192,7 +188,7 @@ func main() {
 	defer file.Close()
 	out_writer := file
 
-	dialTimeout := 2 * time.Second
+	dialTimeout := 10 * time.Second
 
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:            endpoints,
@@ -222,14 +218,16 @@ func main() {
 			if op.GetOp().Prereq {
 				log.Print("Performing prereq")
 				//wg_prereq.Add(1)
-				perform(op.GetOp(), bh_ch, cli, clientid, time.Now())
+				perform(*op.GetOp(), bh_ch, cli, clientid, time.Now())
 			} else {
 				ops = append(ops, op.GetOp())
 			}
 		case *OpWire.Request_Finalise_:
 			got_finalise = true
 		default:
-			log.Fatal("Got unrecognised message...")
+			log.Print("Got unrecognised message...")
+			log.Print(op)
+			log.Fatal("Quitting due to unrecognised message")
 		}
 	}
 
@@ -254,45 +252,82 @@ func main() {
 		}
 	}
 
-	//var wg_chans sync.WaitGroup
-	//op_ch := make(chan *OpWire.Request_Operation, num_channels)
-	//for i := 0; i < num_channels; i++ {
-	//	wg_chans.Add(1)
-
-	//	go func() {
-	//		defer wg_chans.Done()
-	//		for op := range op_ch {
-	//			sleep_time := time.Until(start_time.Add(time.Duration(op.Start * float64(time.Second))))
-	//			time.Sleep(sleep_time)
-	//			perform(op, res_ch, cli, clientid, time.Now())
-	//		}
-	//	} ()
-	//}
-
 	res_ch := make(chan *OpWire.Response, 50000)
 	done := make(chan bool)
 	go result_loop(res_ch, out_writer, done)
 
-	start_time := time.Now()
-	var wg_perform sync.WaitGroup
-	for _, op := range ops {
-		wg_perform.Add(1)
-		sleep_time := time.Until(start_time.Add(time.Duration(op.Start * float64(time.Second))))
-		time.Sleep(sleep_time)
-		//log.Print(op.Start, time.Now())
-		go func () {
-			defer wg_perform.Done()
-			perform(op, res_ch, cli, clientid, time.Now())
-		} ()
+	nchannels := 1000
+	conns := make([]chan OpWire.Request_Operation, nchannels)
+	for i := 0; i < nchannels; i++ {
+		conns[i] = make(chan OpWire.Request_Operation, 10)
 	}
 
-	//close(op_ch)
+
+	nclients := 100
+	clients := make([]*clientv3.Client, nclients)
+	for i := 0; i < nclients; i++ {
+		cli, err := clientv3.New(clientv3.Config{
+			Endpoints:            endpoints,
+			DialTimeout:          dialTimeout,
+			DialKeepAliveTime:    dialTimeout / 2,
+			DialKeepAliveTimeout: dialTimeout * 2,
+			AutoSyncInterval:     dialTimeout / 2,
+		})
+		check(err)
+
+		clients[i] = cli
+	}
+
+	var wg_perform sync.WaitGroup
+	for i, ch := range conns {
+		wg_perform.Add(1)
+		go func(cli *clientv3.Client, ch chan OpWire.Request_Operation) {
+			defer wg_perform.Done()
+			for op := range ch {
+				perform(op, res_ch, cli, clientid, time.Now())
+			}
+		} (clients[i%nclients], ch)
+	}
+
+	log.Print("Starting to perform ops")
+	start_time := time.Now()
+	for i, op := range ops {
+		end_time := start_time.Add(time.Duration(op.Start * float64(time.Second)))
+		t := time.Now()
+		for ; t.Before(end_time); t = time.Now() {}
+		conns[i % nchannels] <- *op
+	}
+	log.Print("Finished sending ops")
+
+	for _, ch := range conns {
+		close(ch)
+	}
+
+	//start_time := time.Now()
+	//var wg_perform sync.WaitGroup
+	//for _, op := range ops {
+	//	//log.Print("Attempting to perform")
+	//	wg_perform.Add(1)
+	//	end_time := start_time.Add(time.Duration(op.Start * float64(time.Second)))
+	//	//log.Print(end_time)
+	//	t := time.Now()
+	//	for ; t.Before(end_time); t = time.Now() {}
+	//	//log.Print("At right time")
+	//	go func () {
+	//		defer wg_perform.Done()
+	//		perform(op, res_ch, cli, clientid, t)
+	//	} ()
+	//}
 
 	//Wait to complete ops
 	wg_perform.Wait()
 
 	//Signal end of results 
 	close(res_ch)
-	//Wait for results to be written
+	//Wait for results to be returned to generator
 	<-done
+
+	for _, cli := range clients {
+		cli.Close()
+	}
 }

@@ -13,7 +13,7 @@ def tag(host):
     return host.name
 
 def kill(host):
-    cmd = ("screen -X -S {0} quit").format(host.name)
+    cmd = ("screen -X -S {0} kill").format(host.name)
     print("calling: " + cmd)
     call(shlex.split(cmd))
 
@@ -30,8 +30,8 @@ def setup(hosts, cgrps, logs, **kwargs):
     print([host.IP() for host in hosts])
 
     def run(cmd, tag, host):
-        cmd = "screen -dmS {tag} bash -c \"{command} 2>&1 | tee -a logs/{logs}_{tag}\"".format(tag=tag,command=cmd, logs=logs)
-        host.popen(cmd, shell=True, stdout=stdout)
+        cmd = "screen -dmS {tag} bash -c \"{command} 2>&1 | tee -a {logs}_{tag}\"".format(tag=tag,command=cmd, logs=logs)
+        host.popen(shlex.split(cmd), stdout=stdout)
         return cmd
 
     for host in hosts:

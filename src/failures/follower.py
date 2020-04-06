@@ -18,7 +18,7 @@ def follower_down(net, restarters, stoppers, service_name, state):
     follower = [host for host in hosts if not host is leader][0]
     print("FAILURE: killing screen : `screen -X -S %s quit`" % follower.name)
 
-    stoppers[follower.name]()
+    call(stoppers[follower.name])
     state['res'] = restarters[follower.name]
 
 def follower_up(state):

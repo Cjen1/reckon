@@ -2,6 +2,9 @@ import subprocess
 import os
 import shlex
 
+def tag(host):
+    return host.name
+
 def clean_address(address):
     try:
         os.unlink(address)
@@ -15,24 +18,43 @@ def new_pipe(address):
     print("creating fifo")
     os.mkfifo(address)
     print("created fifo")
-    f= os.open(address, os.O_RDONLY | os.O_NONBLOCK)
+    #f= os.open(address, os.O_RDONLY | os.O_NONBLOCK)
+    f=open(address, 'r')
     print("opened file")
     return f
 
+def run(cmd, tag, host):
+    cmd = shlex.split(cmd)
+    sp = host.popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    FNULL = open(os.devnull, 'w')
+
+    subprocess.Popen(['tee', 'logs/out_' + tag], stdin=sp.stdout, stdout=FNULL, stderr=FNULL)
+    subprocess.Popen(['tee', 'logs/err_' + tag], stdin=sp.stderr, stdout=FNULL, stderr=FNULL)
+
+    return sp
+
 def start(mn_client, client_id, config):
-    ips = config['cluster_ips']
+    print("starting microclient: " + str(client_id))
     client_path = "systems/ocaml-paxos/clients/"+config['client']+"/client"
     
-    tags = ["op_h" + str(i+1) for i,ip in enumerate(ips)]
+    args_caps = ",".join("/data/cli_" + tag(host) for host in config['cluster'])
 
-    client_port=5001
-    endpoints = "".join(
-            "{tag}={ip}:{client_port},".format(tag=tag,ip=ip,client_port=client_port)
-            for tag,ip in zip(tags, ips)
-            )[:-1]
+    result_address = "src/utils/sockets/" + str(client_id)
 
-    print("Starting client: " + str(client_id))
-    return mn_client.popen(
-            [client_path, endpoints, config['client_address'], str(client_id)],
-            stdout = sys.stdout, stderr = sys.stderr, close_fds = True
+    cmd =  "{client_path} {caps} {client_id} {result_pipe}".format(
+            client_path = client_path,
+            caps = args_caps,
+            client_id = str(client_id),
+            result_pipe = result_address
             )
+    print("Starting client with cmd:" + cmd)
+
+    sp = run(cmd, "mc" + str(client_id), mn_client)
+
+    results = new_pipe(result_address)
+    print(str(client_id) + ": created new pipe successfully")
+
+
+    return sp.stdin, results
+

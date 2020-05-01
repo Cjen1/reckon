@@ -1,13 +1,11 @@
-.PHONY:install build client library
-build: client library
+.PHONY: default system client
+default: system client
 
-library:
-	#rm -vrf ./src/_build/*
-	cd src && \
-		make build
-	rm -v ./bin/*
-	cp ./src/_build/install/default/bin/* ./bin/
+system: 
+	ls -la
+	cd src && make
+	mkdir bins
+	cp src/_build/default/bin/main.exe bins/ocamlpaxos
 
-client: library
-	cd clients/ocaml && \
-		make build
+client:
+	cd clients/ocaml/ && make

@@ -1,0 +1,16 @@
+(executable
+ (name client)
+ (libraries lwt lwt.unix lwt_ppx logs ocaml-protoc ocamlpaxos core hex)
+ (preprocess
+  (pps lwt_ppx ppx_jane)))
+
+(rule
+ (targets
+  message_types.ml
+  message_types.mli
+  message_pb.ml
+  message_pb.mli
+  )
+  (deps message.proto)
+  (action (run ocaml-protoc -binary -pp -ml_out ./ %{deps}))
+  )

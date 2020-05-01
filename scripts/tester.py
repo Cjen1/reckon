@@ -1,114 +1,118 @@
-from subprocess import call
+from subprocess import call, Popen
 import numpy as np
 from itertools import product
 
+def call_tcp_dump(tag, cmd):
+    tcp_dump_cmd = [
+            'tcpdump', '-i', 'any',
+            '-w', ('/results/pcap_'+tag+'.pcap'),
+            'net', '10.0.0.0/16',
+            '-n'
+            ]
+    print(tcp_dump_cmd)
+    p = Popen(tcp_dump_cmd)
+    call(cmd)
+    p.terminate()
+
 abs_path = '/root/mounted/Resolving-Consensus'
 
-rate = 15000
+for rate in [1000]:#, 10000, 20000]:
+    for n in [3]:
+        system='ocaml-paxos_ocaml'
+        tag = "{0}_{1}_{2}".format(n, rate, system)
+        call_tcp_dump(
+                tag,
+                [
+                    'python',
+                    'benchmark.py',
+                    system,
+                    'simple',
+                    '--topo_args', 
+                    (
+                        'n={0},nc=1'.format(n)
+                    ),
+                    'uniform',
+                    '--dist_args',
+                    (
+                        'write_ratio=1'
+                    ),
+                    'none',
+                    '--benchmark_config', 
+                    (
+                        'rate={0},'.format(rate) + 
+                        'duration=30,'+
+                        'dest=/results/res_'+tag+'.res,'+
+                        'logs=/results/log_'+tag+'.log'
+                    ),
+                    abs_path,
+                ]
+            )
+        call(['bash', 'scripts/clean.sh'])
 
-call(
-        [
-            'python',
-            'benchmark.py',
-            'etcd_go',
-            'simple',
-            '--topo_args', 
-            (
-                'n=7,nc=1'
-            ),
-            'uniform',
-            '--dist_args',
-            (
-                'write_ratio=1'
-            ),
-            'leader',
-            '--benchmark_config', 
-                'rate={0},'.format(rate) + 
-                'duration=120,'+
-                'dest=../results/res.res,'.format(rate) +
-                'logs=log',
-            abs_path,
-        ]
-    )
 
-#for rate in [1000]:
-#    for n in [3, 5, 7]:
-#        for system in ['ocaml-paxos_ocaml', 'etcd_go']:
-#            call(
-#                    [
-#                        'python',
-#                        'benchmark.py',
-#                        system,
-#                        'simple',
-#                        '--topo_args', 
-#                        (
-#                            'n=3,nc=1'
-#                        ),
-#                        'uniform',
-#                        '--dist_args',
-#                        (
-#                            'write_ratio=1'
-#                        ),
-#                        'none',
-#                        '--benchmark_config', 
-#                            'rate={0},'.format(rate) + 
-#                            'duration=120,'+
-#                            'dest=../results/{0}_{1}_{2}.res,'.format(n, rate, system)+
-#                            'logs={0}_{1}_{2}_'.format(n,rate,system),
-#                        abs_path,
-#                    ]
-#                )
-#            call(['bash', 'scripts/clean.sh'])
-#
-#for failure in ['leader', 'follower']:
-#    for rate in [10000, 10001]:#[4,16,64,256,1024,4000,10000,12000,14000,16000,18000,20000,32000,34000,36000,38000,40000,42000,44000,46000,48000,50000]:
-#        for n in [3,5,7]:
-#            for system in ['etcd_go']:
-#                call(
-#                        [
-#                            'python',
-#                            'benchmark.py',
-#                            system,
-#                            'simple',
-#                            '--topo_args', 
-#                            (
-#                                'n=3,nc=1'
-#                            ),
-#                            'uniform',
-#                            '--dist_args',
-#                            (
-#                                'write_ratio=1'
-#                            ),
-#                            failure,
-#                            '--benchmark_config', 
-#                                'rate={0},'.format(rate) + 
-#                                'duration=120,'+
-#                                'dest=../results/{0}_{1}_{2}_{3}.res,'.format(n, rate, system, failure)+
-#                                'logs={0}_{1}_{2}_'.format(n,rate,system),
-#                            abs_path,
-#                        ]
-#                    )
-#                call(['bash', 'scripts/clean.sh'])
+#for rate in [10000,20000,30000,40000,50000]:
+#    for n in [3]:
+#        system='etcd_go'
+#        tag = "{0}_{1}_{2}".format(n, rate, system)
+#        call_tcp_dump(
+#                tag,
+#                [
+#                    'python',
+#                    'benchmark.py',
+#                    system,
+#                    'tree',
+#                    '--topo_args', 
+#                    (
+#                        'n_clusters={0}'.format(n)
+#                    ),
+#                    'uniform',
+#                    '--dist_args',
+#                    (
+#                        'write_ratio=1'
+#                    ),
+#                    'none',
+#                    '--benchmark_config', 
+#                    (
+#                        'rate={0},'.format(rate) + 
+#                        'duration=30,'+
+#                        'dest=/results/res_'+tag+'.res,'+
+#                        'logs=/results/log_'+tag+'.log'
+#                    ),
+#                    abs_path,
+#                ]
+#            )
+#        call(['bash', 'scripts/clean.sh'])
 
-'''
-for rate in [4**exp for exp in [0,1,2,3,4,5,6]]:
-    for n in [2**exp + 1 for exp in [1,2,3,4,5,6,7]]:
-        for system in ['ocaml-paxos_ocaml','etcd_go','zookeeper_java']:
-            call(
-                    [
-                        'python',
-                        'benchmark.py',
-                        system,
-                        'simple',
-                        '--topo_args', 'n={0},nc={1}'.format(n, 30),
-                        'uniform',
-                        'leader',
-                        '--benchmark_config', 'rate={0},'.format(rate) + 
-                        'duration=480,'+
-                            'dest=../results/lf_{0}_{1}_{2}.res'.format(n, rate, system),
-                        abs_path,
-                        '-d'
-                    ]
-                )
-            call(['bash', 'clean.sh'])
-            '''
+
+#for i in range(1):
+#    for failure in ['leader', 'follower']:
+#        for rate in [40000]:
+#            for n in [3]:
+#                for system in ['etcd_go']:
+#                    tag = "{0}_{1}_{2}_{3}_{4}.res".format(n, rate, system, failure, i)
+#                    call_tcp_dump(
+#                            tag,
+#                            [
+#                                'python',
+#                                'benchmark.py',
+#                                system,
+#                                'simple',
+#                                '--topo_args', 
+#                                (
+#                                    'n={0},nc=1'.format(n)
+#                                ),
+#                                'uniform',
+#                                '--dist_args',
+#                                (
+#                                    'write_ratio=1'
+#                                ),
+#                                failure,
+#                                '--benchmark_config', 
+#                                    'rate={0},'.format(rate) + 
+#                                    'duration=120,'+
+#                                    'dest=/results/res_'+tag+'.res,'+
+#                                    'logs=/results/log_'+tag,
+#                                abs_path,
+#                            ]
+#                        )
+#                    call(['bash', 'scripts/clean.sh'])

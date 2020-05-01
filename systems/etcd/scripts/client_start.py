@@ -34,7 +34,7 @@ def start(mn_client, client_id, config):
     print("starting microclient: " + str(client_id))
     client_path = "systems/etcd/clients/"+config['client']+"/client"
     
-    args_ips = "".join("http://" + ip + ":2379," for ip in config['cluster_ips'])[:-1]
+    args_ips = "".join("http://" + host.IP() + ":2379," for host in config['cluster'])[:-1]
 
     result_address = "src/utils/sockets/" + str(client_id)
 

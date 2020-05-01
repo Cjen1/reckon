@@ -24,16 +24,28 @@ from tqdm import tqdm
 
 def send(client, op):
     in_pipe, out_pipe = client
-    size = pack('<l',op.ByteSize())
+    size = pack('<l',op.ByteSize()) # little endian signed long (4 bytes)
     payload = op.SerializeToString()
     in_pipe.write(size+payload)
 
+def read_exactly(fd, size):
+    return fd.read(size)
+#    data = ""
+#    remaining = size
+#    while remaining > 0:
+#        newdata = fd.read(remaining)
+#        if len(newdata) == 0:
+#            raise IOError("Failed to read all data")
+#        data += newdata
+#        remaining -= len(newdata)
+#    return data
+
 def read_packet(pipe):
-    size = os.read(pipe, 4)
+    size = read_exactly(pipe, 4)
     if size:
-        size = unpack('<l', size) 
+        size = unpack('<l', size) # little endian signed long (4 bytes)
         # unpack returns a tuple even if a single value
-        payload = os.read(pipe,size[0])
+        payload = read_exactly(pipe,size[0])
         return payload
     else:
         return None
@@ -156,14 +168,14 @@ def collate(pipes, config, total):
     logging.debug("COLLATE: written to file")
 
 
-def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, ips, failures):
+def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, cluster, failures):
     rate = float(rate)
     duration = int(duration)
     op_prereq, op_gen = ops
     config = {
         'service':service_name,
         'client':client_name,
-        'cluster_ips': ips,
+        'cluster': cluster,
         'duration': duration,
         'op_prereq': op_prereq,
         'op_gen': op_gen,

@@ -137,8 +137,9 @@ func marshall_response(resp *OpWire.Response) []byte {
 func send(writer *os.File, msg []byte){
 	var size int32
 	size = int32(len(msg))
-	log.Printf("send size = %L", size)
+	log.Printf("send size = %l", size)
 	size_part := make([]byte, 4)
+	// uint32 doesn't change sign bit, just how value is interpreted
 	binary.LittleEndian.PutUint32(size_part, uint32(size))
 
 	payload := append(size_part[:], msg[:]...)

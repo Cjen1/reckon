@@ -92,7 +92,7 @@ absolute_path = args.absolute_path
 
 service_name, client_name = system.split("_")
 
-net, cluster_ips, clients, restarters, stoppers = topo_module.setup(service_name, absolute_path, logs=bench_args['logs'], **topo_kwargs) 
+net, cluster, clients, restarters, stoppers = topo_module.setup(service_name, absolute_path, logs=bench_args['logs'], **topo_kwargs) 
 failures = fail_setup(net, restarters, stoppers, system.split('_')[0])
 
 hosts = [h for h in net.hosts if h.name[0] == "h"]
@@ -119,7 +119,7 @@ else:
                 bench_args['duration'],
                 service_name,
                 client_name,
-                cluster_ips,
+                cluster,
                 failures,
             )  
 

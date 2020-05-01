@@ -38,33 +38,30 @@ op-deps: install-deps opam
 	  libzmq3-dev \
 	  m4  \
 	  perl \
-	  libev-dev
+	  libev-dev \
+	  pkg-config\
+	  capnproto
 	opam update
-	LWT_DISCOVER_ARGUMENTS="--use-libev true" opam install -y dune ounit core yojson uri ocaml-protoc zmq-lwt \
-			       lwt_ppx utop logs fmt conf-libev lwt-pipe ppx_deriving_protobuf
 	eval `opam env`
+	opam install --deps-only systems/ocaml-paxos/src -y
 
 opam:
 	sudo add-apt-repository ppa:avsm/ppa -y
 	sudo apt update -y
 	sudo apt install opam -y
 	opam init -a --bare --disable-sandboxing
-	opam switch install ocaml-paxos ocaml-base-compiler.4.08.1
-
-ocaml-paxos_install:
-	cd systems/ocaml-paxos && \
-		make build 
+	opam switch install 4.10.0+flambda
 
 #--------------------------------------------------
 .PHONY:zookeeper-deps zk_install
 zk_install:
-	cd systems/zookeeper && \
-		make install
+#	cd systems/zookeeper && \
+#		make install
 zookeeper-deps: install-deps
-	sudo add-apt-repository ppa:linuxuprising/java
-	echo oracle-java13-installer shared/accepted-oracle-license-v1-2 select true | sudo /usr/bin/debconf-set-selections
-	sudo apt update -y
-	sudo apt install oracle-java13-installer -y
+#	sudo add-apt-repository ppa:linuxuprising/java
+#	echo oracle-java13-installer shared/accepted-oracle-license-v1-2 select true | sudo /usr/bin/debconf-set-selections
+#	sudo apt update -y
+#	sudo apt install oracle-java13-installer -y
 
 #--------------------------------------------------
 .PHONY:pip-deps

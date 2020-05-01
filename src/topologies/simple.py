@@ -1,10 +1,7 @@
 from mininet.net import Mininet
 from mininet.node import Controller, UserSwitch, IVSSwitch, OVSSwitch
-from mininet.cli import CLI
-from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 setLogLevel('info')
-import cgroups
 import importlib
 
 switch_num = 1
@@ -70,4 +67,4 @@ def setup(service, current_dir, logs, n='3', nc='10'):
 
     restarters, stoppers = system_setup_func(cluster, cluster_ips, logs=logs, **kwargs)
 
-    return (net, cluster_ips, clients, restarters, stoppers)
+    return (net, cluster, clients, restarters, stoppers)

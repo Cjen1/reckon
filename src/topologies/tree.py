@@ -1,37 +1,37 @@
-
 import importlib
 from mininet.net import Mininet
 from mininet.node import Controller
 from mininet.log import info, setLogLevel
+from mininet.link import TCLink
 setLogLevel('info')
 
-switch_num = 0
+switch_num = 1
 def add_switch(net):
     global switch_num
     res = 's%s' %str(switch_num)
     switch_num += 1
     return net.addSwitch(res)
 
-host_num = 0
+host_num = 1
 def add_host(net):
     global host_num
-    res = 's%s' %str(host_num)
+    res = 'h%s' %str(host_num)
     host_num += 1
     return net.addHost(res)
 
-client_num = 0
+client_num = 1
 def add_client(net):
     global client_num
-    res = 's%s' %str(client_num)
+    res = 'mc%s' %str(client_num)
     client_num += 1
     return net.addHost(res)
 
-def setup(service, current_dir, logs, num_clusters='1', nodes_per_cluster='3', clients_per_cluster='20'):
+def setup(service, current_dir, logs, n_clusters='1', nodes_per_cluster='3', clients_per_cluster='1'):
     nodes_per_cluster = int(nodes_per_cluster)
-    num_clusters = int(num_clusters)
+    num_clusters = int(n_clusters)
     clients_per_cluster = int(clients_per_cluster)
 
-    net = Mininet(controller=Controller)
+    net = Mininet(controller=Controller, link=TCLink)
 
     info('*** Adding controller\n')
     net.addController('c0')
@@ -56,17 +56,18 @@ def setup(service, current_dir, logs, num_clusters='1', nodes_per_cluster='3', c
             for _ in range(num_clusters)
             ]
 
+    print(node_clusters)
+    print(client_clusters)
+
     for node_cluster, client_cluster in zip(node_clusters, client_clusters):
         sw = add_switch(net)
 
-        net.addLink(sw, root)
+        net.addLink(sw, root, delay='35ms') # Connect cluster to root
         for node in node_cluster:
-            net.addLink(node, sw)
+            net.addLink(node, sw, delay='100us') # Connect node to cluster root
 
-        csw = add_switch(net)
-        net.addLink(csw, sw)
         for client in client_cluster:
-            net.addLink(client, csw)
+            net.addLink(client, sw, delay='100us') # Connect client to cluster root
 
     def flatten(ls):
         return [item for sublist in ls for item in sublist]
@@ -86,6 +87,6 @@ def setup(service, current_dir, logs, num_clusters='1', nodes_per_cluster='3', c
 
     cluster_ips = [host.IP() for host in nodes]
 
-    restarters, stop_func = system_setup_func(nodes, cluster_ips, logs=logs, **kwargs)
+    restarters, stoppers = system_setup_func(nodes, cluster_ips, logs=logs, **kwargs)
 
-    return (net, cluster_ips, clients, restarters, stop_func)
+    return (net, nodes, clients, restarters, stoppers)

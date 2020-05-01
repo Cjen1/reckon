@@ -14,6 +14,7 @@ ADD scripts/install/deps-Makefile Makefile
 
 RUN make pip
 
+ADD systems/ocaml-paxos/src/ocamlpaxos.opam systems/ocaml-paxos/src/ocamlpaxos.opam
 RUN make op-deps
 
 RUN make zookeeper-deps
@@ -34,11 +35,6 @@ ADD systems/etcd/clients systems/etcd/clients
 ADD systems/etcd/Makefile systems/etcd/Makefile
 RUN make etcd_install
 
-#- ocaml-paxos ------
-
-FROM base as ocaml_paxos_builder
-ADD systems/ocaml-paxos systems/ocaml-paxos
-RUN make ocaml-paxos_install
 
 #- benchmark --------
 
@@ -48,16 +44,26 @@ RUN mkdir /etcdbin
 RUN cd etcd && make && cp ./bin/* /etcdbin/
 RUN cd etcd/tools/benchmark && go build -o /etcdbin/etcdbench 
 
+#- ocaml-paxos ------
+
+FROM base as ocaml_paxos_builder
+ADD systems/ocaml-paxos/Makefile systems/ocaml-paxos/Makefile
+ADD systems/ocaml-paxos/src systems/ocaml-paxos/src
+RUN cd systems/ocaml-paxos && make system
+ADD systems/ocaml-paxos/clients systems/ocaml-paxos/clients
+RUN cd systems/ocaml-paxos && make client
+
+#--------------------------------------------------
 FROM base 
 
-#-------- Install binaries ------------------------
+#- Install binaries -
 COPY --from=etcd_builder /root/systems/etcd systems/etcd
 COPY --from=ocaml_paxos_builder /root/systems/ocaml-paxos systems/ocaml-paxos
 
 #ADD systems/zookeeper systems/zookeeper
 #RUN make zk_install
 
-#--------- Install tools --------------------------
+#- Install tools ----
 
 RUN mkdir /results
 

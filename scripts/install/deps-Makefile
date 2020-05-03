@@ -38,9 +38,14 @@ op-deps: install-deps opam
 	  libzmq3-dev \
 	  m4  \
 	  perl \
-	  libev-dev \
-	  pkg-config\
-	  capnproto
+	  libev-dev  \
+	  pkg-config \
+	  capnproto \
+	  linux-tools-common \
+	  linux-tools-4.15.0-96-generic \
+	  linux-cloud-tools-4.15.0-96-generic
+
+
 	opam update
 	eval `opam env`
 	opam install --deps-only systems/ocaml-paxos/src -y
@@ -79,6 +84,7 @@ pip: pip-deps
 			tqdm \
 			numpy \
 			cgroups \
+			pandas \
 	)
 
 #--------------------------------------------------

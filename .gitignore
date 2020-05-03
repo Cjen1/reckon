@@ -1,6 +1,6 @@
 **/build/**
 **/_build/**
-**/systems/*/clients/*/client
+systems/*/clients/*/client
 **/result**
 **/logs/**
 *.pyc
@@ -9,7 +9,7 @@
 *.log
 *.gz
 .DS_Store
-*client
+**/client
 **openflow**
 **.jar
 env
@@ -18,3 +18,5 @@ env
 **/systems/ocaml-paxos/bin/**
 
 systems/zookeeper/clients/java/Client.jar
+
+**/.merlin

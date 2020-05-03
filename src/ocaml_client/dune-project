@@ -1,0 +1,17 @@
+(lang dune 2.5)
+(name rcclient)
+(source (github Cjen1/ResolvingConsensus))
+(authors "Chris Jensen")
+
+(generate_opam_files true)
+
+(package
+  (name rcclient)
+  (synopsis "")
+  (depends
+    (ocaml (>= 4.08.0))
+    lwt
+    lwt_ppx
+    logs
+    ocaml-protoc
+    ))

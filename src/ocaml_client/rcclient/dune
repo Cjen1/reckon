@@ -1,6 +1,7 @@
-(executable
- (name client)
- (libraries lwt lwt.unix lwt_ppx logs ocaml-protoc ocamlpaxos core hex rcclient)
+(library
+ (name rcclient)
+ (public_name rcclient)
+ (libraries lwt lwt.unix lwt_ppx logs ocaml-protoc)
  (preprocess
   (pps lwt_ppx ppx_jane)))
 

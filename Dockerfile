@@ -16,6 +16,9 @@ RUN make pip
 
 ADD systems/ocaml-paxos/src/ocamlpaxos.opam systems/ocaml-paxos/src/ocamlpaxos.opam
 RUN make op-deps
+ADD src/ocaml_client src/ocaml_client
+ADD src/utils/message.proto src/utils/message.proto 
+RUN cd src/ocaml_client && make install
 
 RUN make zookeeper-deps
 
@@ -72,3 +75,5 @@ COPY --from=benchmark /etcdbin/* bins/
 RUN echo 'export PATH=$PATH:~/bins/' >> ~/.bashrc
 
 ADD . .
+
+RUN git clone https://github.com/brendangregg/FlameGraph /results/FlameGraph

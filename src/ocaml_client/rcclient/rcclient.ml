@@ -26,8 +26,8 @@ end = struct
 
   type client = Cli.t
 
-  let perform op client cid start_time = 
-    L.debug (fun m -> m "Submitting request");
+  let perform op client cid start_time i = 
+    L.debug (fun m -> m "Submitting request %d" i);
     let%lwt res = 
       let keybuf = Bytes.create 8 in
       match op with
@@ -40,7 +40,7 @@ end = struct
           Cli.get client keybuf cid start_time
         )
     in 
-    L.debug (fun m -> m "Performed op");
+    L.info (fun m -> m "Performed op %d" i);
     Lwt.return res
 
   let recv_from_br (br : Lwt_io.input_channel) = 
@@ -86,12 +86,13 @@ end = struct
       Lwt_stream.fold_s (fun v ops -> 
           match v with
           | (MT.{prereq=true; _}) ->
-            let%lwt _res = perform v.op_type client id (Unix.gettimeofday ()) in 
+            let%lwt _res = perform v.op_type client id (Unix.gettimeofday ()) (-1) in 
             Lwt.return ops
           | _ -> 
             v :: ops |> Lwt.return
         ) stream [] 
     in 
+    let op_list = List.rev op_list in
     L.info (fun m -> m "READYING - Start");
     let%lwt () = send (Bytes.create 0) result_pipe in
     let%lwt _got_start = 
@@ -103,12 +104,20 @@ end = struct
     in 
     L.info (fun m -> m "EXECUTE - Start");
     let start_time = Unix.gettimeofday() in
-    let iter_op_list MT.{prereq=_; start; op_type=op} =
+    let iter_op_list ir res_list MT.{prereq=_; start; op_type=op} =
+      let i = !ir in
+      ir := i + 1;
       let sleep_time = start +. start_time -. Unix.gettimeofday () in
       let%lwt () = Lwt_unix.sleep sleep_time in
-      perform op client id (Unix.gettimeofday ())
+      let%lwt res = perform op client id (Unix.gettimeofday ()) i in
+      res_list := res :: !res_list;
+      Lwt.return_unit
     in 
-    let%lwt res_list = Lwt_list.map_p iter_op_list op_list in
+    (*let%lwt res_list = Lwt_list.mapi_p iter_op_list op_list in*)
+    let op_stream = Lwt_stream.of_list op_list in
+    let ir = ref 1 in
+    let res_list = ref [] in
+    let%lwt () = Lwt_stream.iter_n ~max_concurrency:1024 (iter_op_list ir res_list) op_stream in
     L.info (fun m -> m "Finished applying ops");
-    result_loop res_list result_pipe
+    result_loop !res_list result_pipe
 end 

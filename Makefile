@@ -6,11 +6,23 @@ build: protobuf
 	docker build -t cjen1/rc:latest .
 
 docker: build
-	docker run -it --rm --privileged -e DISPLAY \
+	docker run -it --privileged -e DISPLAY \
              -v /lib/modules:/lib/modules \
 	     --tmpfs /data \
-	     --network host --name rc_test \
+	     --network host --name rc \
 	     cjen1/rc:latest
+
+build-nocache: protobuf
+	docker build --no-cache -t cjen1/rc:latest .
+
+
+docker-nocache: build-nocache
+	docker run -it --privileged -e DISPLAY \
+             -v /lib/modules:/lib/modules \
+	     --tmpfs /data \
+	     --network host --name rc \
+	     cjen1/rc:latest
+
 
 runtest: build
 	docker run -it --rm --privileged -e DISPLAY \

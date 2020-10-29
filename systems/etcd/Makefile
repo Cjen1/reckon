@@ -2,11 +2,11 @@
 ETCD_VER=v3.3.8
 DOWNLOAD_URL=https://storage.googleapis.com/etcd
 
-
 .PHONY: install
 install: client etcd
 
 .PHONY:etcd
+system: etcd
 etcd: /usr/bin/etcd /usr/bin/etcdctl
 
 /usr/bin/etcd: /tmp/etcd-download

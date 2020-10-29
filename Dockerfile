@@ -14,11 +14,7 @@ ADD scripts/install/deps-Makefile Makefile
 
 RUN make pip
 
-ADD systems/ocaml-paxos/src/ocamlpaxos.opam systems/ocaml-paxos/src/ocamlpaxos.opam
 RUN make op-deps
-ADD src/ocaml_client src/ocaml_client
-ADD src/utils/message.proto src/utils/message.proto 
-RUN cd src/ocaml_client && make install
 
 RUN make zookeeper-deps
 
@@ -36,25 +32,44 @@ ADD src/utils src/utils
 FROM base as etcd_builder
 ADD systems/etcd/clients systems/etcd/clients
 ADD systems/etcd/Makefile systems/etcd/Makefile
-RUN make etcd_install
+RUN cd systems/etcd && make system
+#Invalidate cache if client library has been updated
+COPY src/go/src/github.com/Cjen1/rc_go rc_go
+RUN cd systems/etcd && make client
 
 
 #- benchmark --------
 
-FROM golang as benchmark 
+FROM golang:1.14 as benchmark 
 RUN git clone https://github.com/etcd-io/etcd.git
 RUN mkdir /etcdbin
 RUN cd etcd && make && cp ./bin/* /etcdbin/
 RUN cd etcd/tools/benchmark && go build -o /etcdbin/etcdbench 
 
+#- ocaml ------------
+
+FROM base as ocaml_builder
+ENV OPAMYES=1
+RUN apt install liblapacke-dev libopenblas-dev zlib1g-dev -y
+ADD systems/ocaml-paxos/src/ocamlpaxos.opam systems/ocaml-paxos/src/ocamlpaxos.opam 
+RUN opam install --deps-only systems/ocaml-paxos/src -y
+ADD src/ocaml_client src/ocaml_client
+ADD src/utils/message.proto src/utils/message.proto 
+RUN cd src/ocaml_client && make install
+
 #- ocaml-paxos ------
 
-FROM base as ocaml_paxos_builder
+FROM ocaml_builder as ocaml_paxos_builder
 ADD systems/ocaml-paxos/Makefile systems/ocaml-paxos/Makefile
 ADD systems/ocaml-paxos/src systems/ocaml-paxos/src
-RUN cd systems/ocaml-paxos && make system
 ADD systems/ocaml-paxos/clients systems/ocaml-paxos/clients
+RUN cd systems/ocaml-paxos && make system
+#Invalidate cache if client library has been updated
+COPY src/go/src/github.com/Cjen1/rc_go rc_go
+COPY src/go/src/github.com/Cjen1/rc_go go-deps
+COPY systems/ocaml-paxos/go go-deps
 RUN cd systems/ocaml-paxos && make client
+
 
 #--------------------------------------------------
 FROM base 
@@ -77,3 +92,6 @@ RUN echo 'export PATH=$PATH:~/bins/' >> ~/.bashrc
 ADD . .
 
 RUN git clone https://github.com/brendangregg/FlameGraph /results/FlameGraph
+
+RUN apt install strace linux-tools-generic -y
+

@@ -16,38 +16,38 @@ def call_tcp_dump(tag, cmd):
 
 abs_path = '/root/mounted/Resolving-Consensus'
 
-for rate in [1000]:#, 10000, 20000]:
-    for n in [3]:
-        system='ocaml-paxos_ocaml'
-        tag = "{0}_{1}_{2}".format(n, rate, system)
-        call_tcp_dump(
-                tag,
-                [
-                    'python',
-                    'benchmark.py',
-                    system,
-                    'simple',
-                    '--topo_args', 
-                    (
-                        'n={0},nc=1'.format(n)
-                    ),
-                    'uniform',
-                    '--dist_args',
-                    (
-                        'write_ratio=1'
-                    ),
-                    'none',
-                    '--benchmark_config', 
-                    (
-                        'rate={0},'.format(rate) + 
-                        'duration=30,'+
-                        'dest=/results/res_'+tag+'.res,'+
-                        'logs=/results/log_'+tag+'.log'
-                    ),
-                    abs_path,
-                ]
-            )
-        call(['bash', 'scripts/clean.sh'])
+for rate in [1,10,100,1000,10000,15000,20000, 25000, 30000, 35000, 40000]:#, 10000, 20000]:
+    for n in [1,3,5]:
+        for system in ['etcd_go', 'ocaml-paxos_go']:
+            tag = "{0}_{1}_{2}".format(n, rate, system)
+            call_tcp_dump(
+                    tag,
+                    [
+                        'python',
+                        'benchmark.py',
+                        system,
+                        'simple',
+                        '--topo_args', 
+                        (
+                            'n={0},nc=1'.format(n)
+                        ),
+                        'uniform',
+                        '--dist_args',
+                        (
+                            'write_ratio=1'
+                        ),
+                        'none',
+                        '--benchmark_config', 
+                        (
+                            'rate={0},'.format(rate) + 
+                            'duration=10,'+
+                            'dest=/results/res_'+tag+'.res,'+
+                            'logs=/results/log_'+tag+'.log'
+                        ),
+                        abs_path,
+                    ]
+                )
+            call(['bash', 'scripts/clean.sh'])
 
 
 #for rate in [10000,20000,30000,40000,50000]:

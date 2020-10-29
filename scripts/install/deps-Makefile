@@ -44,18 +44,16 @@ op-deps: install-deps opam
 	  linux-tools-common \
 	  linux-tools-4.15.0-96-generic \
 	  linux-cloud-tools-4.15.0-96-generic
-
-
 	opam update
 	eval `opam env`
-	opam install --deps-only systems/ocaml-paxos/src -y
+	#opam install --deps-only systems/ocaml-paxos/src -y
 
 opam:
 	sudo add-apt-repository ppa:avsm/ppa -y
 	sudo apt update -y
 	sudo apt install opam -y
 	opam init -a --bare --disable-sandboxing
-	opam switch install 4.10.0+flambda
+	opam switch install 4.10.1
 
 #--------------------------------------------------
 .PHONY:zookeeper-deps zk_install

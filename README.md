@@ -1,4 +1,4 @@
-# Concensus System Benchmark
+# Consensus System Benchmark
 
 ## Installation
 

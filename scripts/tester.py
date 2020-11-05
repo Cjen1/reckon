@@ -18,7 +18,7 @@ abs_path = '/root/mounted/Resolving-Consensus'
 
 for rate in [1,10,100,1000,10000,15000,20000, 25000, 30000, 35000, 40000]:#, 10000, 20000]:
     for n in [1,3,5]:
-        for system in ['etcd_go', 'ocaml-paxos_go']:
+        for system in ['etcd_go']:
             tag = "{0}_{1}_{2}".format(n, rate, system)
             call_tcp_dump(
                     tag,

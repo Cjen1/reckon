@@ -1,7 +1,13 @@
-#Intended to be run from the top level directory
+# Intended to be run from the top level directory
 
-sudo rm -f logs/*
+# Clean log dir from previous runs
+sudo rm -rf logs/*
+
+# Run test
 sudo bash -c "python scripts/tester.py"
+
+# Clean state
 bash scripts/clean.sh
 
+# Return stats of test for approximate analysis
 python scripts/throughput.py /results/*.res

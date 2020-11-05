@@ -2,11 +2,15 @@
 
 ## Installation
 
-Prerequisites: Install containernet (easiest approach is to run the nested dockercontainer)
+Prerequisites: Install docker (mininet doesn't currently work with WSL)
+
+1. Build the docker image with `make docker`. This builds a docker image with a hopefully working mininet instance (it can be difficult to get functioning) as well as all the test machinery.
+
+2. Run a test. An example test script can be found in `scripts/tester.sh`. Wrappers to isolate tests are provided in `scripts/run.sh` and `scripts/clean.sh`.
 
 ## Running a test
 
-Run benchmark.py
+`python benchmark.py`
 
 Parameters are as follows:
 
@@ -26,8 +30,6 @@ Failure type: The type of failure which will be injected, currently only leader 
 --benchmark_config: configuration of the benchmark for example rate or duration
 
 -d : Debug flag to pause the test after startup and present the Mininet (Containernet) CLI for debug purposes
-
-absolute_path: The absolute path in the host to this folder. This is the path to this folder in the host if operating in a nested docker environment with this folder being mounted into it.
 
 A typical command to start a test would thus be:
 ```

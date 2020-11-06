@@ -21,6 +21,9 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      
+      - name: Build dockerfile
+        run: docker build -t cjen1/rc:latest .
 
       - name: Run basic test
         run: 

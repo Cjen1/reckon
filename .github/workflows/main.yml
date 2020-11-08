@@ -29,7 +29,7 @@ jobs:
 
       - name: Run basic test
         run: 
-          docker run -it --privileged --tmpfs /data --network host --name rc --entrypoint /bin/bash cjen1/rc:latest -c 
+          docker run --privileged --tmpfs /data --network host --name rc --entrypoint /bin/bash cjen1/rc:latest -c 
           "service openvswitch-switch start 
           && ovs-vsctl set-manager ptcp:6640 
           && python benchmark.py etcd_go 

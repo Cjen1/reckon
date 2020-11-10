@@ -25,7 +25,6 @@ def new_pipe(address):
     return f
 
 def run(cmd, tag, host):
-    cmd = "perf record --call-graph dwarf -g -o /results/perf.data -- " + cmd
     cmd = shlex.split(cmd)
     sp = host.popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 

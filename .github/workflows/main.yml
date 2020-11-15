@@ -24,22 +24,20 @@ jobs:
         with:
           submodules: true
           
-      # In this step, this action saves a list of existing images,
-      # the cache is created without them in the post run.
-      # It also restores the cache if it exists.
-      - uses: satackey/action-docker-layer-caching@v0.0.8
-        # Ignore the failure of a step and avoid terminating the job.
-        continue-on-error: true  
-      
-      - name: Build dockerfile
-        run: docker build -t cjen1/rc:latest .
-
-      - name: Run basic test
-        run: 
-          docker run --privileged --tmpfs /data --network host --name rc --entrypoint /bin/bash cjen1/rc:latest -c 
-          "service openvswitch-switch start 
-          && ovs-vsctl set-manager ptcp:6640 
-          && python benchmark.py etcd_go 
-            simple --topo_args n=1,nc=1 uniform --dist_args write_ratio=1 none 
-            --benchmark_config rate=1000 duration=10 dest=./res logs=./logs `realpath .`
-          && service openvswitch-switch stop"
+      - name: test mininet
+        run: |
+                git clone --depth=50 --branch=master https://github.com/mininet/mininet.git mininet/mininet
+                cd mininet/mininet
+                git checkout -qf bfc42f6d0
+                sudo apt-get update -qq
+                sudo apt-get install -qq vlan
+                PYTHON=`which python` util/install.sh -n
+                bash -c "if [ `lsb_release -rs` == '14.04' ]; then make codecheck; fi"
+                pip install pexpect || pip3 install pexpect
+                util/install.sh -nfvw
+                alias sudo="sudo env PATH=$PATH"
+                export PYTHON=`which python`
+                echo 'px import sys; print(sys.version_info)' | sudo $PYTHON bin/mn -v output
+                sudo $PYTHON bin/mn --test pingall
+                sudo $PYTHON mininet/test/runner.py -v -quick
+                sudo $PYTHON examples/test/runner.py -v -quick

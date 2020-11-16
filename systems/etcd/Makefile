@@ -11,9 +11,13 @@ etcd: /usr/bin/etcd /usr/bin/etcdctl
 
 /usr/bin/etcd: /tmp/etcd-download
 	sudo cp /tmp/etcd-download/etcd /usr/bin
+	mkdir -p systems/etcd/bin
+	sudo cp /tmp/etcd-download/etcd systems/etcd/bin/
 
 /usr/bin/etcdctl: /tmp/etcd-download
 	sudo cp /tmp/etcd-download/etcdctl /usr/bin
+	mkdir -p systems/etcd/bin
+	sudo cp /tmp/etcd-download/etcdctl systems/etcd/bin/
 
 .PHONY:/tmp/etcd-download
 /tmp/etcd-download:

@@ -11,8 +11,8 @@ etcd: /usr/bin/etcd /usr/bin/etcdctl
 
 /usr/bin/etcd: /tmp/etcd-download
 	sudo cp /tmp/etcd-download/etcd /usr/bin
-	mkdir -p systems/etcd/bin
-	sudo cp /tmp/etcd-download/etcd systems/etcd/bin/
+	mkdir -p bin
+	sudo cp /tmp/etcd-download/etcd bin/
 
 /usr/bin/etcdctl: /tmp/etcd-download
 	sudo cp /tmp/etcd-download/etcdctl /usr/bin

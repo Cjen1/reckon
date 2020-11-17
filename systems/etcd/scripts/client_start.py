@@ -3,28 +3,11 @@ import os
 import shlex
 import time
 
-def tag(host):
-    return host.name
+def get_tag(host):
+    return "mc_" + host.name
 
-def clean_address(address):
-    try:
-        os.unlink(address)
-    except OSError:
-        if os.path.exists(address):
-            raise
-
-def new_pipe(address):
-    print("Cleaning address")
-    clean_address(address)
-    print("creating fifo")
-    os.mkfifo(address)
-    print("created fifo")
-    #f= os.open(address, os.O_RDONLY | os.O_NONBLOCK)
-    f=open(address,'r')
-    print("opened file")
-    return f
-
-def run(cmd, tag, host):
+def run(cmd, host):
+    #cmd = "perf record --call-graph dwarf -g -o /results/perf.data -- " + cmd
     cmd = shlex.split(cmd)
     sp = host.popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -33,10 +16,29 @@ def run(cmd, tag, host):
     ctime = time.localtime()
     time_tag = time.strftime("%H:%M:%S", ctime)
 
-    subprocess.Popen(['tee', 'logs/' + time_tag + '_out_' + tag], stdin=sp.stdout, stdout=FNULL, stderr=FNULL)
-    subprocess.Popen(['tee', 'logs/' + time_tag + '_err_' + tag], stdin=sp.stderr, stdout=FNULL, stderr=FNULL)
+    subprocess.Popen(['tee', 'logs/' + time_tag + '_out_' + get_tag(host)], stdin=sp.stdout, stdout=FNULL, stderr=FNULL)
+    subprocess.Popen(['tee', 'logs/' + time_tag + '_err_' + get_tag(host)], stdin=sp.stderr, stdout=FNULL, stderr=FNULL)
 
     return sp
+
+def clean_address(address):
+    if os.path.exists(address):
+        os.unlink(address)
+
+def setup_pipes_and_start_client(address, cmd, host):
+    tag = get_tag(host)
+
+    print(tag + "Creating a new pipe: " + address)
+    print(tag + "Cleaning address")
+    clean_address(address)
+    print(tag + "creating fifo")
+    os.mkfifo(address)
+    print(tag + "Created fifo, starting client with: " + cmd)
+    sp = run(cmd, host)
+    print(tag + "Created client, opening pipe for reading")
+    f=open(address, "r")
+    print(tag + "opened pipe")
+    return sp.stdin, f
 
 def start(mn_client, client_id, config):
     print("starting microclient: " + str(client_id))
@@ -44,20 +46,15 @@ def start(mn_client, client_id, config):
     
     args_ips = ",".join("http://" + host.IP() + ":2379" for host in config['cluster'])
 
-    result_address = "src/utils/sockets/" + str(client_id)
+    result_address = "src/utils/sockets/" + get_tag(mn_client)
 
-    cmd =  "{client_path} {ips} {client_id} {result_pipe}".format(
+    cmd = "{client_path} {ips} {client_id} {result_pipe}".format(
             client_path = client_path,
             ips = args_ips,
             client_id = str(client_id),
             result_pipe = result_address
             )
-    print("Starting client with cmd:" + cmd)
 
-    sp = run(cmd, "mc" + str(client_id), mn_client)
 
-    results = new_pipe(result_address)
-    print(str(client_id) + ": created new pipe successfully")
-
-    return sp.stdin, results
+    return setup_pipes_and_start_client(result_address, cmd, mn_client)
 

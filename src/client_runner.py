@@ -30,15 +30,6 @@ def send(client, op):
 
 def read_exactly(fd, size):
     return fd.read(size)
-#    data = ""
-#    remaining = size
-#    while remaining > 0:
-#        newdata = fd.read(remaining)
-#        if len(newdata) == 0:
-#            raise IOError("Failed to read all data")
-#        data += newdata
-#        remaining -= len(newdata)
-#    return data
 
 def read_packet(pipe):
     size = read_exactly(pipe, 4)

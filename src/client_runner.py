@@ -13,6 +13,7 @@ logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%I:%M:%S %p', lev
 
 
 from Queue import Empty as QEmpty, Full as QFull
+from src.utils.req_factory import ReqFactory
 import src.utils.message_pb2 as msg_pb
 import select
 
@@ -61,17 +62,17 @@ def start_clients(microclients, config):
     logging.debug("Microclients started")
     return microclients
 
-def preload(op_gen, prereqs, clients, duration, rate):
+def preload(ops_provider, clients, duration, rate):
     logging.debug("PRELOAD")
 
-    for prereq in prereqs:
+    for prereq in ops_provider.prereqs:
         send(random.choice(clients), prereq)
 
     sim_t = 0
     period = 1/rate
     with tqdm(total=duration) as pbar:
         while sim_t < duration:
-            op = op_gen(sim_t)
+            op = ops_provider.get_ops(sim_t)
             #logging.debug("Sending op")
             send(random.choice(clients), op)
             sim_t = sim_t + period
@@ -79,11 +80,9 @@ def preload(op_gen, prereqs, clients, duration, rate):
 
 def ready(clients):
     logging.debug("READY")
-    finalise = msg_pb.Request()
-    finalise.finalise.msg = ""
 
     for client in clients:
-        send(client, finalise)
+        send(client, ReqFactory.finalise())
 
     pipes = [result_pipe for in_pipe, result_pipe in clients]
     def recv_one(): 
@@ -98,14 +97,12 @@ def ready(clients):
 
 def execute(clients, failures, duration):
     logging.debug("EXECUTE")
-    start = msg_pb.Request()
-    start.start.msg = ""
 
     start_time = time.time()
 
     for client in clients:
         logging.debug("Sending start msg")
-        send(client, start)
+        send(client, ReqFactory.start())
 
     null_failure = (lambda*args,**kwargs: None)
     failures = failures + [null_failure]
@@ -159,17 +156,15 @@ def collate(pipes, config, total):
     logging.debug("COLLATE: written to file")
 
 
-def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, cluster, failures):
+def run_test(f_dest, clients, ops_provider, rate, duration, service_name, client_name, cluster, failures):
     rate = float(rate)
     duration = int(duration)
-    op_prereq, op_gen = ops
     config = {
         'service':service_name,
         'client':client_name,
         'cluster': cluster,
         'duration': duration,
-        'op_prereq': op_prereq,
-        'op_gen': op_gen,
+        'ops_provider': ops_provider,
         'rate': rate,
         'runner_address': os.getcwd() + '/src/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
         'client_address': os.getcwd() + '/src/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
@@ -179,7 +174,7 @@ def run_test(f_dest, clients, ops, rate, duration, service_name, client_name, cl
 
     microclients = start_clients(clients, config)
 
-    preload(op_gen, op_prereq, microclients, duration, rate)
+    preload(ops_provider, microclients, duration, rate)
     ready(microclients)
 
     t_collate = Thread(

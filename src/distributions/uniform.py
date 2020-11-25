@@ -1,50 +1,48 @@
 import numpy.random as rand
-import src.utils.ops as ops
+from src.utils.req_factory import ReqFactory
+from time import time
 
-def generate_prereqs(key_range='1>10'):
-    krl, kru = [int(l) for l in key_range.split('>')]
-    opl = []
-    for k in range(krl, kru+1):
-        op = ops.write(k, b'0', 0)
-        op.op.prereq = True
-        opl.append(op)
 
-    return opl
+class UniformOpsProvider(object):
+    def __init__(
+        self,
+        key_range_lower=1,
+        key_range_upper=10,
+        payload_size=10,
+        write_ratio=0.5,
+        rand_seed=int(time())
+    ):
+        self._key_range_lower = key_range_lower
+        self._key_range_upper = key_range_upper
+        self._payload_size = payload_size
+        self._write_ratio = write_ratio
+        rand.seed(rand_seed)
 
-def write(krl, kru, payload_size, start):
-    op = ops.write(
-                rand.random_integers(krl, kru),
-                ops.payload(payload_size),
+    def _rand_key(self):
+        return rand.random_integers(
+            self._key_range_lower,
+            self._key_range_upper
+        )
+
+    def _uniform_payload(self):
+        return rand.bytes(self._payload_size)
+
+    def _should_gen_write_op(self):
+        return rand.ranf() < self._write_ratio
+
+    @property
+    def prereqs(self):
+        return [
+            ReqFactory.write(k, b'0', 0, prereq=True)
+            for k in range(self._key_range_lower, self._key_range_upper + 1)
+        ]
+
+    def get_ops(self, start):
+        if self._should_gen_write_op():
+            return ReqFactory.write(
+                self._rand_key(),
+                self._uniform_payload(),
                 start
-                )
-    op.op.prereq = False
-    return op
-
-def read(krl, kru, start):
-    op = ops.read(
-            rand.random_integers(krl, kru),
-            start
             )
-    op.op.prereq = False
-    return op
-
-def generate_ops(key_range='1>10',payload_size='10', seed='0', write_ratio='0.5'):
-    krl, kru = key_range.split('>')
-    krl, kru = int(krl), int(kru)
-
-    payload_size = int(payload_size)
-
-    write_ratio = float(write_ratio)
-
-    seed= int(seed)
-
-    return (
-            generate_prereqs(key_range),
-            (rand.seed(seed),
-                lambda (start): (
-                    write(krl, kru, payload_size, start)
-                    if rand.ranf() < write_ratio else
-                    read(krl, kru, start)
-                    )
-                )[-1]
-            )
+        else:
+            return ReqFactory.read(self._rand_key(), start)

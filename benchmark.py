@@ -10,6 +10,8 @@ import os
 from sys import argv, stdout, stderr
 
 from src.client_runner import run_test 
+from src.distributions import register_ops_args
+from src.distributions import get_ops_provider
 #------- Parse arguments --------------------------
 parser = argparse.ArgumentParser(description='Runs a benchmark of a local fault tolerant datastore')
 
@@ -23,13 +25,7 @@ parser.add_argument(
         '--topo_args',
         help='Configuration settings for the topology',
         default='')
-parser.add_argument(
-        'distribution',
-        help='The distribution to generate operations from')
-parser.add_argument(
-        '--dist_args',
-        default="",
-        help='settings for the distribution. eg. size=5,mean=10')
+register_ops_args(parser)
 parser.add_argument(
         'failure',
         help='Injects the given failure into the system')
@@ -57,9 +53,6 @@ topo = args.topology
 topo_kwargs = dict([arg.split('=') for arg in args.topo_args.split(',')]) if args.topo_args != "" else {}
 print(topo, topo_kwargs)
 topo_module = importlib.import_module('src.topologies.' + topo)
-
-distribution = args.distribution
-dist_kwargs = dict([arg.split('=') for arg in args.dist_args.split(',')]) if args.dist_args != "" else {}
 
 fail_type = args.failure
 fail_args = args.fail_args
@@ -104,9 +97,7 @@ else:
     duration = float(bench_args['duration'])
     print("BENCHMARK: " + str(duration))
 
-    op_gen_module = importlib.import_module('src.distributions.' + distribution)
-
-    ops = op_gen_module.generate_ops(**dist_kwargs)		
+    ops_provider = get_ops_provider(args)
 
     print("Benchmark: Waiting for network to settle")
     sleep(10) 
@@ -114,7 +105,7 @@ else:
     run_test(
                 bench_args['dest'],
                 clients, 
-                ops, 
+                ops_provider,
                 bench_args['rate'],
                 bench_args['duration'],
                 service_name,

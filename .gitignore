@@ -20,3 +20,4 @@ env
 systems/zookeeper/clients/java/Client.jar
 
 **/.merlin
+.vscode

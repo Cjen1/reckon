@@ -8,6 +8,7 @@ python benchmark.py etcd_go \
   --benchmark_config rate=1000,duration=10,dest=./res,logs=./logs `realpath .`
 
 EXITCODE=$?
+test $EXITCODE -eq 0 && echo "Command succeeded" || echo "Command Failed"; 
 
 service openvswitch-switch stop
 

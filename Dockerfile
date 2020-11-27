@@ -51,7 +51,7 @@ RUN cd etcd/tools/benchmark && go build -o /etcdbin/etcdbench
 
 FROM base as ocaml_builder
 ENV OPAMYES=1
-RUN apt install liblapacke-dev libopenblas-dev zlib1g-dev -y
+RUN apt update && apt install liblapacke-dev libopenblas-dev zlib1g-dev -y
 ADD systems/ocaml-paxos/src/ocamlpaxos.opam systems/ocaml-paxos/src/ocamlpaxos.opam 
 RUN opam install --deps-only systems/ocaml-paxos/src -y
 ADD src/ocaml_client src/ocaml_client
@@ -95,5 +95,5 @@ RUN echo 'export PATH=$PATH:~/bins/' >> ~/.bashrc
 
 RUN git clone https://github.com/brendangregg/FlameGraph /results/FlameGraph
 
-RUN apt install strace linux-tools-generic -y
+RUN apt update && apt install strace linux-tools-generic -y
 

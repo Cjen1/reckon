@@ -92,8 +92,8 @@ RUN mkdir bins logs
 COPY --from=benchmark /etcdbin/* bins/
 RUN echo 'export PATH=$PATH:~/bins/' >> ~/.bashrc
 
-
 RUN git clone https://github.com/brendangregg/FlameGraph /results/FlameGraph
 
 RUN apt update && apt install strace linux-tools-generic -y
 
+RUN chmod 777 -R scripts

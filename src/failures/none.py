@@ -1,2 +1,3 @@
-def setup(net, restarters, stoppers, service_name):
-    return []
+class NoFailure():
+    def get_failures(self, net, system, restarters, stoppers):
+        return []

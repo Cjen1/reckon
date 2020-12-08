@@ -113,7 +113,7 @@ class Etcd(AbstractSystem):
                 resp = host.cmd(cmd)
                 leader_ip = self.parse_resp(resp)
                 leader = cluster[ips.index(leader_ip)]
-                print("FAILURE: killing leader: "+leader_ip)
+                print("FAILURE: killing leader: "+self.get_node_tag(leader))
                 return leader
             except:
                 pass

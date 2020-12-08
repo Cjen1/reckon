@@ -13,6 +13,7 @@ from src.client_runner import run_test
 from src.distributions import register_ops_args
 from src.distributions import get_ops_provider
 from systems import register_system_args, get_system
+from failures import register_failure_args, get_failure_provider
 #------- Parse arguments --------------------------
 parser = argparse.ArgumentParser(description='Runs a benchmark of a local fault tolerant datastore')
 
@@ -25,12 +26,7 @@ parser.add_argument(
         help='Configuration settings for the topology',
         default='')
 register_ops_args(parser)
-parser.add_argument(
-        'failure',
-        help='Injects the given failure into the system')
-parser.add_argument(
-        '--fail_args',
-        help='Arguments to be passed to the failure script.')
+register_failure_args(parser)
 parser.add_argument(
         '--benchmark_config',
         default="",
@@ -49,12 +45,7 @@ topo_kwargs = dict([arg.split('=') for arg in args.topo_args.split(',')]) if arg
 print(topo, topo_kwargs)
 topo_module = importlib.import_module('src.topologies.' + topo)
 
-fail_type = args.failure
-fail_args = args.fail_args
-print(fail_type, fail_args)
-fail_module = importlib.import_module('src.failures.' + fail_type)
-fail_setup = fail_module.setup
-
+failure_provider = get_failure_provider(args)
 
 ## A list of benchmark configs with defaults. Change values as appropriate when we have an 
 ## idea of what values *are* appropriate.

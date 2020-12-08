@@ -51,7 +51,7 @@ class Etcd(AbstractSystem):
                         "--heartbeat-interval=100 " +
                         "--election-timeout=500"
                         ).format(
-                            tag=tag(host),
+                            tag=tag,
                             ip=host.IP(), 
                             cluster=cluster_str, 
                             cluster_state=cluster_state, 

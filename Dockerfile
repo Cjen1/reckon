@@ -32,7 +32,6 @@ ADD src/utils src/utils
 FROM base as etcd_builder
 ADD systems/etcd/clients systems/etcd/clients
 ADD systems/etcd/Makefile systems/etcd/Makefile
-ADD systems/etcd/scripts systems/etcd/scripts
 RUN cd systems/etcd && make system
 #Invalidate cache if client library has been updated
 #COPY src/go/src/github.com/Cjen1/rc_go rc_go

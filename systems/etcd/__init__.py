@@ -1,7 +1,7 @@
 from enum import Enum
 import subprocess
 
-from systems import AbstractSystem, AbstractClient
+from ..systems_classes import AbstractSystem, AbstractClient
 
 class Go(AbstractClient):
     def cmd(ips, client_id, result_address):
@@ -19,22 +19,23 @@ class ClientType(Enum):
         return self.value
 
 class Etcd(AbstractSystem):
-    def get_client(args):
-        if args.client is ClientType.Go:
+    def get_client(self, args):
+        if args.client == str(ClientType.Go):
             return Go()
-        else 
+        else: 
             raise Exception(
                 'Not supported client type: ' + args.client
             )
 
+
     def start_nodes(self, cluster):
-        cluster_str = ",".join(tag(host) + "=http://"+host.IP()+":2380" for i, host in enumerate(hosts))
+        cluster_str = ",".join(self.get_node_tag(host) + "=http://"+host.IP()+":2380" for i, host in enumerate(cluster))
 
         restarters = {}
         stoppers = {}
         
         for host in cluster:
-            tag = get_node_tag(host)
+            tag = self.get_node_tag(host)
             def start_cmd(cluster_state): 
                etcd_cmd = (
                         "systems/etcd/bin/etcd " +
@@ -52,26 +53,26 @@ class Etcd(AbstractSystem):
                         ).format(
                             tag=tag(host),
                             ip=host.IP(), 
-                            cluster=cluster, 
+                            cluster=cluster_str, 
                             cluster_state=cluster_state, 
                             cluster_token="urop_cluster"
                         )
-                return etcd_cmd + "2>&1 > {log}/{tag}.log".format(log=self.log_location,tag=tag)
+               return etcd_cmd + "2>&1 > {log}/{tag}.log".format(log=self.log_location,tag=tag)
 
             self.start_screen(host, start_cmd("new"), tag)
             print("Start cmd: " + start_cmd("new"))
 
-            stop_cmd = shlex.split(("screen -X -S {0} quit").format(tag))
-            stoppers[host.name] = lambda:host.cmdPrint(stop_cmd)
+            #We use the default arguemnt to capture the host variable semantically rather than lexically
+            stoppers[tag] = lambda host=host:self.kill_screen(host)
 
-            restarters[tag(host)] = lambda:self.start_screen(host, start_cmd("existing"), tag)
+            restarters[tag] = lambda host=host:self.start_screen(host, start_cmd("existing"))
 
         return restarters, stoppers
 
     def start_client(self, client, client_id, cluster):
         print("starting microclient: " + str(client_id))
-        tag = get_client_tag(host)
-        result_address = "src/utils/sockets/" + self.get_client_tag(mn_client)
+        tag = self.get_client_tag(client)
+        result_address = "src/utils/sockets/" + tag
 
         args_ips = ",".join("http://" + host.IP() + ":2379" for host in cluster)
 
@@ -110,7 +111,7 @@ class Etcd(AbstractSystem):
                 cmd = "ETCDCTL_API=3 systems/etcd/bin/etcdctl endpoint status --cluster"
                 resp = host.cmd(cmd)
                 leader_ip = _parse_resp(resp)
-                leader = hosts[ips.index(leader_ip)]
+                leader = cluster[ips.index(leader_ip)]
                 print("FAILURE: killing leader: "+leader_ip)
                 return leader
             except:

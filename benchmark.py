@@ -62,7 +62,6 @@ bench_defs = {
         'rate': 1,		# upper bound on reqs/sec 
 	'duration': 160,	# duration of operation sending in seconds
         'test_results_location': 'test.res', 
-        'logs': '../logs/test.log', 
         }
 bench_args = {}
 if args.benchmark_config != "":

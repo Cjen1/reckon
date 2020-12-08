@@ -1,5 +1,6 @@
 import shlex
 import time
+import os
 from sys import stdout
 import abc
 from abc import abstractmethod
@@ -12,6 +13,8 @@ class AbstractSystem(object):
         creation_time = time.strftime("%H:%M:%S", ctime)
 
         self.log_location=args.system_logs
+        if not os.path.exists(args.system_logs):
+            os.makedirs(args.system_logs)
         self.creation_time = creation_time 
         self.client_class = self.get_client(args)
         self.client_type = args.client

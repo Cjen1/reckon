@@ -13,17 +13,17 @@ class AbstractSystem(object):
     def __str__(self):
         return "{0}-{1}".format(self.system_type, self.client_type)
 
-    def get_client_tag(host):
+    def get_client_tag(self, host):
         return "mc_" + host.name
 
-    def get_node_tag(host):
+    def get_node_tag(self, host):
         return "node_" + host.name
 
-    def start_screen(host, command):
+    def start_screen(self, host, command):
         cmd = "screen -dmS {tag} bash -c \"{command}\"".format(tag=get_node_tag(host),command=command)
         host.cmdPrint(shlex.split(cmd))
 
-    def kill_screen(host):
+    def kill_screen(self, host):
         host.cmd(shlex.split(("screen -X -S {0} quit").format(get_node_tag(host))))
 
     @abstractmethod

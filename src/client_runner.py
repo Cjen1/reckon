@@ -140,7 +140,7 @@ def collate(pipes, test_results_location, total):
                     pbar.update(1)
 
     logging.debug("COLLATE: done, writing: " + test_results_location)
-    with open(test_results_location) as fres:
+    with open(test_results_location, 'w') as fres:
         json.dump(resps, fres)
 
     logging.debug("COLLATE: written to file")

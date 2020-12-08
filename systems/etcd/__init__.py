@@ -1,17 +1,20 @@
 from enum import Enum
+from sys import stdout
 import subprocess
+import os
 
 from ..systems_classes import AbstractSystem, AbstractClient
 
 class Go(AbstractClient):
-    def cmd(ips, client_id, result_address):
+    def cmd(self, ips, client_id, result_address):
         client_path = "systems/etcd/clients/go/client"
         return "{client_path} {ips} {client_id} {result_pipe}".format(
                 client_path = client_path,
-                ips = args_ips,
+                ips = ips,
                 client_id = str(client_id),
                 result_pipe = result_address
                 )
+
 class ClientType(Enum):
     Go = "go"
 
@@ -57,9 +60,9 @@ class Etcd(AbstractSystem):
                             cluster_state=cluster_state, 
                             cluster_token="urop_cluster"
                         )
-               return etcd_cmd + "2>&1 > {log}/{tag}.log".format(log=self.log_location,tag=tag)
+               return self.add_logging(etcd_cmd, tag + ".log")
 
-            self.start_screen(host, start_cmd("new"), tag)
+            self.start_screen(host, start_cmd("new"))
             print("Start cmd: " + start_cmd("new"))
 
             #We use the default arguemnt to capture the host variable semantically rather than lexically
@@ -76,24 +79,21 @@ class Etcd(AbstractSystem):
 
         args_ips = ",".join("http://" + host.IP() + ":2379" for host in cluster)
 
-        if os.path.exists(address):
-            os.unlink(address)
-        os.mkfifo(address)
+        if os.path.exists(result_address):
+            os.unlink(result_address)
+        os.mkfifo(result_address)
 
-        cmd = self.clientClass.cmd(ips, client_id, result_address)
-        cmd = "{cmd} 2> {log}/{tag}.err 1> {log}/{tag}.out".format(
-                cmd=cmd,
-                log=self.log_location,
-                tag=tag
-                )
+        cmd = self.client_class.cmd(args_ips, client_id, result_address)
+        cmd = self.add_logging(cmd, tag + ".log")
 
-        sp = client.popen(cmd, stdin=subprocess.PIPE)
+        print("Starting client with: ", cmd)
+        sp = client.popen(cmd, stdin=subprocess.PIPE, shell=True)
 
-        results=open(address, "r")
+        results=open(result_address, "r")
 
         return sp.stdin, results
 
-    def _parse_resp(resp):
+    def parse_resp(self, resp):
         print("--------------------------------------------------")
         print(resp)
         print("--------------------------------------------------")
@@ -110,7 +110,7 @@ class Etcd(AbstractSystem):
             try:
                 cmd = "ETCDCTL_API=3 systems/etcd/bin/etcdctl endpoint status --cluster"
                 resp = host.cmd(cmd)
-                leader_ip = _parse_resp(resp)
+                leader_ip = self.parse_resp(resp)
                 leader = cluster[ips.index(leader_ip)]
                 print("FAILURE: killing leader: "+leader_ip)
                 return leader

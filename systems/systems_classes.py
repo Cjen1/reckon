@@ -1,3 +1,6 @@
+import shlex
+import time
+from sys import stdout
 import abc
 from abc import abstractmethod
 
@@ -5,7 +8,11 @@ class AbstractSystem(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, args):
+        ctime = time.localtime()
+        creation_time = time.strftime("%H:%M:%S", ctime)
+
         self.log_location=args.system_logs
+        self.creation_time = creation_time 
         self.client_class = self.get_client(args)
         self.client_type = args.client
         super(AbstractSystem, self).__init__()
@@ -20,11 +27,14 @@ class AbstractSystem(object):
         return "node_" + host.name
 
     def start_screen(self, host, command):
-        cmd = "screen -dmS {tag} bash -c \"{command}\"".format(tag=get_node_tag(host),command=command)
-        host.cmdPrint(shlex.split(cmd))
+        cmd = "screen -dmS {tag} bash -c \"{command}\"".format(tag=self.get_node_tag(host),command=command)
+        host.popen(shlex.split(cmd), stdout=stdout)
 
     def kill_screen(self, host):
-        host.cmd(shlex.split(("screen -X -S {0} quit").format(get_node_tag(host))))
+        host.cmd(shlex.split(("screen -X -S {0} quit").format(self.get_node_tag(host))))
+
+    def add_logging(self, cmd, tag):
+        return cmd + " 2>&1 | tee -a {log}/{time_tag}_{tag}".format(log=self.log_location, tag=tag, time_tag=self.creation_time)
 
     @abstractmethod
     def get_client(self, args):
@@ -46,6 +56,6 @@ class AbstractClient(object):
     __metaclass__ = abc.ABCMeta
 
     @abstractmethod
-    def cmd(ips, client_id, result_address):
+    def cmd(self, ips, client_id, result_address):
         pass
 

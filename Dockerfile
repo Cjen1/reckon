@@ -86,6 +86,7 @@ COPY --from=etcd_builder /root/systems/etcd systems/etcd
 #- Install tools ----
 
 RUN mkdir /results
+RUN mkdir /results/logs
 
 RUN mkdir bins logs
 COPY --from=benchmark /etcdbin/* bins/

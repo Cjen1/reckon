@@ -59,14 +59,10 @@ fail_setup = fail_module.setup
 ## A list of benchmark configs with defaults. Change values as appropriate when we have an 
 ## idea of what values *are* appropriate.
 bench_defs = {
-        'nclients': 1, 
         'rate': 1,		# upper bound on reqs/sec 
 	'duration': 160,	# duration of operation sending in seconds
-        'test_results_location': '../results/test.res', 
+        'test_results_location': 'test.res', 
         'logs': '../logs/test.log', 
-        'cpu_quota' : 100,
-        'memory_quota' : '4096',
-        'memory_unit' : 'megabytes'
         }
 bench_args = {}
 if args.benchmark_config != "":
@@ -87,6 +83,7 @@ else:
     print("BENCHMARK: " + str(duration))
 
     ops_provider = get_ops_provider(args)
+    failures = fail_setup(net, restarters, stoppers, system)
 
     print("BENCHMARK: Starting Test")
     run_test(

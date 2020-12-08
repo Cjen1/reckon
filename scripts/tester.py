@@ -39,7 +39,7 @@ for rate in [1,10,100,1000,10000,15000,20000, 25000, 30000, 35000, 40000]:#, 100
                         (
                             'rate={0},'.format(rate) + 
                             'duration=10,'+
-                            'dest=/results/res_'+tag+'.res,'+
+                            'test_results_location=/results/res_'+tag+'.res,'+
                             'logs=/results/log_'+tag+'.log'
                         ),
                     ]

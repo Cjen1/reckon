@@ -1,7 +1,6 @@
 from enum import Enum
 from src.failures.leader import LeaderFailure
 from src.failures.none import NoFailure
-from src.failures.partialpartition import PPartitionFailure
 
 class FailureType(Enum):
     FNone = 'none'

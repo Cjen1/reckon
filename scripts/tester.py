@@ -16,35 +16,36 @@ def call_tcp_dump(tag, cmd):
 
 abs_path = '/root/mounted/Resolving-Consensus'
 
-for rate in [1,10,100,1000,10000,15000,20000, 25000, 30000, 35000, 40000]:#, 10000, 20000]:
-    for n in [1,3,5]:
+for rate in [1]:
+    for n in [1,3]:
         for [system,client] in [['etcd','go']]:
-            tag = "{0}_{1}_{2}".format(n, rate, system)
-            call_tcp_dump(
-                    tag,
-                    [
-                        'python',
-                        'benchmark.py',
-                        system,
-                        'simple',
-                        'uniform',
-                        'none',
-                        '--client', client,
-                        '--system_logs', '/results/logs',
-                        '--topo_args', 
-                        (
-                            'n={0},nc=1'.format(n)
-                        ),
-                        '--benchmark_config', 
-                        (
-                            'rate={0},'.format(rate) + 
-                            'duration=10,'+
-                            'test_results_location=/results/res_'+tag+'.res,'+
-                            'logs=/results/log_'+tag+'.log'
-                        ),
-                    ]
-                )
-            call(['bash', 'scripts/clean.sh'])
+            for failure in ['leader', 'none']:
+                tag = "{0}_{1}_{2}_{3}".format(n, rate, system, failure)
+                call_tcp_dump(
+                        tag,
+                        [
+                            'python',
+                            'benchmark.py',
+                            system,
+                            'simple',
+                            'uniform',
+                            failure,
+                            '--client', client,
+                            '--system_logs', '/results/logs',
+                            '--topo_args', 
+                            (
+                                'n={0},nc=1'.format(n)
+                            ),
+                            '--benchmark_config', 
+                            (
+                                'rate={0},'.format(rate) + 
+                                'duration=10,'+
+                                'test_results_location=/results/res_'+tag+'.res,'+
+                                'logs=/results/log_'+tag+'.log'
+                            ),
+                        ]
+                    )
+                call(['bash', 'scripts/clean.sh'])
 
 
 #for rate in [10000,20000,30000,40000,50000]:

@@ -13,7 +13,7 @@ from src.client_runner import run_test
 from src.distributions import register_ops_args
 from src.distributions import get_ops_provider
 from systems import register_system_args, get_system
-from failures import register_failure_args, get_failure_provider
+from src.failures import register_failure_args, get_failure_provider
 #------- Parse arguments --------------------------
 parser = argparse.ArgumentParser(description='Runs a benchmark of a local fault tolerant datastore')
 
@@ -73,7 +73,7 @@ else:
     print("BENCHMARK: " + str(duration))
 
     ops_provider = get_ops_provider(args)
-    failures = fail_setup(net, restarters, stoppers, system)
+    failures = failure_provider.get_failures(cluster, system, restarters, stoppers)
 
     print("BENCHMARK: Starting Test")
     run_test(

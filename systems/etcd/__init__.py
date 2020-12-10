@@ -87,7 +87,8 @@ class Etcd(AbstractSystem):
         cmd = self.add_logging(cmd, tag + ".log")
 
         print("Starting client with: ", cmd)
-        sp = client.popen(cmd, stdin=subprocess.PIPE, shell=True)
+        FNULL = open(os.devnull, 'w')
+        sp = client.popen(cmd, stdin=subprocess.PIPE, stdout=FNULL, stderr=FNULL, shell=True)
 
         results=open(result_address, "r")
 

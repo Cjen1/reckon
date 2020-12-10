@@ -74,12 +74,6 @@ RUN cd src/ocaml_client && make install
 #--------------------------------------------------
 FROM base 
 
-ADD . .
-
-#- Install binaries -
-COPY --from=etcd_builder /root/systems/etcd systems/etcd
-#COPY --from=ocaml_paxos_builder /root/systems/ocaml-paxos systems/ocaml-paxos
-
 #ADD systems/zookeeper systems/zookeeper
 #RUN make zk_install
 
@@ -92,8 +86,12 @@ RUN mkdir bins logs
 COPY --from=benchmark /etcdbin/* bins/
 RUN echo 'export PATH=$PATH:~/bins/' >> ~/.bashrc
 
-
 RUN git clone https://github.com/brendangregg/FlameGraph /results/FlameGraph
 
 RUN apt update && apt install strace linux-tools-generic -y
 
+ADD . .
+
+#- Install binaries -
+COPY --from=etcd_builder /root/systems/etcd systems/etcd
+#COPY --from=ocaml_paxos_builder /root/systems/ocaml-paxos systems/ocaml-paxos

@@ -30,8 +30,9 @@ class AbstractSystem(object):
         return "node_" + host.name
 
     def start_screen(self, host, command):
+        FNULL = open(os.devnull, 'w')
         cmd = "screen -dmS {tag} bash -c \"{command}\"".format(tag=self.get_node_tag(host),command=command)
-        host.popen(shlex.split(cmd), stdout=stdout)
+        host.popen(shlex.split(cmd), stdout=FNULL, stderr=FNULL)
 
     def kill_screen(self, host):
         host.cmd(shlex.split(("screen -X -S {0} quit").format(self.get_node_tag(host))))

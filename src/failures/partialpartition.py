@@ -1,7 +1,11 @@
 import logging
-logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%I:%M:%S %p', level=logging.DEBUG)
 
-class PPartitionFailure():
+logging.basicConfig(
+    format="%(asctime)s %(message)s", datefmt="%I:%M:%S %p", level=logging.DEBUG
+)
+
+
+class PPartitionFailure:
     def partition(self, host, remote):
         cmd = "iptables -I OUTPUT -d {0} -j DROP".format(remote.IP())
         host.cmd(cmd, shell=True)
@@ -25,6 +29,6 @@ class PPartitionFailure():
         self.cluster = cluster
         self.system = system
         return [
-                lambda self=self: self.initiate_partition(),
-                lambda self=self: self.remove_partition()
-                ]
+            lambda self=self: self.initiate_partition(),
+            lambda self=self: self.remove_partition(),
+        ]

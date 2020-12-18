@@ -2,53 +2,63 @@ from subprocess import call, Popen
 import numpy as np
 from itertools import product
 
+
 def call_tcp_dump(tag, cmd):
     tcp_dump_cmd = [
-            'tcpdump', '-i', 'any',
-            '-w', ('/results/pcap_'+tag+'.pcap'),
-            'net', '10.0.0.0/16',
-            '-n'
-            ]
+        "tcpdump",
+        "-i",
+        "any",
+        "-w",
+        ("/results/pcap_" + tag + ".pcap"),
+        "net",
+        "10.0.0.0/16",
+        "-n",
+    ]
     print(tcp_dump_cmd)
     p = Popen(tcp_dump_cmd)
     call(cmd)
     p.terminate()
 
-abs_path = '/root/mounted/Resolving-Consensus'
 
-for rate in [1]:
-    for n in [1,3]:
-        for [system,client] in [['etcd','go']]:
-            for failure in ['leader', 'none']:
+abs_path = "/root/mounted/Resolving-Consensus"
+
+for rate in [100]:
+    for n in [3]:
+        for [system, client] in [["etcd", "go-no-mem"]]:
+            for failure in ["partial-partition"]:
                 tag = "{0}_{1}_{2}_{3}".format(n, rate, system, failure)
                 call_tcp_dump(
-                        tag,
-                        [
-                            'python',
-                            'benchmark.py',
-                            system,
-                            'simple',
-                            'uniform',
-                            failure,
-                            '--client', client,
-                            '--system_logs', '/results/logs',
-                            '--topo_args', 
-                            (
-                                'n={0},nc=1'.format(n)
-                            ),
-                            '--benchmark_config', 
-                            (
-                                'rate={0},'.format(rate) + 
-                                'duration=10,'+
-                                'test_results_location=/results/res_'+tag+'.res,'+
-                                'logs=/results/log_'+tag+'.log'
-                            ),
-                        ]
-                    )
-                call(['bash', 'scripts/clean.sh'])
+                    tag,
+                    [
+                        "python",
+                        "benchmark.py",
+                        system,
+                        "simple",
+                        "uniform",
+                        failure,
+                        "--client",
+                        client,
+                        "--system_logs",
+                        "/results/logs",
+                        "--topo_args",
+                        ("n={0},nc=1".format(n)),
+                        "--benchmark_config",
+                        (
+                            "rate={0},".format(rate)
+                            + "duration=600,"
+                            + "test_results_location=/results/res_"
+                            + tag
+                            + ".res,"
+                            + "logs=/results/log_"
+                            + tag
+                            + ".log"
+                        ),
+                    ],
+                )
+                call(["bash", "scripts/clean.sh"])
 
 
-#for rate in [10000,20000,30000,40000,50000]:
+# for rate in [10000,20000,30000,40000,50000]:
 #    for n in [3]:
 #        system='etcd_go'
 #        tag = "{0}_{1}_{2}".format(n, rate, system)
@@ -59,7 +69,7 @@ for rate in [1]:
 #                    'benchmark.py',
 #                    system,
 #                    'tree',
-#                    '--topo_args', 
+#                    '--topo_args',
 #                    (
 #                        'n_clusters={0}'.format(n)
 #                    ),
@@ -69,9 +79,9 @@ for rate in [1]:
 #                        'write_ratio=1'
 #                    ),
 #                    'none',
-#                    '--benchmark_config', 
+#                    '--benchmark_config',
 #                    (
-#                        'rate={0},'.format(rate) + 
+#                        'rate={0},'.format(rate) +
 #                        'duration=30,'+
 #                        'dest=/results/res_'+tag+'.res,'+
 #                        'logs=/results/log_'+tag+'.log'
@@ -82,7 +92,7 @@ for rate in [1]:
 #        call(['bash', 'scripts/clean.sh'])
 
 
-#for i in range(1):
+# for i in range(1):
 #    for failure in ['leader', 'follower']:
 #        for rate in [40000]:
 #            for n in [3]:
@@ -95,7 +105,7 @@ for rate in [1]:
 #                                'benchmark.py',
 #                                system,
 #                                'simple',
-#                                '--topo_args', 
+#                                '--topo_args',
 #                                (
 #                                    'n={0},nc=1'.format(n)
 #                                ),
@@ -105,8 +115,8 @@ for rate in [1]:
 #                                    'write_ratio=1'
 #                                ),
 #                                failure,
-#                                '--benchmark_config', 
-#                                    'rate={0},'.format(rate) + 
+#                                '--benchmark_config',
+#                                    'rate={0},'.format(rate) +
 #                                    'duration=120,'+
 #                                    'dest=/results/res_'+tag+'.res,'+
 #                                    'logs=/results/log_'+tag,

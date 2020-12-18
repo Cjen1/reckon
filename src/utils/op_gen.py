@@ -3,6 +3,7 @@ import message_pb2 as msg_pb
 from numpy import random as rand
 import math
 
+
 class Operation:
     def __init__(self, opType):
         self.type = opType
@@ -31,8 +32,8 @@ class Operation:
 
 
 # Number of keys to write, size of data in bytes
-# Return (<operations>, []) 
-def sequential_keys(num_ops, data_size, limit = 256**4):
+# Return (<operations>, [])
+def sequential_keys(num_ops, data_size, limit=256 ** 4):
     num_keys = num_ops
     if num_keys > limit:
         num_keys = limit - 1
@@ -41,9 +42,10 @@ def sequential_keys(num_ops, data_size, limit = 256**4):
 
     return (ops, [])
 
+
 ## Number of keys to write, size of data in bytes, proportion of the operations to be reads
-## Return (<operations>, <prerequisite operations>) 
-#def mixed_ops(num_ops, num_keys, data_size, split, limit = 256**4):	
+## Return (<operations>, <prerequisite operations>)
+# def mixed_ops(num_ops, num_keys, data_size, split, limit = 256**4):
 #    if num_keys > limit:
 #        num_keys = limit - 1
 #
@@ -64,49 +66,56 @@ def sequential_keys(num_ops, data_size, limit = 256**4):
 # ratio: The reads/total
 def mixed_ops(num_keys=100, data_size=1024, ratio=0.5):
     return (
-            lambda: 
-                Op_get(rand.randint(0, num_keys)) 
-                    if rand.rand() < ratio 
-                    else Op_put(rand.randint(0, num_keys), rand.bytes(data_size)),
-            [Op_put(key, rand.bytes(data_size)) for key in range(num_keys)])
+        lambda: Op_get(rand.randint(0, num_keys))
+        if rand.rand() < ratio
+        else Op_put(rand.randint(0, num_keys), rand.bytes(data_size)),
+        [Op_put(key, rand.bytes(data_size)) for key in range(num_keys)],
+    )
 
-# Dynamically generate a write operation 
+
+# Dynamically generate a write operation
 def write_ops(num_keys=100, data_size=1024):
-    return (lambda: Op_put(rand.randint(0, num_keys), rand.bytes(data_size)), 
-            [])
+    return (lambda: Op_put(rand.randint(0, num_keys), rand.bytes(data_size)), [])
 
-# Dynamically generate a read operation 
+
+# Dynamically generate a read operation
 def read_ops(num_keys=100, data_size=1024):
-    return (lambda: Op_get(rand.randint(0, num_keys)), 
-            [Op_put(key, rand.bytes(data_size)) for key in range(num_keys)]) 
+    return (
+        lambda: Op_get(rand.randint(0, num_keys)),
+        [Op_put(key, rand.bytes(data_size)) for key in range(num_keys)],
+    )
+
 
 def gen_payload(num_bytes):
     return rand.bytes(num_bytes)
+
 
 def Op_put(key, value):
     op = msg_pb.Operation()
     op.put.key = key
     op.put.value = value
 
-    #payload = op.SerializeToString()
+    # payload = op.SerializeToString()
     payload = op
 
     return payload
+
 
 def Op_get(key):
     op = msg_pb.Operation()
     op.get.key = key
 
-    #payload = op.SerializeToString()
+    # payload = op.SerializeToString()
     payload = op
 
     return payload
+
 
 def Op_quit():
     op = msg_pb.Operation()
     op.quit.msg = "Quit"
 
-    #payload = op.SerializeToString()
+    # payload = op.SerializeToString()
     payload = op
-    
+
     return payload

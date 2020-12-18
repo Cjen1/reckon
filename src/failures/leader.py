@@ -1,4 +1,4 @@
-class LeaderFailure():
+class LeaderFailure:
     def leader_down(self):
         leader = self.system.get_leader(self.cluster)
         self.stoppers[self.system.get_node_tag(leader)]()
@@ -14,6 +14,6 @@ class LeaderFailure():
         self.restarters = restarters
         self.stoppers = stoppers
         return [
-                lambda self=self: self.leader_down(),
-                lambda self=self: self.leader_recovery()
-                ]
+            lambda self=self: self.leader_down(),
+            lambda self=self: self.leader_recovery(),
+        ]

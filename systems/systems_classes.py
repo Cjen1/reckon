@@ -5,6 +5,7 @@ from sys import stdout
 import abc
 from abc import abstractmethod
 
+
 class AbstractSystem(object):
     __metaclass__ = abc.ABCMeta
 
@@ -12,10 +13,10 @@ class AbstractSystem(object):
         ctime = time.localtime()
         creation_time = time.strftime("%H:%M:%S", ctime)
 
-        self.log_location=args.system_logs
+        self.log_location = args.system_logs
         if not os.path.exists(args.system_logs):
             os.makedirs(args.system_logs)
-        self.creation_time = creation_time 
+        self.creation_time = creation_time
         self.client_class = self.get_client(args)
         self.client_type = args.client
         super(AbstractSystem, self).__init__()
@@ -30,15 +31,19 @@ class AbstractSystem(object):
         return "node_" + host.name
 
     def start_screen(self, host, command):
-        FNULL = open(os.devnull, 'w')
-        cmd = "screen -dmS {tag} bash -c \"{command}\"".format(tag=self.get_node_tag(host),command=command)
+        FNULL = open(os.devnull, "w")
+        cmd = 'screen -dmS {tag} bash -c "{command}"'.format(
+            tag=self.get_node_tag(host), command=command
+        )
         host.popen(shlex.split(cmd), stdout=FNULL, stderr=FNULL)
 
     def kill_screen(self, host):
         host.cmd(shlex.split(("screen -X -S {0} quit").format(self.get_node_tag(host))))
 
     def add_logging(self, cmd, tag):
-        return cmd + " 2>&1 | tee -a {log}/{time_tag}_{tag}".format(log=self.log_location, tag=tag, time_tag=self.creation_time)
+        return cmd + " 2>&1 | tee -a {log}/{time_tag}_{tag}".format(
+            log=self.log_location, tag=tag, time_tag=self.creation_time
+        )
 
     @abstractmethod
     def get_client(self, args):
@@ -56,10 +61,10 @@ class AbstractSystem(object):
     def get_leader(self, cluster):
         return None
 
+
 class AbstractClient(object):
     __metaclass__ = abc.ABCMeta
 
     @abstractmethod
     def cmd(self, ips, client_id, result_address):
         pass
-

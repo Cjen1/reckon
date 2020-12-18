@@ -15,8 +15,19 @@ class Go(AbstractClient):
                 result_pipe = result_address
                 )
 
+class GoNoMem(AbstractClient):
+    def cmd(self, ips, client_id, result_address):
+        client_path = "systems/etcd/clients/go-no-mem/client"
+        return "{client_path} {ips} {client_id} {result_pipe}".format(
+                client_path = client_path,
+                ips = ips,
+                client_id = str(client_id),
+                result_pipe = result_address
+                )
+
 class ClientType(Enum):
     Go = "go"
+    GoNoMem = "go-no-mem"
 
     def __str__(self):
         return self.value
@@ -25,7 +36,9 @@ class Etcd(AbstractSystem):
     def get_client(self, args):
         if args.client == str(ClientType.Go):
             return Go()
-        else: 
+        elif args.client == str(ClientType.GoNoMem):
+            return GoNoMem()
+        else:
             raise Exception(
                 'Not supported client type: ' + args.client
             )

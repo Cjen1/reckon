@@ -52,16 +52,6 @@ def read_payload(pipe):
         logging.debug("Got nothing from pipe, probably EOF")
         return None
 
-def start_clients(microclients, config):
-    logging.debug("Setting up microclients")
-    sys.stdout.flush()
-    microclients = [
-            config['start_client'](mnclient, client_id, config)
-            for client_id, mnclient in enumerate(microclients)
-            ]
-    logging.debug("Microclients started")
-    return microclients
-
 def preload(ops_provider, clients, duration, rate):
     logging.debug("PRELOAD")
 
@@ -122,7 +112,7 @@ def execute(clients, failures, duration):
             time.sleep(sleep_time)
         failure()
 
-def collate(pipes, config, total):
+def collate(pipes, test_results_location, total):
     logging.debug("COLLATE")
     resps = []
     inputs = pipes
@@ -149,37 +139,31 @@ def collate(pipes, config, total):
                             )
                     pbar.update(1)
 
-    logging.debug("COLLATE: done, writing: " + config['f_dest'])
-    with open(config['f_dest'], "w") as fres:
+    logging.debug("COLLATE: done, writing: " + test_results_location)
+    with open(test_results_location, 'w') as fres:
         json.dump(resps, fres)
 
     logging.debug("COLLATE: written to file")
 
 
-def run_test(f_dest, clients, ops_provider, rate, duration, service_name, client_name, cluster, failures):
+def run_test(test_results_location, clients, ops_provider, rate, duration, system, cluster, failures):
     rate = float(rate)
     duration = int(duration)
-    config = {
-        'service':service_name,
-        'client':client_name,
-        'cluster': cluster,
-        'duration': duration,
-        'ops_provider': ops_provider,
-        'rate': rate,
-        'runner_address': os.getcwd() + '/src/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
-        'client_address': os.getcwd() + '/src/utils/sockets/benchmark.sock', # needs to be relative to the current environment rather than to a host
-        'start_client': (importlib.import_module('systems.%s.scripts.client_start' % service_name).start),
-        'f_dest': f_dest
-        }
 
-    microclients = start_clients(clients, config)
+    logging.debug("Setting up microclients")
+    sys.stdout.flush()
+    microclients = [
+            system.start_client(client, client_id, cluster)
+            for client_id, client in enumerate(clients)
+            ]
+    logging.debug("Microclients started")
 
     preload(ops_provider, microclients, duration, rate)
     ready(microclients)
 
     t_collate = Thread(
             target=collate,
-            args=[[out_pipe for (in_pipe, out_pipe) in microclients], config, rate * duration]
+            args=[[out_pipe for (in_pipe, out_pipe) in microclients], test_results_location, rate * duration]
             )
     t_collate.daemon = True
     t_collate.start()

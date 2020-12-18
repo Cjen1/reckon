@@ -12,12 +12,11 @@ from sys import argv, stdout, stderr
 from src.client_runner import run_test 
 from src.distributions import register_ops_args
 from src.distributions import get_ops_provider
+from systems import register_system_args, get_system
 #------- Parse arguments --------------------------
 parser = argparse.ArgumentParser(description='Runs a benchmark of a local fault tolerant datastore')
 
-parser.add_argument(
-        'system',
-        help='The system under test, with the client to use. eg etcd_go')
+register_system_args(parser)
 parser.add_argument(
         'topology',
         help='The topology of the network under test')
@@ -40,14 +39,10 @@ parser.add_argument(
         '-d',
         action='store_true',
         help='Debug mode, sets up mininet, then waits in Mininet.CLI')
-parser.add_argument(
-        'absolute_path',
-        help="The absolute path in the host to this folder, required due to docker weirdness and zmq's ipc rules"
-        )
 
 args = parser.parse_args()
 
-system = args.system
+system = get_system(args)
 
 topo = args.topology
 topo_kwargs = dict([arg.split('=') for arg in args.topo_args.split(',')]) if args.topo_args != "" else {}
@@ -64,14 +59,9 @@ fail_setup = fail_module.setup
 ## A list of benchmark configs with defaults. Change values as appropriate when we have an 
 ## idea of what values *are* appropriate.
 bench_defs = {
-        'nclients': 1, 
         'rate': 1,		# upper bound on reqs/sec 
 	'duration': 160,	# duration of operation sending in seconds
-        'dest': '../results/test.res', 
-        'logs': '../logs/test.log', 
-        'cpu_quota' : 100,
-        'memory_quota' : '4096',
-        'memory_unit' : 'megabytes'
+        'test_results_location': 'test.res', 
         }
 bench_args = {}
 if args.benchmark_config != "":
@@ -81,15 +71,9 @@ for key, val in bench_defs.items():
 
 print(bench_args)
 
-absolute_path = args.absolute_path
+net, cluster, clients = topo_module.setup(**topo_kwargs) 
 
-service_name, client_name = system.split("_")
-
-net, cluster, clients, restarters, stoppers = topo_module.setup(service_name, absolute_path, logs=bench_args['logs'], **topo_kwargs) 
-failures = fail_setup(net, restarters, stoppers, system.split('_')[0])
-
-hosts = [h for h in net.hosts if h.name[0] == "h"]
-
+restarters, stoppers = system.start_nodes(cluster)
 if args.d:
     from mininet.cli import CLI
     CLI(net)
@@ -98,18 +82,16 @@ else:
     print("BENCHMARK: " + str(duration))
 
     ops_provider = get_ops_provider(args)
+    failures = fail_setup(net, restarters, stoppers, system)
 
-    print("Benchmark: Waiting for network to settle")
-    sleep(10) 
-    print("BENCHMARK: Starting Test, "+str((service_name, client_name)))
+    print("BENCHMARK: Starting Test")
     run_test(
-                bench_args['dest'],
+                bench_args['test_results_location'],
                 clients, 
                 ops_provider,
                 bench_args['rate'],
                 bench_args['duration'],
-                service_name,
-                client_name,
+                system,
                 cluster,
                 failures,
             )  

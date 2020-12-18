@@ -25,7 +25,7 @@ def add_client(net):
     client_num += 1
     return net.addHost(res)
 
-def setup(service, current_dir, logs, n='3', nc='10'):
+def setup(n='3', nc='10'):
     n = int(n)
     nc = int(nc)
     #- Core setup -------
@@ -55,16 +55,6 @@ def setup(service, current_dir, logs, n='3', nc='10'):
 
     net.start()
 
-    system_setup_func = (
-            importlib.import_module(
-                "systems.{0}.scripts.setup".format(service)
-                )
-            ).setup
-
-    kwargs = {'rc':current_dir, 'zk_dist_dir':'{rc}/systems/zookeeper/scripts/zktmp'.format(rc=current_dir)}
-
     cluster_ips = [host.IP() for host in cluster]
 
-    restarters, stoppers = system_setup_func(cluster, cluster_ips, logs=logs, **kwargs)
-
-    return (net, cluster, clients, restarters, stoppers)
+    return (net, cluster, clients)

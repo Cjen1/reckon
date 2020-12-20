@@ -32,3 +32,4 @@ etcd: /usr/bin/etcd /usr/bin/etcdctl
 .PHONY:client
 client:
 	cd clients/go/ && make build
+	cd clients/go-no-mem/ && make build

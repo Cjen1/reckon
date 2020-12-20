@@ -10,7 +10,7 @@ class UniformOpsProvider(object):
         key_range_upper=10,
         payload_size=10,
         write_ratio=0.5,
-        rand_seed=int(time())
+        rand_seed=int(time()),
     ):
         self._key_range_lower = key_range_lower
         self._key_range_upper = key_range_upper
@@ -19,10 +19,7 @@ class UniformOpsProvider(object):
         rand.seed(rand_seed)
 
     def _rand_key(self):
-        return rand.random_integers(
-            self._key_range_lower,
-            self._key_range_upper
-        )
+        return rand.random_integers(self._key_range_lower, self._key_range_upper)
 
     def _uniform_payload(self):
         return rand.bytes(self._payload_size)
@@ -33,16 +30,12 @@ class UniformOpsProvider(object):
     @property
     def prereqs(self):
         return [
-            ReqFactory.write(k, b'0', 0, prereq=True)
+            ReqFactory.write(k, b"0", 0, prereq=True)
             for k in range(self._key_range_lower, self._key_range_upper + 1)
         ]
 
     def get_ops(self, start):
         if self._should_gen_write_op():
-            return ReqFactory.write(
-                self._rand_key(),
-                self._uniform_payload(),
-                start
-            )
+            return ReqFactory.write(self._rand_key(), self._uniform_payload(), start)
         else:
             return ReqFactory.read(self._rand_key(), start)

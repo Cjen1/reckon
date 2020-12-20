@@ -1,31 +1,19 @@
-from mininet.node import Controller
-from mininet.cli import CLI
-from mininet.link import TCLink
-from mininet.log import info, setLogLevel
-from subprocess import call
-import importlib
+class LeaderFailure:
+    def leader_down(self):
+        leader = self.system.get_leader(self.cluster)
+        self.stoppers[self.system.get_node_tag(leader)]()
+        self.killed = leader
 
-setLogLevel('info')
+    def leader_recovery(self):
+        leader = self.killed
+        self.restarters[self.system.get_node_tag(leader)]()
 
-def leader_down(net, restarters, stoppers, service_name, state):
-    hosts = [ net[hostname] for hostname in filter(lambda i: i[0] == 'h', net.keys())]
-    ips = [host.IP() for host in hosts]
-    print(ips)
-
-    print("FAILURE: Stopping Leader")
-    leader = importlib.import_module('systems.%s.scripts.find_leader' % service_name).find_leader(hosts, ips)
-
-    print("Sending stop to", leader.name)
-    call(stoppers[leader.name])
-    state['res'] = restarters[leader.name]
-
-def leader_up(state):
-    print("FAILURE: Bringing leader back up")
-    state['res']()
-
-def setup(net, restarters, stoppers, service_name):
-    state  = {}
-    return [
-            lambda: leader_down(net, restarters, stoppers, service_name, state),
-            lambda: leader_up(state)
-            ]
+    def get_failures(self, cluster, system, restarters, stoppers):
+        self.cluster = cluster
+        self.system = system
+        self.restarters = restarters
+        self.stoppers = stoppers
+        return [
+            lambda self=self: self.leader_down(),
+            lambda self=self: self.leader_recovery(),
+        ]

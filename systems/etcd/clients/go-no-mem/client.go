@@ -10,6 +10,7 @@ import (
 
 	"github.com/Cjen1/rc_go"
 	"go.etcd.io/etcd/clientv3"
+	"google.golang.org/grpc"
 )
 
 type rc_cli struct {
@@ -46,6 +47,7 @@ func main() {
 	result_pipe := os.Args[3]
 
 	dialTimeout := 10 * time.Second
+	dialOptions := []grpc.DialOption{grpc.WithBlock()}
 
 	gen_cli := func() (rc_go.Client, error){
 		cli_v3, err := clientv3.New(clientv3.Config{
@@ -54,9 +56,10 @@ func main() {
 			DialKeepAliveTime:    dialTimeout / 2,
 			DialKeepAliveTimeout: dialTimeout * 2,
 			AutoSyncInterval:     dialTimeout / 2,
+			DialOptions:	      dialOptions,
 		})
 		cli := rc_cli{Client:cli_v3}
 		return cli,err
 	}
-	rc_go.Run(gen_cli, clientid, result_pipe, false, false)
+	rc_go.Run(gen_cli, clientid, result_pipe, false, true)
 }

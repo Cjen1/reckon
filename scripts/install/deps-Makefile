@@ -108,7 +108,8 @@ install-deps:
 		libzmq3-dev \
 		tmux \
 		screen \
-		psmisc 
+		psmisc \
+		iptables
 	
 	curl -L "https://github.com/protocolbuffers/protobuf/releases/download/v3.9.1/protoc-3.9.1-linux-x86_64.zip" > /tmp/pb.zip
 	unzip /tmp/pb.zip -d /tmp/pb

@@ -1,10 +1,10 @@
 import argparse
-import importlib
 
 from src.client_runner import run_test
 from src.distributions import register_ops_args
 from src.distributions import get_ops_provider
 from src.failures import register_failure_args, get_failure_provider
+from src.topologies import register_topo_args, get_topology_provider
 from systems import register_system_args, get_system
 
 # ------- Parse arguments --------------------------
@@ -13,10 +13,7 @@ parser = argparse.ArgumentParser(
 )
 
 register_system_args(parser)
-parser.add_argument("topology", help="The topology of the network under test")
-parser.add_argument(
-    "--topo_args", help="Configuration settings for the topology", default=""
-)
+register_topo_args(parser)
 register_ops_args(parser)
 register_failure_args(parser)
 parser.add_argument(
@@ -31,19 +28,6 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
-
-system = get_system(args)
-
-topo = args.topology
-topo_kwargs = (
-    dict([arg.split("=") for arg in args.topo_args.split(",")])
-    if args.topo_args != ""
-    else {}
-)
-print(topo, topo_kwargs)
-topo_module = importlib.import_module("src.topologies." + topo)
-
-failure_provider = get_failure_provider(args)
 
 ## A list of benchmark configs with defaults. Change values as appropriate when we have an
 ## idea of what values *are* appropriate.
@@ -60,7 +44,11 @@ for key, val in bench_defs.items():
 
 print(bench_args)
 
-net, cluster, clients = topo_module.setup(**topo_kwargs)
+system = get_system(args)
+
+net, cluster, clients = get_topology_provider(args).setup()
+
+failure_provider = get_failure_provider(args)
 
 restarters, stoppers = system.start_nodes(cluster)
 if args.d:

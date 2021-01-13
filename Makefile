@@ -12,6 +12,14 @@ docker: build
 	     --network host --name rc \
 	     cjen1/rc:latest
 
+docker-ssd: build
+	docker run -it --privileged -e DISPLAY \
+             -v /lib/modules:/lib/modules \
+	     -v /local/scratch-ssd/cjj39/data:/data \
+	     --network host --name rc \
+	     cjen1/rc:latest
+
+
 build-nocache: protobuf
 	docker build --no-cache -t cjen1/rc:latest .
 

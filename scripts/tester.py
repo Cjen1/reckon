@@ -1,6 +1,4 @@
 from subprocess import call, Popen
-import numpy as np
-from itertools import product
 
 
 def call_tcp_dump(tag, cmd):
@@ -20,107 +18,69 @@ def call_tcp_dump(tag, cmd):
     p.terminate()
 
 
-abs_path = "/root/mounted/Resolving-Consensus"
-
-for rate in [100]:
-    for n in [3]:
-        for [system, client] in [["etcd", "go-no-mem"]]:
-            for failure in ["partial-partition"]:
-                tag = "{0}_{1}_{2}_{3}".format(n, rate, system, failure)
-                call_tcp_dump(
-                    tag,
-                    [
-                        "python",
-                        "benchmark.py",
-                        system,
-                        "simple",
-                        "uniform",
-                        failure,
-                        "--client",
-                        client,
-                        "--system_logs",
-                        "/results/logs",
-                        "--topo_args",
-                        ("n={0},nc=1".format(n)),
-                        "--benchmark_config",
-                        (
-                            "rate={0},".format(rate)
-                            + "duration=600,"
-                            + "test_results_location=/results/res_"
-                            + tag
-                            + ".res,"
-                            + "logs=/results/log_"
-                            + tag
-                            + ".log"
-                        ),
-                    ],
-                )
-                call(["bash", "scripts/clean.sh"])
+def run_test(system, client, rate, topo, nn, nc, failure, tag, duration):
+    call_tcp_dump(
+        tag,
+        [
+            "python",
+            "benchmark.py",
+            system,
+            topo,
+            "--number-nodes",
+            nn,
+            "--number-clients",
+            nc,
+            "uniform",
+            failure,
+            "--client",
+            client,
+            "--system_logs",
+            "/results/logs",
+            "--benchmark_config",
+            (
+                "rate={0},".format(rate)
+                + "duration={0},".format(duration)
+                + "test_results_location=/results/res_"
+                + tag
+                + ".res,"
+                + "logs=/results/log_"
+                + tag
+                + ".log"
+            ),
+        ],
+    )
+    call(["bash", "scripts/clean.sh"])
 
 
-# for rate in [10000,20000,30000,40000,50000]:
-#    for n in [3]:
-#        system='etcd_go'
-#        tag = "{0}_{1}_{2}".format(n, rate, system)
-#        call_tcp_dump(
-#                tag,
-#                [
-#                    'python',
-#                    'benchmark.py',
-#                    system,
-#                    'tree',
-#                    '--topo_args',
-#                    (
-#                        'n_clusters={0}'.format(n)
-#                    ),
-#                    'uniform',
-#                    '--dist_args',
-#                    (
-#                        'write_ratio=1'
-#                    ),
-#                    'none',
-#                    '--benchmark_config',
-#                    (
-#                        'rate={0},'.format(rate) +
-#                        'duration=30,'+
-#                        'dest=/results/res_'+tag+'.res,'+
-#                        'logs=/results/log_'+tag+'.log'
-#                    ),
-#                    abs_path,
-#                ]
-#            )
-#        call(['bash', 'scripts/clean.sh'])
+## Validation
+#for rate in [1, 100, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000,16000, 17000, 18000, 19000, 20000]:
+#    for n in [3,5,7]:
+#        tag = "validation_{0}_{1}".format(n, rate)
+#        run_test("etcd", "go", rate, "simple", str(n), "1", "none", tag, "60")
+#
+
+for repeat in range(3):
+    # Leader failure
+    run_test("etcd", "go-no-mem", 500, "simple", "3", "1", "leader", "repeat{0}_leader_failure".format(repeat), "60")
+
+    # Partial Partition No Memory
+    run_test("etcd", "go-no-mem", 500, "simple", "3", "1", "partial-partition", "repeat{0}_part_no_mem".format(repeat), "600", )
+
+    # Partial Partition 100 clients
+    run_test(
+        "etcd", "go", 500, "simple", "3", "1", "partial-partition", "repeat{0}_part_100_cli".format(repeat), "600"
+    )
+
+    # Partial Partition No Check Quorum
+    run_test(
+        "etcdNoCQ", "go", 500, "simple", "3", "1", "partial-partition", "repeat{0}_no_cq".format(repeat), "600"
+    )
+
+    # Intermittent partial partiion
+    run_test(
+        "etcd", "go", 500, "simple", "3", "1", "intermittent", "repeat{0}_intermittent".format(repeat), "600"
+    )
 
 
-# for i in range(1):
-#    for failure in ['leader', 'follower']:
-#        for rate in [40000]:
-#            for n in [3]:
-#                for system in ['etcd_go']:
-#                    tag = "{0}_{1}_{2}_{3}_{4}.res".format(n, rate, system, failure, i)
-#                    call_tcp_dump(
-#                            tag,
-#                            [
-#                                'python',
-#                                'benchmark.py',
-#                                system,
-#                                'simple',
-#                                '--topo_args',
-#                                (
-#                                    'n={0},nc=1'.format(n)
-#                                ),
-#                                'uniform',
-#                                '--dist_args',
-#                                (
-#                                    'write_ratio=1'
-#                                ),
-#                                failure,
-#                                '--benchmark_config',
-#                                    'rate={0},'.format(rate) +
-#                                    'duration=120,'+
-#                                    'dest=/results/res_'+tag+'.res,'+
-#                                    'logs=/results/log_'+tag,
-#                                abs_path,
-#                            ]
-#                        )
-#                    call(['bash', 'scripts/clean.sh'])
+    # WAN colocated
+    run_test("etcd", "go", 1000, "wan", "7", "1", "none", "repeat{0}_wan_7".format(repeat), "60")

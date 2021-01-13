@@ -31,7 +31,7 @@ func (c rc_cli) Get(k string) (string, error) {
 }
 
 func main() {
-	log.Print("Client: Starting client")
+	log.Print("Client: Starting client memory client")
 
 	endpoints := strings.Split(os.Args[1], ",")
 	log.Printf("%v\n", endpoints)

@@ -28,7 +28,7 @@ def register_topo_args(parser):
         default=1,
     )
 
-    topo_group.add_argument("--link-latency", default="35ms")
+    topo_group.add_argument("--link-latency", default="20ms")
 
 
 def get_topology_provider(args):

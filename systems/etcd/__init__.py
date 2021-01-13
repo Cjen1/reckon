@@ -37,6 +37,8 @@ class ClientType(Enum):
 
 
 class Etcd(AbstractSystem):
+    binary_path = "systems/etcd/bin/etcd"
+
     def get_client(self, args):
         if args.client == str(ClientType.Go):
             return Go()
@@ -57,9 +59,9 @@ class Etcd(AbstractSystem):
         for host in cluster:
             tag = self.get_node_tag(host)
 
-            def start_cmd(cluster_state):
+            def start_cmd(cluster_state, tag=tag, host=host):
                 etcd_cmd = (
-                    "systems/etcd/bin/etcd "
+                    "{binary} "
                     + "--data-dir=/data/{tag} "
                     + "--name {tag} "
                     + "--initial-advertise-peer-urls http://{ip}:2380 "
@@ -72,6 +74,7 @@ class Etcd(AbstractSystem):
                     + "--heartbeat-interval=100 "
                     + "--election-timeout=500"
                 ).format(
+                    binary=self.binary_path,
                     tag=tag,
                     ip=host.IP(),
                     cluster=cluster_str,
@@ -138,3 +141,10 @@ class Etcd(AbstractSystem):
                 return leader
             except:
                 pass
+
+class EtcdNoCheckQuorum(Etcd):
+    binary_path = "systems/etcd/bin/etcd_sans_check_quorum"
+
+class EtcdDebug(Etcd):
+    binary_path = "systems/etcd/bin/etcd_debug"
+

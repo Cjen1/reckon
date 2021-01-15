@@ -45,6 +45,11 @@ func main() {
 	log.Printf("Client: creating file")
 	result_pipe := os.Args[3]
 
+	thread_number, err := strconv.Atoi(os.Args[4])
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	dialTimeout := 10 * time.Second
 
 	gen_cli := func() (rc_go.Client, error){
@@ -58,5 +63,5 @@ func main() {
 		cli := rc_cli{Client:cli_v3}
 		return cli,err
 	}
-	rc_go.Run(gen_cli, clientid, result_pipe, false, false)
+	rc_go.Run(gen_cli, clientid, result_pipe, false, false, thread_number)
 }

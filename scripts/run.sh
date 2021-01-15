@@ -4,10 +4,10 @@
 sudo rm -rf logs/*
 
 # Run test
-sudo bash -c "python scripts/tester.py"
+sudo bash -c "python scripts/tester.py" 2>&1 | tee /results/run.log
 
 # Clean state
 bash scripts/clean.sh
 
 # Return stats of test for approximate analysis
-python scripts/throughput.py /results/*.res
+python scripts/throughput.py /results/*.res 

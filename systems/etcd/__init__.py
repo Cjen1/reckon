@@ -9,7 +9,7 @@ from ..systems_classes import AbstractSystem, AbstractClient
 class Go(AbstractClient):
     def cmd(self, ips, client_id, result_address):
         client_path = "systems/etcd/clients/go/client"
-        return "{client_path} {ips} {client_id} {result_pipe}".format(
+        return "{client_path} {ips} {client_id} {result_pipe} 1000".format(
             client_path=client_path,
             ips=ips,
             client_id=str(client_id),
@@ -27,10 +27,31 @@ class GoNoMem(AbstractClient):
             result_pipe=result_address,
         )
 
+class Go10000(AbstractClient):
+    def cmd(self, ips, client_id, result_address):
+        client_path = "systems/etcd/clients/go/client"
+        return "{client_path} {ips} {client_id} {result_pipe} 10000".format(
+            client_path=client_path,
+            ips=ips,
+            client_id=str(client_id),
+            result_pipe=result_address,
+        )
+
+class Go100(AbstractClient):
+    def cmd(self, ips, client_id, result_address):
+        client_path = "systems/etcd/clients/go/client"
+        return "{client_path} {ips} {client_id} {result_pipe} 100".format(
+            client_path=client_path,
+            ips=ips,
+            client_id=str(client_id),
+            result_pipe=result_address,
+        )
 
 class ClientType(Enum):
     Go = "go"
     GoNoMem = "go-no-mem"
+    Go10000 = "go-10000"
+    Go100 = "go-100"
 
     def __str__(self):
         return self.value
@@ -44,6 +65,10 @@ class Etcd(AbstractSystem):
             return Go()
         elif args.client == str(ClientType.GoNoMem):
             return GoNoMem()
+        elif args.client == str(ClientType.Go10000):
+            return Go10000()
+        elif args.client == str(ClientType.Go100):
+            return Go100()
         else:
             raise Exception("Not supported client type: " + args.client)
 

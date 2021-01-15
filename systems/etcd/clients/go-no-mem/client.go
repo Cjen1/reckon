@@ -61,5 +61,5 @@ func main() {
 		cli := rc_cli{Client:cli_v3}
 		return cli,err
 	}
-	rc_go.Run(gen_cli, clientid, result_pipe, false, true)
+	rc_go.Run(gen_cli, clientid, result_pipe, false, true, 10000)
 }

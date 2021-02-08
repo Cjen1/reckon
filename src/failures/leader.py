@@ -13,7 +13,4 @@ class LeaderFailure:
         self.system = system
         self.restarters = restarters
         self.stoppers = stoppers
-        return [
-            lambda self=self: self.leader_down(),
-            lambda self=self: self.leader_recovery(),
-        ]
+        return [self.leader_down,self.leader_recovery]

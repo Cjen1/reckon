@@ -7,7 +7,7 @@ logging.basicConfig(
 )
 
 
-class IntermittentPPartitionFailure:
+class IntermittentFPartitionFailure:
     def __init__(self, sleep_duration):
         self.sleep_duration = sleep_duration
         self.partition = None
@@ -18,6 +18,7 @@ class IntermittentPPartitionFailure:
 
     def add_partition(self, host, remote):
         cmd = "iptables -I OUTPUT -d {0} -j DROP".format(remote.IP())
+        logging.debug("cmd on {0} = {1}".format(host.name, cmd))
         host.cmd(cmd, shell=True)
         self.partitioned.append(host)
 
@@ -25,19 +26,23 @@ class IntermittentPPartitionFailure:
         cmd = "iptables -D OUTPUT 1"
         for host in self.partitioned:
             host.cmd(cmd, shell=True)
+            logging.debug("cmd on {0} = {1}".format(host.name, cmd))
         self.partitioned = []
 
-    def initiate_partition(self):
+    def initiate_failure(self):
         leader = self.system.get_leader(self.cluster)
         non_leader = [h for h in self.cluster if not h == leader][0]
+        major_partition = [h for h in self.cluster if not h == non_leader]
         self.failure_fixed = threading.Event()
-        def thread_fn(self=self):
+        def thread_fn(self=self, leader=leader, non_leader=non_leader):
             while not self.failure_fixed.isSet():
-                print("Partitioning {0} {1}".format(leader.name, non_leader.name))
-                self.add_partition(leader, non_leader)
-                self.add_partition(non_leader, leader)
+                logging.debug("Partitioning {0} {1}".format([h.name for h in major_partition], non_leader.name))
+                for m in major_partition:
+                    self.add_partition(m, non_leader)
+                    self.add_partition(non_leader, m)
                 time.sleep(self.sleep_duration)
                 self.heal_partition()
+                time.sleep(self.sleep_duration)
 
         thread = threading.Thread(
                 target=thread_fn,
@@ -45,7 +50,7 @@ class IntermittentPPartitionFailure:
                 )
         thread.start()
 
-    def remove_partition(self):
+    def remove_failure(self):
         self.failure_fixed.set()
 
     def get_failures(self, cluster, system, restarters, stoppers):
@@ -53,6 +58,6 @@ class IntermittentPPartitionFailure:
         self.cluster = cluster
         self.system = system
         return [
-            lambda self=self: self.initiate_partition(),
-            lambda self=self: self.remove_partition(),
+            lambda self=self: self.initiate_failure(),
+            lambda self=self: self.remove_failure(),
         ]

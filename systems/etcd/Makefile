@@ -6,7 +6,7 @@ DOWNLOAD_URL=https://storage.googleapis.com/etcd
 install: client etcd
 
 .PHONY:etcd
-system: etcdVariants
+system:
 	rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
 	rm -rf /tmp/etcd-download && mkdir -p /tmp/etcd-download
 	curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
@@ -16,18 +16,6 @@ system: etcdVariants
 	cp /tmp/etcd-download/etcd bin/
 	cp /tmp/etcd-download/etcdctl bin/
 
-etcdVariants:
-	mkdir -p bin
-	cd altered_etcd_source \
-		&& git checkout NoCheckQuorum \
-		&& ETCD_SETUP_GOPATH=1 make build \
-		&& cp bin/etcd ../bin/etcd_sans_check_quorum
-	cd altered_etcd_source \
-		&& git checkout debug \
-		&& ETCD_SETUP_GOPATH=1 make build \
-		&& cp bin/etcd ../bin/etcd_debug
-
 .PHONY:client
 client:
 	cd clients/go/ && make build
-	cd clients/go-no-mem/ && make build

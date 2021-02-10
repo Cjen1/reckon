@@ -13,6 +13,7 @@ class AbstractSystem(object):
         ctime = time.localtime()
         creation_time = time.strftime("%H:%M:%S", ctime)
 
+        self.system_type = args.system_type
         self.log_location = args.system_logs
         if not os.path.exists(args.system_logs):
             os.makedirs(args.system_logs)
@@ -35,10 +36,13 @@ class AbstractSystem(object):
         cmd = 'screen -dmS {tag} bash -c "{command}"'.format(
             tag=self.get_node_tag(host), command=command
         )
+        print("Starting screen on {0} with cmd {1}".format(host.name, cmd))
         host.popen(shlex.split(cmd), stdout=FNULL, stderr=FNULL)
 
     def kill_screen(self, host):
-        host.cmd(shlex.split(("screen -X -S {0} quit").format(self.get_node_tag(host))))
+        cmd = ("screen -X -S {0} quit").format(self.get_node_tag(host))
+        print("Killing screen on host {0} with cmd {1}".format(host.name, cmd))
+        host.cmd(shlex.split(cmd))
 
     def add_logging(self, cmd, tag):
         return cmd + " 2>&1 | tee -a {log}/{time_tag}_{tag}".format(

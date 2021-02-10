@@ -30,11 +30,11 @@ ADD src/utils src/utils
 #- etcd -------------
 
 FROM base as etcd_builder
-ADD systems/etcd/clients systems/etcd/clients
 ADD systems/etcd/Makefile systems/etcd/Makefile
-RUN cd systems/etcd && make client
 ADD systems/etcd/altered_etcd_source systems/etcd/altered_etcd_source
 RUN cd systems/etcd && make system
+ADD systems/etcd/clients systems/etcd/clients
+RUN cd systems/etcd && make client
 
 #- benchmark --------
 

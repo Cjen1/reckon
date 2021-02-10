@@ -1,14 +1,10 @@
 module client
 
-replace github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.0.0
-
-replace google.golang.org/grpc => google.golang.org/grpc v1.23.0
-
 require (
-	github.com/coreos/etcd v3.3.18+incompatible // indirect
+	github.com/Cjen1/rc_go v0.0.0-20210121150301-e510be8ca351
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/protobuf v1.3.2
 	github.com/pebbe/zmq4 v1.0.0 // indirect
-	go.etcd.io/etcd v3.3.8+incompatible
-	google.golang.org/grpc v1.26.0 // indirect
+	go.etcd.io/etcd v0.0.0-20201125193152-8a03d2e9614b // indirect
+	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
 )

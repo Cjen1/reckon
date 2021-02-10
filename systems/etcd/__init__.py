@@ -7,51 +7,24 @@ from ..systems_classes import AbstractSystem, AbstractClient
 
 
 class Go(AbstractClient):
+    def __init__(self, args):
+        self.ncpr = args.new_client_per_request
+
     def cmd(self, ips, client_id, result_address):
-        client_path = "systems/etcd/clients/go/client"
-        return "{client_path} {ips} {client_id} {result_pipe} 1000".format(
+        client_path = "systems/etcd/clients/go-3.4/client"
+        return "{client_path} --targets={ips} --id={client_id} --results={result_pipe} --ncpr={ncpr}".format(
             client_path=client_path,
             ips=ips,
             client_id=str(client_id),
             result_pipe=result_address,
-        )
-
-
-class GoNoMem(AbstractClient):
-    def cmd(self, ips, client_id, result_address):
-        client_path = "systems/etcd/clients/go-no-mem/client"
-        return "{client_path} {ips} {client_id} {result_pipe}".format(
-            client_path=client_path,
-            ips=ips,
-            client_id=str(client_id),
-            result_pipe=result_address,
-        )
-
-class Go10000(AbstractClient):
-    def cmd(self, ips, client_id, result_address):
-        client_path = "systems/etcd/clients/go/client"
-        return "{client_path} {ips} {client_id} {result_pipe} 10000".format(
-            client_path=client_path,
-            ips=ips,
-            client_id=str(client_id),
-            result_pipe=result_address,
-        )
-
-class Go100(AbstractClient):
-    def cmd(self, ips, client_id, result_address):
-        client_path = "systems/etcd/clients/go/client"
-        return "{client_path} {ips} {client_id} {result_pipe} 100".format(
-            client_path=client_path,
-            ips=ips,
-            client_id=str(client_id),
-            result_pipe=result_address,
+            ncpr=self.ncpr
         )
 
 class ClientType(Enum):
     Go = "go"
-    GoNoMem = "go-no-mem"
-    Go10000 = "go-10000"
-    Go100 = "go-100"
+    GoTrackClient = "go-track-client"
+    GoAsync = "go-async"
+    Go34 = "go-3.4"
 
     def __str__(self):
         return self.value
@@ -62,13 +35,7 @@ class Etcd(AbstractSystem):
 
     def get_client(self, args):
         if args.client == str(ClientType.Go):
-            return Go()
-        elif args.client == str(ClientType.GoNoMem):
-            return GoNoMem()
-        elif args.client == str(ClientType.Go10000):
-            return Go10000()
-        elif args.client == str(ClientType.Go100):
-            return Go100()
+            return Go(args)
         else:
             raise Exception("Not supported client type: " + args.client)
 
@@ -114,7 +81,7 @@ class Etcd(AbstractSystem):
             # We use the default arguemnt to capture the host variable semantically rather than lexically
             stoppers[tag] = lambda host=host: self.kill_screen(host)
 
-            restarters[tag] = lambda host=host: self.start_screen(
+            restarters[tag] = lambda host=host, start_cmd=start_cmd: self.start_screen(
                 host, start_cmd("existing")
             )
 

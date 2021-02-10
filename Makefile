@@ -5,7 +5,7 @@ SHELL := /bin/bash
 build: protobuf
 	docker build -t cjen1/rc:latest .
 
-docker: build
+docker-tmpfs: build
 	docker run -it --privileged -e DISPLAY \
              -v /lib/modules:/lib/modules \
 	     --tmpfs /data \

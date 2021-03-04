@@ -1,7 +1,7 @@
 module client
 
 require (
-	github.com/Cjen1/rc_go v0.0.0-20210215190143-c8183aba9966
+	github.com/Cjen1/rc_go v0.0.0-20210217163701-ee753d042f15 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/protobuf v1.3.2
 	github.com/pebbe/zmq4 v1.0.0 // indirect

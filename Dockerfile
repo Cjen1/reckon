@@ -31,7 +31,6 @@ ADD src/utils src/utils
 
 FROM base as etcd_builder
 ADD systems/etcd/Makefile systems/etcd/Makefile
-ADD systems/etcd/altered_etcd_source systems/etcd/altered_etcd_source
 RUN cd systems/etcd && make system
 ADD systems/etcd/clients systems/etcd/clients
 RUN cd systems/etcd && make client

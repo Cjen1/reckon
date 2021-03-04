@@ -19,3 +19,4 @@ system:
 .PHONY:client
 client:
 	cd clients/go/ && make build
+	cd clients/go-tracer && make build

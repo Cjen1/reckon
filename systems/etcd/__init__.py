@@ -2,29 +2,32 @@ from enum import Enum
 from sys import stdout
 import subprocess
 import os
+import logging
 
 from ..systems_classes import AbstractSystem, AbstractClient
 
 
 class Go(AbstractClient):
+    client_path = "systems/etcd/clients/go/client"
+
     def __init__(self, args):
         self.ncpr = args.new_client_per_request
 
     def cmd(self, ips, client_id, result_address):
-        client_path = "systems/etcd/clients/go-3.4/client"
         return "{client_path} --targets={ips} --id={client_id} --results={result_pipe} --ncpr={ncpr}".format(
-            client_path=client_path,
+            client_path=self.client_path,
             ips=ips,
             client_id=str(client_id),
             result_pipe=result_address,
             ncpr=self.ncpr
         )
 
+class GoTracer(Go):
+    client_path = "systems/etcd/clients/go-tracer/client"
+
 class ClientType(Enum):
     Go = "go"
-    GoTrackClient = "go-track-client"
-    GoAsync = "go-async"
-    Go34 = "go-3.4"
+    GoTracer = "go-tracer"
 
     def __str__(self):
         return self.value
@@ -32,10 +35,13 @@ class ClientType(Enum):
 
 class Etcd(AbstractSystem):
     binary_path = "systems/etcd/bin/etcd"
+    additional_flags = ""
 
     def get_client(self, args):
         if args.client == str(ClientType.Go):
             return Go(args)
+        elif args.client == str(ClientType.GoTracer):
+            return GoTracer(args)
         else:
             raise Exception("Not supported client type: " + args.client)
 
@@ -65,6 +71,7 @@ class Etcd(AbstractSystem):
                     + "--initial-cluster-state {cluster_state} "
                     + "--heartbeat-interval=100 "
                     + "--election-timeout=500"
+                    + ((" " + self.additional_flags) if self.additional_flags != "" else "")
                 ).format(
                     binary=self.binary_path,
                     tag=tag,
@@ -134,9 +141,5 @@ class Etcd(AbstractSystem):
             except:
                 pass
 
-class EtcdNoCheckQuorum(Etcd):
-    binary_path = "systems/etcd/bin/etcd_sans_check_quorum"
-
-class EtcdDebug(Etcd):
-    binary_path = "systems/etcd/bin/etcd_debug"
-
+class EtcdPreVote(Etcd):
+    additional_flags = "--pre-vote=True"

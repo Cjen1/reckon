@@ -16,20 +16,20 @@ type myClient struct {
 	clients []*clientv3.Client
 	endpoints []string
 	r_id int
-	mtx *sync.Mutex
+	mtx sync.Mutex
 }
 
-func (c myClient) get_client() (*clientv3.Client, string) {
+func (c *myClient) get_client() (*clientv3.Client, string) {
 	c.mtx.Lock()
 	r_id := c.r_id
-	c.r_id ++
+	c.r_id = c.r_id + 1
 	c.mtx.Unlock()
 	id := r_id % len(c.clients)
 	return c.clients[id],c.endpoints[id]
 }
 
 type rc_cli struct {
-	Client myClient
+	Client *myClient
 }
 
 func (c rc_cli) Close() {
@@ -52,7 +52,7 @@ func (c rc_cli) Get(k string) (string, string, error) {
 
 func main() {
 	log.Print("Client: Starting client memory client")
-	f_endpoints := flag.String("targets", "", "Endpoints to send to ie: http://127.0.0.1:4000, http://127.0.0.1:4001")
+	f_endpoints := flag.String("targets", "", "Endpoints to send to ie: http://127.0.0.1:4000,http://127.0.0.1:4001")
 	f_client_id := flag.Int("id", -1, "Client id")
 	f_new_client_per_request := flag.Bool("ncpr", false, "New client per request")
 	f_res_pipe := flag.String("results", "", "Result file")
@@ -72,7 +72,7 @@ func main() {
 				DialTimeout:          dialTimeout,
 				DialKeepAliveTime:    dialTimeout / 2,
 				DialKeepAliveTimeout: dialTimeout * 2,
-				AutoSyncInterval:     dialTimeout / 2,
+				AutoSyncInterval:     0,
 			})
 			if err != nil {
 				return nil, err
@@ -80,11 +80,11 @@ func main() {
 			clients[i] = client
 		}
 		cli := rc_cli{
-			Client:myClient{
+			Client:&myClient{
 				clients:clients,
 				endpoints:endpoints,
 				r_id:0,
-				mtx:&sync.Mutex{},
+				mtx:sync.Mutex{},
 			},
 		}
 		return cli,nil

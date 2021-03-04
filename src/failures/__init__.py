@@ -11,7 +11,7 @@ class FailureType(Enum):
     FLeader = "leader"
     FPartialPartition = "partial-partition"
     FIntermittentPP = "intermittent-partial"
-    FIntermittentOtherNodes = "intermittent-full"
+    FIntermittentFP = "intermittent-full"
 
     def __str__(self):
         return self.value

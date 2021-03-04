@@ -10,11 +10,6 @@ import random
 
 import logging
 
-logging.basicConfig(
-    format="%(asctime)s %(message)s", datefmt="%I:%M:%S %p", level=logging.DEBUG
-)
-
-
 from Queue import Empty as QEmpty, Full as QFull
 from src.utils.req_factory import ReqFactory
 import src.utils.message_pb2 as msg_pb

@@ -83,7 +83,7 @@ class Etcd(AbstractSystem):
                 return self.add_logging(etcd_cmd, tag + ".log")
 
             self.start_screen(host, start_cmd("new"))
-            print("Start cmd: " + start_cmd("new"))
+            logging.debug("Start cmd: " + start_cmd("new"))
 
             # We use the default arguemnt to capture the host variable semantically rather than lexically
             stoppers[tag] = lambda host=host: self.kill_screen(host)
@@ -95,7 +95,7 @@ class Etcd(AbstractSystem):
         return restarters, stoppers
 
     def start_client(self, client, client_id, cluster):
-        print("starting microclient: " + str(client_id))
+        logging.debug("starting microclient: " + str(client_id))
         tag = self.get_client_tag(client)
         result_address = "src/utils/sockets/" + tag
 
@@ -108,7 +108,7 @@ class Etcd(AbstractSystem):
         cmd = self.client_class.cmd(args_ips, client_id, result_address)
         cmd = self.add_logging(cmd, tag + ".log")
 
-        print("Starting client with: ", cmd)
+        logging.debug("Starting client with: " + cmd)
         FNULL = open(os.devnull, "w")
         sp = client.popen(
             cmd, stdin=subprocess.PIPE, stdout=FNULL, stderr=FNULL, shell=True
@@ -119,9 +119,9 @@ class Etcd(AbstractSystem):
         return sp.stdin, results
 
     def parse_resp(self, resp):
-        print("--------------------------------------------------")
-        print(resp)
-        print("--------------------------------------------------")
+        logging.debug("--------------------------------------------------")
+        logging.debug(resp)
+        logging.debug("--------------------------------------------------")
         endpoint_statuses = resp.split("\n")[0:-1]
         leader = ""
         for endpoint in endpoint_statuses:

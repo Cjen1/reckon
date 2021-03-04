@@ -7,6 +7,12 @@ from src.failures import register_failure_args, get_failure_provider
 from src.topologies import register_topo_args, get_topology_provider
 from systems import register_system_args, get_system
 
+import logging
+logging.basicConfig(
+    format="%(asctime)s %(message)s", datefmt="%I:%M:%S %p", level=logging.DEBUG
+)
+
+
 # ------- Parse arguments --------------------------
 parser = argparse.ArgumentParser(
     description="Runs a benchmark of a local fault tolerant datastore"
@@ -42,7 +48,7 @@ if args.benchmark_config != "":
 for key, val in bench_defs.items():
     bench_args.setdefault(key, val)  # set as arg or as default value
 
-print(bench_args)
+logging.info(bench_args)
 
 system = get_system(args)
 
@@ -57,12 +63,12 @@ if args.d:
     CLI(net)
 else:
     duration = float(bench_args["duration"])
-    print("BENCHMARK: " + str(duration))
+    logging.info("BENCHMARK: " + str(duration))
 
     ops_provider = get_ops_provider(args)
     failures = failure_provider.get_failures(cluster, system, restarters, stoppers)
 
-    print("BENCHMARK: Starting Test")
+    logging.info("BENCHMARK: Starting Test")
     run_test(
         bench_args["test_results_location"],
         clients,
@@ -74,4 +80,4 @@ else:
         failures,
     )
 
-    print("Finished Test")
+    logging.info("Finished Test")

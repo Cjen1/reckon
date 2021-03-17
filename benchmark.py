@@ -80,4 +80,7 @@ else:
         failures,
     )
 
+    for stopper in stoppers.values():
+        stopper()
+
     logging.info("Finished Test")

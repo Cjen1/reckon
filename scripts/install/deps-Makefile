@@ -88,9 +88,6 @@ pip: pip-deps
 #--------------------------------------------------
 .PHONY:install-deps
 install-deps:
-	sudo add-apt-repository ppa:deadsnakes/ppa -y
-	sudo apt update --yes
-	sudo DEBIAN_FRONTEND=noninteractive apt upgrade --yes
 	sudo apt install -y \
 		python3 \
 		python \

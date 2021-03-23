@@ -12,7 +12,7 @@ class TopologyType(Enum):
 
 
 def register_topo_args(parser):
-    topo_group = parser.add_argument_group("distribution")
+    topo_group = parser.add_argument_group("topologies")
 
     topo_group.add_argument("topo_type", type=TopologyType, choices=list(TopologyType))
 

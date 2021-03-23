@@ -43,16 +43,16 @@ RUN mkdir /etcdbin
 RUN cd etcd && make && cp ./bin/* /etcdbin/
 RUN cd etcd/tools/benchmark && go build -o /etcdbin/etcdbench 
 
-#- ocaml ------------
-
-FROM base as ocaml_builder
-ENV OPAMYES=1
-RUN apt update && apt install liblapacke-dev libopenblas-dev zlib1g-dev -y
-ADD systems/ocaml-paxos/src/ocamlpaxos.opam systems/ocaml-paxos/src/ocamlpaxos.opam 
-RUN opam install --deps-only systems/ocaml-paxos/src -y
-ADD src/ocaml_client src/ocaml_client
-ADD src/utils/message.proto src/utils/message.proto 
-RUN cd src/ocaml_client && make install
+##- ocaml ------------
+#
+#FROM base as ocaml_builder
+#ENV OPAMYES=1
+#RUN apt update && apt install liblapacke-dev libopenblas-dev zlib1g-dev -y
+#ADD systems/ocaml-paxos/src/ocamlpaxos.opam systems/ocaml-paxos/src/ocamlpaxos.opam 
+#RUN opam install --deps-only systems/ocaml-paxos/src -y
+#ADD src/ocaml_client src/ocaml_client
+#ADD src/utils/message.proto src/utils/message.proto 
+#RUN cd src/ocaml_client && make install
 
 ##- ocaml-paxos ------
 #

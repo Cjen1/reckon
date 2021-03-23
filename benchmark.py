@@ -22,33 +22,14 @@ register_system_args(parser)
 register_topo_args(parser)
 register_ops_args(parser)
 register_failure_args(parser)
-parser.add_argument(
-    "--benchmark_config",
-    default="",
-    help="A comma separated list of benchmark parameters, eg. rate=500,duration=10.",
-)
-parser.add_argument(
-    "-d",
-    action="store_true",
-    help="Debug mode, sets up mininet, then waits in Mininet.CLI",
-)
+
+arg_group = parser.add_argument_group("benchmark")
+arg_group.add_argument("-d",action="store_true",help="Debug mode")
+arg_group.add_argument("--rate", type=float, default=10)
+arg_group.add_argument("--duration", type=float, default=120)
+arg_group.add_argument("--result-location", default="test.res")
 
 args = parser.parse_args()
-
-## A list of benchmark configs with defaults. Change values as appropriate when we have an
-## idea of what values *are* appropriate.
-bench_defs = {
-    "rate": 1,  # upper bound on reqs/sec
-    "duration": 160,  # duration of operation sending in seconds
-    "test_results_location": "test.res",
-}
-bench_args = {}
-if args.benchmark_config != "":
-    bench_args = dict([arg.split("=") for arg in args.benchmark_config.split(",")])
-for key, val in bench_defs.items():
-    bench_args.setdefault(key, val)  # set as arg or as default value
-
-logging.info(bench_args)
 
 system = get_system(args)
 
@@ -62,19 +43,16 @@ if args.d:
 
     CLI(net)
 else:
-    duration = float(bench_args["duration"])
-    logging.info("BENCHMARK: " + str(duration))
-
     ops_provider = get_ops_provider(args)
     failures = failure_provider.get_failures(cluster, system, restarters, stoppers)
 
     logging.info("BENCHMARK: Starting Test")
     run_test(
-        bench_args["test_results_location"],
+        args.result_location,
         clients,
         ops_provider,
-        bench_args["rate"],
-        bench_args["duration"],
+        args.rate,
+        args.duration,
         system,
         cluster,
         failures,

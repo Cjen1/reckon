@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"log"
-	"os"
-	"strconv"
 	"strings"
 	"time"
+	"flag"
 
 	"github.com/Cjen1/rc_go"
 	"go.etcd.io/etcd/clientv3"
@@ -31,19 +30,16 @@ func (c rc_cli) Get(k string) (string, error) {
 }
 
 func main() {
-	log.Print("Client: Starting client")
+	log.Print("Client: Starting client memory client")
+	f_endpoints := flag.String("targets", "", "Endpoints to send to ie: http://127.0.0.1:4000, http://127.0.0.1:4001")
+	f_client_id := flag.Int("id", -1, "Client id")
+	f_new_client_per_request := flag.Bool("ncpr", false, "New client per request")
+	f_res_pipe := flag.String("results", "", "Result file")
 
-	endpoints := strings.Split(os.Args[1], ",")
+	flag.Parse()
+
+	endpoints := strings.Split(*f_endpoints, ",")
 	log.Printf("%v\n", endpoints)
-
-	i, err := strconv.ParseUint(os.Args[2], 10, 32)
-	if err != nil {
-		log.Fatal(err)
-	}
-	clientid := uint32(i)
-
-	log.Printf("Client: creating file")
-	result_pipe := os.Args[3]
 
 	dialTimeout := 10 * time.Second
 
@@ -58,5 +54,5 @@ func main() {
 		cli := rc_cli{Client:cli_v3}
 		return cli,err
 	}
-	rc_go.Run(gen_cli, clientid, result_pipe, false, false)
+	rc_go.Run(gen_cli, uint32(*f_client_id), *f_res_pipe, *f_new_client_per_request)
 }

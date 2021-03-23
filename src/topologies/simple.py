@@ -3,62 +3,43 @@ from mininet.node import Controller, UserSwitch, IVSSwitch, OVSSwitch
 from mininet.log import info, setLogLevel
 
 setLogLevel("info")
-import importlib
-
-switch_num = 1
 
 
-def add_switch(net):
-    global switch_num
-    res = "s%s" % str(switch_num)
-    switch_num += 1
-    return net.addSwitch(res)
+class SimpleTopologyProvider:
+    def __init__(self, number_nodes, number_clients):
+        self.number_nodes = number_nodes
+        self.number_clients = number_clients
 
+        self.switch_num = 0
+        self.host_num = 0
+        self.client_num = 0
 
-host_num = 1
+    def add_switch(self):
+        name = "s%s" % str(self.switch_num + 1)
+        self.switch_num += 1
+        return self.net.addSwitch(name)
 
+    def add_host(self):
+        name = "h%s" % str(self.host_num + 1)
+        self.host_num += 1
+        return self.net.addHost(name)
 
-def add_host(net):
-    global host_num
-    res = "h%s" % str(host_num)
-    host_num += 1
-    return net.addHost(res)
+    def add_client(self):
+        name = "mc%s" % str(self.client_num + 1)
+        self.client_num += 1
+        return self.net.addHost(name)
 
+    def setup(self):
+        self.net = Mininet(controller=Controller)
+        self.net.addController("c0")
+        sw = self.add_switch()
 
-client_num = 1
+        hosts = [self.add_host() for _ in range(self.number_nodes)]
+        clients = [self.add_client() for _ in range(self.number_clients)]
 
+        for host in hosts + clients:
+            self.net.addLink(host, sw)
 
-def add_client(net):
-    global client_num
-    res = "mc%s" % str(client_num)
-    client_num += 1
-    return net.addHost(res)
+        self.net.start()
 
-
-def setup(n="3", nc="10"):
-    n = int(n)
-    nc = int(nc)
-    # - Core setup -------
-
-    net = Mininet(controller=Controller)
-    info("*** Adding controller\n")
-    net.addController("c0")
-
-    info("*** Adding switches\n")
-    sw = add_switch(net)
-
-    info("*** Adding hosts and links\n")
-    cluster = [add_host(net) for _ in range(n)]
-
-    clients = [add_client(net) for _ in range(nc)]
-
-    for host in cluster:
-        net.addLink(host, sw)
-    for client in clients:
-        net.addLink(client, sw)
-
-    net.start()
-
-    cluster_ips = [host.IP() for host in cluster]
-
-    return (net, cluster, clients)
+        return (self.net, hosts, clients)

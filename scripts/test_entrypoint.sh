@@ -6,9 +6,9 @@ service openvswitch-switch start
 ovs-vsctl set-manager ptcp:6640
 
 timeout 30 \
-	python benchmark.py etcd --client go --system_logs ./logs \
-	simple --topo_args n=1,nc=1 uniform --write-ratio 1 none \
-	--benchmark_config rate=1000,duration=10
+	python benchmark.py etcd simple --number-nodes 3 --number-clients 1 \
+	uniform --write-ratio 0.5 none \
+	--client go --benchmark_config rate=1000,duration=10
 
 EXITCODE=$?
 

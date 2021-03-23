@@ -8,6 +8,7 @@ logging.basicConfig(
 class PPartitionFailure:
     def partition(self, host, remote):
         cmd = "iptables -I OUTPUT -d {0} -j DROP".format(remote.IP())
+        logging.debug("cmd on {0} = {1}".format(host.name, cmd))
         host.cmd(cmd, shell=True)
         self.partitioned.append(host)
 
@@ -22,6 +23,7 @@ class PPartitionFailure:
         cmd = "iptables -D OUTPUT 1"
         for host in self.partitioned:
             host.cmd(cmd, shell=True)
+            logging.debug("cmd on {0} = {1}".format(host.name, cmd))
         self.partitioned = []
 
     def get_failures(self, cluster, system, restarters, stoppers):

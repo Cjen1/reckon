@@ -21,3 +21,6 @@ systems/zookeeper/clients/java/Client.jar
 
 **/.merlin
 .vscode
+
+src/go
+src/rc_go

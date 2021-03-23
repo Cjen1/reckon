@@ -24,7 +24,7 @@ def register_ops_args(parser):
     dist_group.add_argument(
         "--write-ratio",
         type=float,
-        default=0.5,
+        default=1,
         help="percentage of client's write operation, defaults to %(default)s",
     )
 

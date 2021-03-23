@@ -30,13 +30,10 @@ ADD src/utils src/utils
 #- etcd -------------
 
 FROM base as etcd_builder
-ADD systems/etcd/clients systems/etcd/clients
 ADD systems/etcd/Makefile systems/etcd/Makefile
 RUN cd systems/etcd && make system
-#Invalidate cache if client library has been updated
-#COPY src/go/src/github.com/Cjen1/rc_go rc_go
+ADD systems/etcd/clients systems/etcd/clients
 RUN cd systems/etcd && make client
-
 
 #- benchmark --------
 
@@ -74,16 +71,13 @@ RUN cd src/ocaml_client && make install
 #--------------------------------------------------
 FROM base 
 
-#ADD systems/zookeeper systems/zookeeper
-#RUN make zk_install
-
 #- Install tools ----
 
 RUN mkdir /results
 RUN mkdir /results/logs
 
 RUN mkdir bins logs
-COPY --from=benchmark /etcdbin/* bins/
+COPY --from=benchmark /etcdbin/etcdbench bins/
 RUN echo 'export PATH=$PATH:~/bins/' >> ~/.bashrc
 
 RUN git clone https://github.com/brendangregg/FlameGraph /results/FlameGraph

@@ -1,11 +1,17 @@
 import argparse
-import importlib
 
 from src.client_runner import run_test
 from src.distributions import register_ops_args
 from src.distributions import get_ops_provider
 from src.failures import register_failure_args, get_failure_provider
+from src.topologies import register_topo_args, get_topology_provider
 from systems import register_system_args, get_system
+
+import logging
+logging.basicConfig(
+    format="%(asctime)s %(message)s", datefmt="%I:%M:%S %p", level=logging.DEBUG
+)
+
 
 # ------- Parse arguments --------------------------
 parser = argparse.ArgumentParser(
@@ -13,10 +19,7 @@ parser = argparse.ArgumentParser(
 )
 
 register_system_args(parser)
-parser.add_argument("topology", help="The topology of the network under test")
-parser.add_argument(
-    "--topo_args", help="Configuration settings for the topology", default=""
-)
+register_topo_args(parser)
 register_ops_args(parser)
 register_failure_args(parser)
 parser.add_argument(
@@ -32,19 +35,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-system = get_system(args)
-
-topo = args.topology
-topo_kwargs = (
-    dict([arg.split("=") for arg in args.topo_args.split(",")])
-    if args.topo_args != ""
-    else {}
-)
-print(topo, topo_kwargs)
-topo_module = importlib.import_module("src.topologies." + topo)
-
-failure_provider = get_failure_provider(args)
-
 ## A list of benchmark configs with defaults. Change values as appropriate when we have an
 ## idea of what values *are* appropriate.
 bench_defs = {
@@ -58,9 +48,13 @@ if args.benchmark_config != "":
 for key, val in bench_defs.items():
     bench_args.setdefault(key, val)  # set as arg or as default value
 
-print(bench_args)
+logging.info(bench_args)
 
-net, cluster, clients = topo_module.setup(**topo_kwargs)
+system = get_system(args)
+
+net, cluster, clients = get_topology_provider(args).setup()
+
+failure_provider = get_failure_provider(args)
 
 restarters, stoppers = system.start_nodes(cluster)
 if args.d:
@@ -69,12 +63,12 @@ if args.d:
     CLI(net)
 else:
     duration = float(bench_args["duration"])
-    print("BENCHMARK: " + str(duration))
+    logging.info("BENCHMARK: " + str(duration))
 
     ops_provider = get_ops_provider(args)
     failures = failure_provider.get_failures(cluster, system, restarters, stoppers)
 
-    print("BENCHMARK: Starting Test")
+    logging.info("BENCHMARK: Starting Test")
     run_test(
         bench_args["test_results_location"],
         clients,
@@ -86,4 +80,7 @@ else:
         failures,
     )
 
-    print("Finished Test")
+    for stopper in stoppers.values():
+        stopper()
+
+    logging.info("Finished Test")

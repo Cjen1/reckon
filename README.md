@@ -6,7 +6,7 @@
 
 Run `make docker` to build a docker container containing all dependencies required to run a test with any of the clients, and to subsequently start it up, putting you into a Bash shell.
 
-### Other methods
+### Manual approach
 
 - Install mininet
 - Build the relevant system and client via `cd systems/<relevant-system> && make system && make client`

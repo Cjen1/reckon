@@ -1,4 +1,4 @@
-# Consensus System Benchmark
+# Reckon - Benchmarking consensus systems for availability under failures.
 
 ## Installation
 

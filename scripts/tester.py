@@ -45,7 +45,7 @@ def run_test(system='etcd', topo='simple', nn='3', nc='1', write_rate='1', failu
     cmd = (
             "python benchmark.py {system} {topo} --number-nodes {nn} --number-clients {nc} uniform --write-ratio {write_ratio} " +
             "{failure} --mtbf {mtbf} --client {client} --new_client_per_request {ncpr} --system_logs /results/logs " +
-            "--benchmark_config rate={rate},duration={duration},test_results_location=/results/res_{tag}.res,logs=/results/log_{tag}.log"
+            "--rate {rate} --duration {duration} --result-location /results/res_{tag}.res"
         ).format(**config)
 
     cmd = shlex.split(cmd)
@@ -56,6 +56,13 @@ def run_test(system='etcd', topo='simple', nn='3', nc='1', write_rate='1', failu
 
 for repeat in range(5):
     tag = 'repeat-{0}'.format(repeat)
+    run_test(failure='leader', tag=tag)
+    run_test(failure='partial-partition', tag=tag)
+    run_test(failure='intermittent-partial', duration='600', mtbf='10', tag=tag)
+    run_test(failure='intermittent-full', duration='600', mtbf='10', tag=tag)
+    run_test(system='etcd-pre-vote', failure='partial-partition', tag=tag)
+    run_test(topo='wan', nn='7', tag=tag)
+
     rates = [1,2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000]
     n_servers = [3,5,7,9]
     params = [v for v in it.product(rates, n_servers)]

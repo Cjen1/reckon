@@ -1,10 +1,10 @@
 SHELL := /bin/bash
 
-.PHONY:build docker runtest
-
+.PHONY:build
 build: protobuf
 	docker build -t cjen1/reckon:latest .
 
+.PHONY: docker
 docker: build
 	docker run -it --privileged -e DISPLAY \
 	     --tmpfs /data \

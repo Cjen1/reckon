@@ -1,13 +1,6 @@
 FROM iwaseyusuke/mininet as base
-ADD scripts/install/deps-Makefile Makefile
-#ensure bashrc is used
-SHELL ["/bin/bash", "-c", "-l"]
-
-#Need correct controller
-RUN ln /usr/bin/ovs-testcontroller /usr/bin/controller
 
 ARG TZ=Europe/London
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
     build-essential \
     software-properties-common \
@@ -15,82 +8,38 @@ RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-ADD scripts/install/deps-Makefile Makefile
+RUN ln /usr/bin/ovs-testcontroller /usr/bin/controller
 
+ADD scripts/install/deps-Makefile Makefile
 RUN make pip
 
-RUN make op-deps
-
-RUN make zookeeper-deps
-
-ENV GOPATH /root/go
-ENV PATH $PATH:/usr/lib/go-1.11/bin
-ENV PATH $PATH:/root/go/bin
-RUN mkdir go
-RUN make etcd-deps
+# RUN make zookeeper-deps ??? do you support ZK currently?
 
 ADD src/utils src/utils
 
-#--------------------------------------------------
-#- etcd -------------
+RUN mkdir -p \
+    /results/logs \
+    bins \
+    logs
 
-FROM base as etcd_builder
-ADD systems/etcd/Makefile systems/etcd/Makefile
-RUN cd systems/etcd && make system
-ADD systems/etcd/clients systems/etcd/clients
-RUN cd systems/etcd && make client
+FROM benchmark-image as benchmark
 
-#- benchmark --------
+RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
+    strace \
+    linux-tools-generic
+    && rm -rf /var/lib/apt/lists/*
 
-FROM golang:1.14 as benchmark
-RUN git clone https://github.com/etcd-io/etcd.git
-RUN mkdir /etcdbin
-RUN cd etcd && make && cp ./bin/* /etcdbin/
-RUN cd etcd/tools/benchmark && go build -o /etcdbin/etcdbench
-
-##- ocaml ------------
-#
-#FROM base as ocaml_builder
-#ENV OPAMYES=1
-#RUN apt update && apt install liblapacke-dev libopenblas-dev zlib1g-dev -y
-#ADD systems/ocaml-paxos/src/ocamlpaxos.opam systems/ocaml-paxos/src/ocamlpaxos.opam
-#RUN opam install --deps-only systems/ocaml-paxos/src -y
-#ADD src/ocaml_client src/ocaml_client
-#ADD src/utils/message.proto src/utils/message.proto
-#RUN cd src/ocaml_client && make install
-
-##- ocaml-paxos ------
-#
-#FROM ocaml_builder as ocaml_paxos_builder
-#ADD systems/ocaml-paxos/Makefile systems/ocaml-paxos/Makefile
-#ADD systems/ocaml-paxos/src systems/ocaml-paxos/src
-#ADD systems/ocaml-paxos/clients systems/ocaml-paxos/clients
-#RUN cd systems/ocaml-paxos && make system
-##Invalidate cache if client library has been updated
-##COPY src/go/src/github.com/Cjen1/rc_go rc_go
-##COPY src/go/src/github.com/Cjen1/rc_go go-deps
-##COPY systems/ocaml-paxos/go go-deps
-#RUN cd systems/ocaml-paxos && make client
-
-
-#--------------------------------------------------
-FROM base
-
-#- Install tools ----
-
-RUN mkdir /results
-RUN mkdir /results/logs
-
-RUN mkdir bins logs
 COPY --from=benchmark /etcdbin/etcdbench bins/
 RUN echo 'export PATH=$PATH:~/bins/' >> ~/.bashrc
-
 RUN git clone https://github.com/brendangregg/FlameGraph /results/FlameGraph
+## ...do you need to COPY --from=benchmark something due to above?
 
-RUN apt update && apt install strace linux-tools-generic -y
+ADD . . ## given all teh selective ADDing until now, why this?
 
-ADD . .
+FROM etcd-image AS etcd
+COPY --from=etcd /root/systems/etcd systems/etcd
 
-#- Install binaries -
-COPY --from=etcd_builder /root/systems/etcd systems/etcd
-#COPY --from=ocaml_paxos_builder /root/systems/ocaml-paxos systems/ocaml-paxos
+FROM ocamlpaxos-image AS ocaml
+COPY --from=ocaml_builder /root/systems/ocaml-paxos systems/ocaml-paxos
+
+## ...etc for the other system that you build imgaes for elsewhere

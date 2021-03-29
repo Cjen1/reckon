@@ -1,0 +1,12 @@
+FROM ubuntu
+
+ENV GOPATH /root/go
+ENV PATH $PATH:/usr/lib/go-1.11/bin
+ENV PATH $PATH:/root/go/bin
+RUN mkdir go
+RUN make etcd-deps
+
+ADD systems/etcd/Makefile systems/etcd/Makefile
+RUN cd systems/etcd && make system
+ADD systems/etcd/clients systems/etcd/clients
+RUN cd systems/etcd && make client

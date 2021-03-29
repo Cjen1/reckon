@@ -1,11 +1,7 @@
 SHELL := /bin/bash
 
-.PHONY:build
-build: protobuf
-	docker build -t cjen1/reckon:latest .
-
-.PHONY: docker
-docker: build
+.PHONY: run
+run: build
 	docker run -it --privileged -e DISPLAY \
 	     --tmpfs /data \
 	     --network host --name reckon \
@@ -14,3 +10,17 @@ docker: build
 .PHONY: protobuf
 protobuf:
 	cd src && make protobuf
+
+.PHONY: etcd-image
+etcd-image:
+	docker build -f Dockerfile.etcd -t etcd-image .
+
+.PHONY: ocamlpaxos-image
+ocamlpaxos-image:
+	docker build -f Dockerfile.ocamlpaxos -t ocamlpaxos-image .
+
+## ...etc
+
+.PHONY:reckon
+reckon: protobuf
+	docker build -t cjen1/reckon:latest .

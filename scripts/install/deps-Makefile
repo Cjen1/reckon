@@ -11,7 +11,7 @@ ETCD_VER=v3.3.8
 DOWNLOAD_URL=https://storage.googleapis.com/etcd
 
 etcd-deps: install-deps go-install
-	sudo rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -rf /tmp/etcd-download 
+	sudo rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -rf /tmp/etcd-download
 	mkdir -p /tmp/etcd-download
 	sudo curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
 	sudo tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download --strip-components=1
@@ -25,7 +25,7 @@ go-install: install-deps
 	echo 'export PATH=$$PATH:~/go/bin' >> ~/.bashrc
 	echo 'export PATH=$$PATH:/usr/lib/go-1.11/bin' >> ~/.bashrc
 
-etcd_install: 
+etcd_install:
 	cd systems/etcd && \
 		make install
 
@@ -107,7 +107,7 @@ install-deps:
 		screen \
 		psmisc \
 		iptables
-	
+
 	curl -L "https://github.com/protocolbuffers/protobuf/releases/download/v3.9.1/protoc-3.9.1-linux-x86_64.zip" > /tmp/pb.zip
 	unzip /tmp/pb.zip -d /tmp/pb
 	sudo cp /tmp/pb/bin/protoc /usr/bin

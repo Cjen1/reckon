@@ -8,7 +8,12 @@ RUN ln /usr/bin/ovs-testcontroller /usr/bin/controller
 
 ARG TZ=Europe/London
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-RUN apt update && apt install software-properties-common build-essential sudo tzdata -y
+RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
+    build-essential \
+    software-properties-common \
+    sudo \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
 
 ADD scripts/install/deps-Makefile Makefile
 
@@ -37,21 +42,21 @@ RUN cd systems/etcd && make client
 
 #- benchmark --------
 
-FROM golang:1.14 as benchmark 
+FROM golang:1.14 as benchmark
 RUN git clone https://github.com/etcd-io/etcd.git
 RUN mkdir /etcdbin
 RUN cd etcd && make && cp ./bin/* /etcdbin/
-RUN cd etcd/tools/benchmark && go build -o /etcdbin/etcdbench 
+RUN cd etcd/tools/benchmark && go build -o /etcdbin/etcdbench
 
 ##- ocaml ------------
 #
 #FROM base as ocaml_builder
 #ENV OPAMYES=1
 #RUN apt update && apt install liblapacke-dev libopenblas-dev zlib1g-dev -y
-#ADD systems/ocaml-paxos/src/ocamlpaxos.opam systems/ocaml-paxos/src/ocamlpaxos.opam 
+#ADD systems/ocaml-paxos/src/ocamlpaxos.opam systems/ocaml-paxos/src/ocamlpaxos.opam
 #RUN opam install --deps-only systems/ocaml-paxos/src -y
 #ADD src/ocaml_client src/ocaml_client
-#ADD src/utils/message.proto src/utils/message.proto 
+#ADD src/utils/message.proto src/utils/message.proto
 #RUN cd src/ocaml_client && make install
 
 ##- ocaml-paxos ------
@@ -69,7 +74,7 @@ RUN cd etcd/tools/benchmark && go build -o /etcdbin/etcdbench
 
 
 #--------------------------------------------------
-FROM base 
+FROM base
 
 #- Install tools ----
 

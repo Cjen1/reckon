@@ -13,7 +13,6 @@ reckon: etcd-image
 
 .PHONY: etcd-image
 etcd-image: protobuf
-	cp src/utils/message.proto systems/etcd/message.proto
 	cd systems/etcd && docker build -t etcd-image .
 
 .PHONY: ocamlpaxos-image

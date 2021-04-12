@@ -1,16 +1,12 @@
-from multiprocessing import Pool, Manager, Queue, Value
-from subprocess import Popen
+from multiprocessing import Queue
 from threading import Thread
 import time
 import sys
-import os
 import json
-import zmq
 import random
 
 import logging
 
-from Queue import Empty as QEmpty, Full as QFull
 from src.utils.req_factory import ReqFactory
 import src.utils.message_pb2 as msg_pb
 import select

@@ -20,3 +20,13 @@ system:
 client:
 	cd clients/go/ && make build
 	cd clients/go-tracer && make build
+
+.PHONY:docker-build-deps
+docker-build-deps:
+	apt-get update && apt-get install --no-install-recommends -yy -qq \
+		unzip
+	curl -L "https://github.com/protocolbuffers/protobuf/releases/download/v3.9.1/protoc-3.9.1-linux-x86_64.zip" > /tmp/pb.zip
+	unzip /tmp/pb.zip -d /tmp/pb
+	cp /tmp/pb/bin/protoc /usr/bin
+	rm -r /tmp/pb
+	go get google.golang.org/protobuf/cmd/protoc-gen-go

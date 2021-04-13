@@ -24,6 +24,9 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
+          
+      - name: Install dependencies
+        run: apt install protobuf-compiler && 
 
       - name: Build dockerfile
         run: docker build -t cjen1/rc:latest .

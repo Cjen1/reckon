@@ -26,12 +26,12 @@ jobs:
           submodules: true
           
       - name: Install dependencies
-        run: apt install protobuf-compiler && 
+        run: sudo apt update && sudo apt install --no-install-recommends -yy -qq python-protobuf protobuf-compiler
 
       - name: Build dockerfile
-        run: docker build -t cjen1/rc:latest .
+        run: make reckon
 
       - name: Run basic test
         timeout-minutes: 10
         run: 
-          docker run --privileged --tmpfs /data -v /lib/modules:/lib/modules --network host --name rc --entrypoint /root/scripts/test_entrypoint.sh cjen1/rc:latest
+          docker run --privileged --tmpfs /data -v /lib/modules:/lib/modules --network host --name rc --entrypoint /root/scripts/test_entrypoint.sh cjen1/reckon:latest

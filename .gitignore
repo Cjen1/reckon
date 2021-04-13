@@ -24,3 +24,4 @@ systems/zookeeper/clients/java/Client.jar
 
 src/go
 src/rc_go
+src/utils/message_pb2.py*

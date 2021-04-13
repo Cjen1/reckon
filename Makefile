@@ -12,14 +12,12 @@ reckon: etcd-image
 	docker build -t cjen1/reckon:latest .
 
 .PHONY: etcd-image
-etcd-image: protobuf
+etcd-image:
 	cd systems/etcd && docker build -t etcd-image .
 
 .PHONY: ocamlpaxos-image
 ocamlpaxos-image:
 	docker build -f Dockerfile.ocamlpaxos -t ocamlpaxos-image .
-
-## ...etc
 
 .PHONY: protobuf
 protobuf:

@@ -26,7 +26,7 @@ jobs:
           submodules: true
           
       - name: Install dependencies
-        run: apt install protobuf-compiler && 
+        run: sudo apt update && sudo apt install --no-install-recommends -yy -qq python-protobuf protobuf-compiler
 
       - name: Build dockerfile
         run: make reckon

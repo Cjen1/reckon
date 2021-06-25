@@ -1,0 +1,18 @@
+open! Core
+open! Async
+
+val logger : Async_unix.Log.t
+
+module type Client = sig
+  type t
+
+  val put : t -> bytes -> bytes -> Time.t -> Message_types.response Deferred.t
+
+  val get : t -> bytes -> Time.t -> Message_types.response Deferred.t
+end
+
+module Make (Cli : Client) : sig
+  type client = Cli.t
+
+  val run : client -> int32 -> string -> unit Deferred.t
+end

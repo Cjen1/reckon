@@ -1,0 +1,11 @@
+(library
+ (name reckon)
+ (libraries core async ocaml-protoc ocplib-endian)
+ (preprocess
+  (pps ppx_jane ppx_log ppx_accessor)))
+
+(rule
+ (targets message_types.ml message_types.mli message_pb.ml message_pb.mli)
+ (deps message.proto)
+ (action
+  (run opam exec ocaml-protoc -- -binary -pp -ml_out ./ %{deps})))

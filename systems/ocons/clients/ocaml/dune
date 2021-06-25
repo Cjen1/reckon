@@ -1,0 +1,6 @@
+(executable
+ (name client)
+ (libraries base core async logs logs.fmt fmt.tty ppx_log rpc_parallel
+   accessor core_profiler ocons-core reckon)
+ (preprocess
+  (pps ppx_jane ppx_log ppx_accessor)))

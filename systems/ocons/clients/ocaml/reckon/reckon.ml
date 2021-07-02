@@ -11,15 +11,15 @@ let logger =
 module type Client = sig
   type t
 
-  val put : t -> bytes -> bytes -> Time.t -> Message_types.response Deferred.t
+  val put : t -> bytes -> bytes -> (unit, string) Deferred.Result.t
 
-  val get : t -> bytes -> Time.t -> Message_types.response Deferred.t
+  val get : t -> bytes -> (bytes, string) Deferred.Result.t
 end
 
 module Make (Cli : Client) : sig
   type client = Cli.t
 
-  val run : client -> string -> unit Deferred.t
+  val run : client -> int32 -> string -> unit Deferred.t
 end = struct
   module EB = EndianBytes.LittleEndian
   module MT = Message_types
@@ -29,15 +29,42 @@ end = struct
 
   type client = Cli.t
 
-  let perform op client start_time =
+  let mk_response res clientid client_start queue_start end_ optype =
+    let res = Result.join res in
+    MT.
+      { err= (match res with Ok _ -> "" | Error s -> s)
+      ; client_start=
+          client_start |> Time.to_span_since_epoch |> Time.Span.to_sec
+      ; queue_start= queue_start |> Time.to_span_since_epoch |> Time.Span.to_sec
+      ; end_= end_ |> Time.to_span_since_epoch |> Time.Span.to_sec
+      ; optype
+      ; response_time= -1.
+      ; clientid
+      ; target= "" }
+
+  let perform op client start_time clientid =
     let keybuf = Bytes.create 8 in
     match op with
     | MT.Put {key; value} ->
         Stdlib.Bytes.set_int64_ne keybuf 0 key ;
-        Cli.put client keybuf value start_time
+        let actual_start = Time.now () in
+        let%bind res =
+          let open Deferred.Monad_infix in
+          try_with (fun () -> Cli.put client keybuf value)
+          >>| function Ok v -> Ok v | Error e -> Error (Exn.to_string e)
+        in
+        let fin = Time.now () in
+        return @@ mk_response res clientid actual_start start_time fin "Write"
     | MT.Get {key} ->
         Stdlib.Bytes.set_int64_ne keybuf 0 key ;
-        Cli.get client keybuf start_time
+        let actual_start = Time.now () in
+        let%bind res =
+          let open Deferred.Monad_infix in
+          try_with (fun () -> Cli.get client keybuf)
+          >>| function Ok v -> Ok v | Error e -> Error (Exn.to_string e)
+        in
+        let fin = Time.now () in
+        return @@ mk_response res clientid actual_start start_time fin "Read"
 
   let fail_on_incomplete v =
     match%bind v with
@@ -80,7 +107,7 @@ end = struct
     let%bind () = Deferred.List.iter ~how:`Sequential ~f:iter res_list in
     [%log.info logger "Results returned"] ; Deferred.unit
 
-  let run client result_pipe =
+  let run client clientid result_pipe =
     let%bind result_pipe = Writer.open_file result_pipe in
     let in_pipe = Lazy.force Reader.stdin in
     [%log.debug logger "Preload"] ;
@@ -102,7 +129,7 @@ end = struct
       Pipe.fold op_stream ~init:[] ~f:(fun ops v ->
           match v with
           | MT.{prereq= true; _} ->
-              let%bind _res = perform v.op_type client (Time.now ()) in
+              let%bind _res = perform v.op_type client (Time.now ()) clientid in
               return ops
           | _ ->
               v :: ops |> return )
@@ -122,7 +149,7 @@ end = struct
     let start_time = Time.now () in
     let fold_op_list ops MT.{prereq= _; start; op_type= op} =
       let%bind () = Time.(add start_time (Span.of_sec start)) |> at in
-      let res = perform op client (Time.now ()) in
+      let res = perform op client (Time.now ()) clientid in
       res :: ops |> return
     in
     let%bind results = Deferred.List.fold ~init:[] ~f:fold_op_list op_list in

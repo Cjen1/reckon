@@ -1,5 +1,20 @@
 (lang dune 2.7)
-(name reckon-ocons)
+(name ocons-reckon-client)
 (authors "Chris Jensen")
 (allow_approximate_merlin)
 
+(package
+  (name ocons-reckon-client)
+  (synopsis "Reckon client for OCons implementations")
+  (depends
+    ocons-core
+    core
+    async
+    accessor_async
+    ocaml-protoc
+    ocplib-endian
+    ppx_log
+    ppx_accessor
+    dune
+    ppx_jane
+    ))

@@ -3,11 +3,12 @@
 (authors "Chris Jensen")
 (allow_approximate_merlin)
 
+(generate_opam_files true)
+
 (package
   (name ocons-reckon-client)
   (synopsis "Reckon client for OCons implementations")
   (depends
-    ocons-core
     core
     async
     accessor_async

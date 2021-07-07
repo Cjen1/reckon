@@ -8,16 +8,16 @@ run: reckon
 	     cjen1/reckon:latest
 
 .PHONY:reckon
-reckon: etcd-image
+reckon: etcd-image ocons-image
 	docker build -t cjen1/reckon:latest .
 
 .PHONY: etcd-image
 etcd-image:
 	cd systems/etcd && docker build -t etcd-image .
 
-.PHONY: ocamlpaxos-image
-ocamlpaxos-image:
-	docker build -f Dockerfile.ocamlpaxos -t ocamlpaxos-image .
+.PHONY: ocons-image
+ocons-image:
+	cd systems/ocons && docker build -t ocons-image .
 
 .PHONY: protobuf
 protobuf:
@@ -45,6 +45,7 @@ docker-build-deps:
 
 .PHONY:docker-install-runtime-deps
 docker-install-runtime-deps: python-deps protobuf
+	apt-get update 
 	apt-get install --no-install-recommends -yy -qq \
 		tmux \
 		screen \
@@ -53,3 +54,5 @@ docker-install-runtime-deps: python-deps protobuf
 		strace \
 		linux-tools-generic \
 		tcpdump
+	TZ="Europe/London" DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
+	pip install pandas

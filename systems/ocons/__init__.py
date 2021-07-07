@@ -7,89 +7,78 @@ import logging
 from ..systems_classes import AbstractSystem, AbstractClient
 
 
-class Go(AbstractClient):
-    client_path = "systems/etcd/clients/go/client"
+class OCaml(AbstractClient):
+    client_path = "systems/ocons/clients/ocaml/client"
 
     def __init__(self, args):
-        self.ncpr = args.new_client_per_request
+        pass
 
-    def cmd(self, ips, client_id, result_address):
-        return "{client_path} --targets={ips} --id={client_id} --results={result_pipe} --ncpr={ncpr}".format(
+    def cmd(self, ips, client_id):
+        return "{client_path} {ips} {client_id} -log-level debug".format(
             client_path=self.client_path,
             ips=ips,
             client_id=str(client_id),
-            result_pipe=result_address,
-            ncpr=self.ncpr
         )
 
-class GoTracer(Go):
-    client_path = "systems/etcd/clients/go-tracer/client"
 
 class ClientType(Enum):
-    Go = "go"
-    GoTracer = "go-tracer"
+    OCaml = "ocaml"
 
     def __str__(self):
         return self.value
 
 
-class Etcd(AbstractSystem):
-    binary_path = "systems/etcd/bin/etcd"
-    additional_flags = ""
+CLIENT_PORT = 2379
+INTERNAL_PORT = 2380
+
+
+class OCons(AbstractSystem):
+    binary_path = "not-a-real-system"
 
     def get_client(self, args):
-        if args.client == str(ClientType.Go):
-            return Go(args)
-        elif args.client == str(ClientType.GoTracer):
-            return GoTracer(args)
+        if args.client == str(ClientType.OCaml):
+            return OCaml(args)
         else:
             raise Exception("Not supported client type: " + args.client)
 
     def start_nodes(self, cluster):
-        cluster_str = ",".join(
-            self.get_node_tag(host) + "=http://" + host.IP() + ":2380"
-            for i, host in enumerate(cluster)
+        node_list = ",".join(
+            "{id}:{ip}:{port}".format(id=i, ip=node.IP(), port=INTERNAL_PORT)
+            for i, node in enumerate(cluster)
         )
 
         restarters = {}
         stoppers = {}
 
-        for host in cluster:
+        for node_id, host in enumerate(cluster):
             tag = self.get_node_tag(host)
 
-            def start_cmd(cluster_state, tag=tag, host=host):
-                etcd_cmd = (
+            def start_cmd(tag=tag, node_id=node_id):
+                ocons_cmd = (
                     "{binary} "
-                    + "--data-dir=/data/{tag} "
-                    + "--name {tag} "
-                    + "--initial-advertise-peer-urls http://{ip}:2380 "
-                    + "--listen-peer-urls http://{ip}:2380 "
-                    + "--listen-client-urls http://0.0.0.0:2379 "
-                    + "--advertise-client-urls http://{ip}:2379 "
-                    + "--initial-cluster {cluster} "
-                    + "--initial-cluster-token {cluster_token} "
-                    + "--initial-cluster-state {cluster_state} "
-                    + "--heartbeat-interval=100 "
-                    + "--election-timeout=500"
-                    + ((" " + self.additional_flags) if self.additional_flags != "" else "")
+                    + "{node_id} "
+                    + "{node_list} "
+                    + "{data_dir} "
+                    + "{CLIENT_PORT} "
+                    + "{INTERNAL_PORT} "
+                    + "5 0.1 -s 500"
                 ).format(
                     binary=self.binary_path,
-                    tag=tag,
-                    ip=host.IP(),
-                    cluster=cluster_str,
-                    cluster_state=cluster_state,
-                    cluster_token="urop_cluster",
+                    node_id=node_id,
+                    node_list=node_list,
+                    data_dir="/data/" + tag,
+                    CLIENT_PORT=CLIENT_PORT,
+                    INTERNAL_PORT=INTERNAL_PORT,
                 )
-                return self.add_logging(etcd_cmd, tag + ".log")
+                return self.add_logging(ocons_cmd, tag + ".log")
 
-            self.start_screen(host, start_cmd("new"))
-            logging.debug("Start cmd: " + start_cmd("new"))
+            self.start_screen(host, start_cmd())
+            logging.debug("Start cmd: " + start_cmd())
 
-            # We use the default arguemnt to capture the host variable semantically rather than lexically
             stoppers[tag] = lambda host=host: self.kill_screen(host)
 
             restarters[tag] = lambda host=host, start_cmd=start_cmd: self.start_screen(
-                host, start_cmd("existing")
+                host, start_cmd()
             )
 
         return restarters, stoppers
@@ -97,26 +86,22 @@ class Etcd(AbstractSystem):
     def start_client(self, client, client_id, cluster):
         logging.debug("starting microclient: " + str(client_id))
         tag = self.get_client_tag(client)
-        result_address = "src/utils/sockets/" + tag
 
-        args_ips = ",".join("http://" + host.IP() + ":2379" for host in cluster)
+        args_ips = ",".join(
+            "{ip}:{port}".format(ip=host.IP(), port=str(CLIENT_PORT))
+            for host in cluster
+        )
 
-        if os.path.exists(result_address):
-            os.unlink(result_address)
-        os.mkfifo(result_address)
-
-        cmd = self.client_class.cmd(args_ips, client_id, result_address)
-        cmd = self.add_logging(cmd, tag + ".log")
+        cmd = self.client_class.cmd(args_ips, client_id)
+        cmd = self.add_logging(cmd, tag + ".log", just_stderr=True)
 
         logging.debug("Starting client with: " + cmd)
         FNULL = open(os.devnull, "w")
         sp = client.popen(
-            cmd, stdin=subprocess.PIPE, stdout=FNULL, stderr=FNULL, shell=True
+            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=FNULL, shell=True
         )
 
-        results = open(result_address, "r")
-
-        return sp.stdin, results
+        return sp.stdin, sp.stdout
 
     def parse_resp(self, resp):
         logging.debug("--------------------------------------------------")
@@ -141,5 +126,6 @@ class Etcd(AbstractSystem):
             except:
                 pass
 
-class EtcdPreVote(Etcd):
-    additional_flags = "--pre-vote=True"
+
+class OConsPaxos(OCons):
+    binary_path = "systems/ocons/bins/ocons-paxos"

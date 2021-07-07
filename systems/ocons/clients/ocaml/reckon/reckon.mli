@@ -14,5 +14,5 @@ end
 module Make (Cli : Client) : sig
   type client = Cli.t
 
-  val run : client -> int32 -> string -> unit Deferred.t
+  val run : client -> int32 -> unit Deferred.t
 end

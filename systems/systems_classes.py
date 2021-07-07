@@ -45,10 +45,15 @@ class AbstractSystem(object):
         logging.debug("Killing screen on host {0} with cmd {1}".format(host.name, cmd))
         host.cmd(shlex.split(cmd))
 
-    def add_logging(self, cmd, tag):
-        return cmd + " 2>&1 | tee -a {log}/{time_tag}_{tag}".format(
-            log=self.log_location, tag=tag, time_tag=self.creation_time
-        )
+    def add_logging(self, cmd, tag, just_stderr=False):
+        if not just_stderr:
+            return cmd + " 2>&1 | tee -a {log}/{time_tag}_{tag}".format(
+                log=self.log_location, tag=tag, time_tag=self.creation_time
+            )
+        else:
+            return cmd + " 2> {log}/{time_tag}_{tag}".format(
+                log=self.log_location, tag=tag, time_tag=self.creation_time
+            )
 
     @abstractmethod
     def get_client(self, args):

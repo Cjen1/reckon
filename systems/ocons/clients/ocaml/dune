@@ -1,5 +1,5 @@
 (executable
  (name client)
- (libraries base core async ppx_log accessor ocons-core reckon)
+ (libraries base core async ppx_log accessor ocons-core reckon async.log_extended)
  (preprocess
   (pps ppx_jane ppx_log ppx_accessor)))

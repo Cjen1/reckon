@@ -19,4 +19,5 @@ RUN make docker-install-runtime-deps
 
 ADD . .
 
-COPY --from=etcd-image /system systems/etcd
+COPY --from=etcd-image  /system systems/etcd
+COPY --from=ocons-image /system systems/ocons

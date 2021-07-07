@@ -1,10 +1,10 @@
 # Intended to be run from the top level directory
 
 # Clean log dir from previous runs
-sudo rm -rf logs/*
+rm -rf logs/*
 
 # Run test
-sudo bash -c "python scripts/tester.py" 2>&1 | tee /results/run.log
+bash -c "python scripts/tester.py" 2>&1 | tee /results/run.log
 
 # Clean state
 bash scripts/clean.sh

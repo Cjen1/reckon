@@ -44,6 +44,11 @@ let arg_int32 = Command.Arg_type.create Int32.of_string
 let node_list =
   Command.Arg_type.comma_separated ~allow_empty:false network_address
 
+let log_param =
+  Log_extended.Command.(
+    setup_via_params ~log_to_console_by_default:(Stderr Color)
+      ~log_to_syslog_by_default:false ())
+
 let () =
   let command =
     Command.async_spec ~summary:"Reckon OCons client"
@@ -51,10 +56,15 @@ let () =
         empty
         +> anon ("node_list" %: node_list)
         +> anon ("client_id" %: arg_int32)
-        +> anon ("result_pipe" %: string))
-      (fun node_list cid result_pipe () ->
+        +> log_param)
+      (fun node_list cid () () ->
+        let global_level = Async.Log.Global.level () in
+        let global_output = Async.Log.Global.get_output () in
+        List.iter [Reckon.logger] ~f:(fun log ->
+            Async.Log.set_level log global_level ;
+            Async.Log.set_output log global_output ) ;
         let client = Client.new_client node_list in
-        let%bind () = Reckon_client.run client cid result_pipe in
+        let%bind () = Reckon_client.run client cid in
         Async.exit 0 )
   in
   Command.run command

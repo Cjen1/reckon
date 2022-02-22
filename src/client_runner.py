@@ -1,187 +1,139 @@
-from multiprocessing import Queue
+import logging
 from threading import Thread
 import time
 import sys
-import json
-import random
+import selectors 
 
-import logging
-
-from src.utils.req_factory import ReqFactory
-import src.utils.message_pb2 as msg_pb
-import select
-
-import importlib
-
-from struct import pack, unpack
+from typing import List, cast
+import src.reckon_types as t
 
 from tqdm import tqdm
 
+def preload(ops_provider : t.AbstractWorkload, duration) -> int:
+    logging.debug("PRELOAD: begin")
 
-def send(client, op):
-    in_pipe, out_pipe = client
-    size = pack("<l", op.ByteSize())  # little endian signed long (4 bytes)
-    payload = op.SerializeToString()
-    in_pipe.write(size + payload)
-
-
-def read_exactly(fd, size):
-    return fd.read(size)
-
-
-def read_packet(pipe):
-    size = read_exactly(pipe, 4)
-    if size:
-        size = unpack("<l", size)  # little endian signed long (4 bytes)
-        # unpack returns a tuple even if a single value
-        payload = read_exactly(pipe, size[0])
-        return payload
-    else:
-        return None
-
-
-def read_payload(pipe):
-    payload = read_packet(pipe)
-    if payload:
-        resp = msg_pb.Response()
-        resp.ParseFromString(payload)
-        return resp
-    else:
-        logging.debug("Got nothing from pipe, probably EOF")
-        return None
-
-
-def preload(ops_provider, clients, duration, rate):
-    logging.debug("PRELOAD")
-
-    for prereq in ops_provider.prereqs:
-        send(random.choice(clients), prereq)
+    for client, op  in ops_provider.prerequisites:
+        client.send(t.preload(prereq=True, operation=op))
 
     sim_t = 0
-    period = 1 / rate
+    total_reqs = 0
     with tqdm(total=duration) as pbar:
-        while sim_t < duration:
-            op = ops_provider.get_ops(sim_t)
-            # logging.debug("Sending op")
-            send(random.choice(clients), op)
-            sim_t = sim_t + period
-            pbar.update(period)
+        for client, op in ops_provider.workload(): 
+            if op.time > duration:
+                break
 
+            total_reqs += 1
+            client.send(t.preload(prereq=False, operation=op))
 
-def ready(clients):
-    logging.debug("READY")
+            pbar.update(op.time - sim_t)
+            sim_t = op.time
+    
+    for client in ops_provider.clients:
+        client.send(t.finalise())
+    
+    logging.debug("PRELOAD: end")
+    return total_reqs
 
-    for client in clients:
-        send(client, ReqFactory.finalise())
+def ready(clients: List[t.Client]):
+    logging.debug("READY: begin")
 
-    pipes = [result_pipe for in_pipe, result_pipe in clients]
+    sel = selectors.DefaultSelector()
 
-    def recv_one():
-        logging.debug(pipes)
-        readable, _, execeptional = select.select(pipes, [], pipes)
-        logging.debug("CR: received at least one: ")
-        return read_packet(readable[0])
+    for i,cli in enumerate(clients):
+        cli.register_selector(sel, selectors.EVENT_READ, i)
 
-    logging.debug("Waiting to receive readys")
-    for client in clients:
-        recv_one()
+    for _ in range(len(clients)):
+        i = sel.select()[0][0].data
+        
+        msg = clients[i].recv()
+        assert(msg.kind == t.MessageKind.Ready)
+    
+    logging.debug("READY: end")
 
+def execute(clients: List[t.Client], failures: List[t.AbstractFault], duration: float):
+    logging.debug("EXECUTE: begin")
 
-def execute(clients, failures, duration):
-    logging.debug("EXECUTE")
-
-    start_time = time.time()
-
-    for client in clients:
-        logging.debug("Sending start msg")
-        send(client, ReqFactory.start())
-
-    null_failure = lambda *args, **kwargs: None
-    failures = failures + [null_failure]
+    failures = failures + [t.NullFault()]
     n_failures = len(failures)
     sleep_time = duration / (n_failures)
 
+    start_time = time.time()
+
     failure_times = [(i + 1) * sleep_time + start_time for i, _ in enumerate(failures)]
 
-    for failure_time, failure in zip(failure_times, failures):
-        sleep_time = failure_time - time.time()
-        logging.debug("BENCHMARK: sleeping for" + str(sleep_time))
+    for client in clients:
+        client.send(t.start())
+
+    for failure_time, failure in tqdm(zip(failure_times, failures), desc = "failure execution"):
+        sleep_time : float = failure_time - time.time()
         sys.stdout.flush()
         if sleep_time > 0:
             time.sleep(sleep_time)
-        failure()
+        failure.apply_fault()
 
+    logging.debug("EXECUTE: end")
 
-def collate(pipes, test_results_location, total):
-    logging.debug("COLLATE")
-    resps = []
-    inputs = pipes
+def collate(clients: List[t.Client], test_results_location: str, total_reqs: int):
+    logging.debug("COLLATE: begin")
 
-    with tqdm() as pbar:
-        while inputs:
-            readable, _, _ = select.select(pipes, [], pipes)
-            for pipe in readable:
-                resp = read_payload(pipe)
-                if not resp:  # resp = None
-                    inputs.remove(pipe)
-                else:
-                    resps.append(
-                        {
-                            "Resp_time": resp.response_time,
-                            "Cli_start": resp.client_start,
-                            "Q_start": resp.queue_start,
-                            "End": resp.end,
-                            "Client_id": resp.clientid,
-                            "Error": resp.err,
-                            "Target": resp.target,
-                            "Op_type": resp.optype,
-                        }
-                    )
-                    pbar.update(1)
+    sel = selectors.DefaultSelector();
 
-    logging.debug("COLLATE: done, writing: " + test_results_location)
+    for i, client in enumerate(clients):
+        client.register_selector(sel, selectors.EVENT_READ, i)
+
+    resps = t.Results(responses=[])
+    remaining_clients = len(clients)
+    with tqdm(total=total_reqs) as pbar:
+        while remaining_clients > 0:
+            i = sel.select()[0][0].data
+            msg = clients[i].recv()
+            if msg.kind == t.MessageKind.Finished:
+                remaining_clients -= 1
+                clients[i].unregister_selector(sel, selectors.EVENT_READ)
+            elif msg.kind == t.MessageKind.Result:
+                pbar.update(1)
+                payload = cast(t.Result, msg.payload)
+                resps.responses.append(payload)
+
+    logging.debug(f"COLLATE: received, writing to {test_results_location}")
     with open(test_results_location, "w") as fres:
-        json.dump(resps, fres)
-
-    logging.debug("COLLATE: written to file")
-
+        fres.write(resps.json())
+    logging.debug("COLLATE: end")
 
 def run_test(
-    test_results_location,
-    clients,
-    ops_provider,
-    rate,
-    duration,
-    system,
-    cluster,
-    failures,
-):
-    rate = float(rate)
+        test_results_location: str,
+        clients: List[t.MininetHost],
+        ops_provider: t.AbstractWorkload,
+        duration: int,
+        system: t.AbstractSystem,
+        cluster: List[t.MininetHost],
+        failures: List[t.AbstractFault],
+    ):
     duration = int(duration)
 
-    logging.debug("Setting up microclients")
+    logging.debug("Setting up clients")
     sys.stdout.flush()
-    microclients = [
+    clients = [
         system.start_client(client, client_id, cluster)
         for client_id, client in enumerate(clients)
     ]
     logging.debug("Microclients started")
 
-    preload(ops_provider, microclients, duration, rate)
-    ready(microclients)
+    total_reqs = preload(ops_provider, clients)
+    ready(clients)
 
     t_collate = Thread(
         target=collate,
         args=[
-            [out_pipe for (in_pipe, out_pipe) in microclients],
+            clients,
             test_results_location,
-            rate * duration,
+            total_reqs,
         ],
     )
     t_collate.daemon = True
     t_collate.start()
 
-    execute(microclients, failures, duration)
+    execute(clients, failures, duration)
 
     logging.debug("Waiting to join collate thread")
     t_collate.join()

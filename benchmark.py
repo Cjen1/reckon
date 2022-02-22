@@ -1,8 +1,8 @@
 import argparse
 
 from src.client_runner import run_test
-from src.distributions import register_ops_args
-from src.distributions import get_ops_provider
+from src.workload import register_ops_args
+from src.workload import get_ops_provider
 from src.failures import register_failure_args, get_failure_provider
 from src.topologies import register_topo_args, get_topology_provider
 from systems import register_system_args, get_system
@@ -51,7 +51,6 @@ else:
         args.result_location,
         clients,
         ops_provider,
-        args.rate,
         args.duration,
         system,
         cluster,

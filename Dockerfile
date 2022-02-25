@@ -1,4 +1,4 @@
-FROM iwaseyusuke/mininet as base
+FROM cjen1/reckon-mininet:latest as base
 
 RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
     build-essential \

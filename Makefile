@@ -8,8 +8,12 @@ run: reckon
 	     cjen1/reckon:latest
 
 .PHONY:reckon
-reckon: etcd-image
+reckon: reckon-mininet etcd-image
 	docker build -t cjen1/reckon:latest .
+
+.PHONY: reckon-mininet
+reckon-mininet: 
+	docker build -f Dockerfile.mininet -t cjen1/reckon-mininet:latest .
 
 .PHONY: etcd-image
 etcd-image:
@@ -29,6 +33,7 @@ python-deps:
 
 .PHONY:docker-build-deps
 docker-build-deps:
+	apt-get update
 	apt-get install --no-install-recommends -yy -qq \
 		python \
 		python-pip \

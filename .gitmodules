@@ -1,3 +1,6 @@
 [submodule "systems/ocaml-paxos/src"]
 	path = systems/ocaml-paxos/src
 	url = https://github.com/Cjen1/OcamlPaxos.git
+[submodule "vendor/mininet"]
+	path = vendor/mininet
+	url = git@github.com:mininet/mininet

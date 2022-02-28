@@ -3,7 +3,7 @@ module client
 go 1.17
 
 require (
-	github.com/Cjen1/reckon/src/goclient v0.0.0-20220228172104-152d188365ba
+	github.com/Cjen1/reckon/src/goclient v0.0.0-20220228173319-1316075c86f5
 	go.etcd.io/etcd v0.0.0-20201125193152-8a03d2e9614b
 )
 

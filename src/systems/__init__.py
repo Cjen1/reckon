@@ -1,9 +1,8 @@
 from enum import Enum
-
-from systems.etcd import Etcd, EtcdPreVote
-
 from distutils.util import strtobool
 
+from src.systems.etcd import Etcd, EtcdPreVote
+import src.reckon_types as t
 
 class SystemType(Enum):
     Etcd = "etcd"
@@ -11,7 +10,6 @@ class SystemType(Enum):
 
     def __str__(self):
         return self.value
-
 
 def register_system_args(parser):
     system_group = parser.add_argument_group("system")
@@ -34,7 +32,7 @@ def register_system_args(parser):
         type=lambda x:bool(strtobool(x))
     )
 
-def get_system(args):
+def get_system(args) -> t.AbstractSystem:
     res = None
     if args.system_type is SystemType.Etcd:
         res = Etcd(args)

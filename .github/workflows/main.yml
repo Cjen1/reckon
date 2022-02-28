@@ -28,6 +28,10 @@ jobs:
       - name: Build dockerfile
         run: make reckon
 
+      - name: Run client runner tests
+        timeout-minutes: 1
+        run: make test-client-runner
+
       - name: Run basic test
         timeout-minutes: 10
         run: 

@@ -1,6 +1,9 @@
 # cloned from https://github.com/mininet/mininet/pull/968
 FROM debian:stretch-slim
 
+USER root
+WORKDIR /root
+
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -yq && apt-get install -yq \
     arping \
@@ -9,6 +12,7 @@ RUN apt-get update -yq && apt-get install -yq \
     iputils-ping \
     net-tools \
     sudo \
+    openssl \
     traceroute
 
 RUN apt update -yq && apt install -yq \
@@ -26,12 +30,14 @@ RUN apt update -yq && apt install -yq \
 
 RUN mkdir /python && \
     cd /python && \
-    wget https://www.python.org/ftp/python/3.10.2/Python-3.10.2.tgz && \
-    tar -xf Python-3.10.2.tgz && \
-    cd Python-3.10.2 && \
-    ./configure --enable-optimizations && \
+    wget https://www.python.org/ftp/python/3.9.10/Python-3.9.10.tgz && \
+    tar -xf Python-3.9.10.tgz && \
+    cd Python-3.9.10 && \
+    ./configure --enable-optimizations --with-ssl && \
     make -j 4 && \
     sudo make install
+
+RUN bash -c "ln -s `which python3` /usr/local/bin/python"
 
 ARG INSTALL_FLAGS="-fnv"
 COPY ./vendor/mininet /root/mininet
@@ -42,4 +48,5 @@ RUN apt-get clean
 COPY ./scripts/ENTRYPOINT.sh /root/mininet/util/ENTRYPOINT.sh
 RUN chmod +x /root/mininet/util/ENTRYPOINT.sh
 
-ENTRYPOINT [ "/root/mininet/util/ENTRYPOINT.sh", "mn"]
+ENTRYPOINT [ "/root/mininet/util/ENTRYPOINT.sh"]
+CMD ["mn"]

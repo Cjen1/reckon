@@ -14,7 +14,6 @@ RUN mkdir -p /results/logs
 
 # Cache runtime deps
 ADD requirements.txt requirements.txt
-ADD src src
 RUN make docker-install-runtime-deps
 
 ADD . .

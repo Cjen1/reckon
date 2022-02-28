@@ -4,21 +4,20 @@ import subprocess
 import os
 import logging
 
-from ..systems_classes import AbstractSystem, AbstractClient
+import src.reckon_types as t
 
 
-class Go(AbstractClient):
+class Go(t.AbstractClient):
     client_path = "systems/etcd/clients/go/client"
 
     def __init__(self, args):
         self.ncpr = args.new_client_per_request
 
-    def cmd(self, ips, client_id, result_address):
-        return "{client_path} --targets={ips} --id={client_id} --results={result_pipe} --ncpr={ncpr}".format(
+    def cmd(self, ips, client_id) -> str:
+        return "{client_path} --targets={ips} --id={client_id} --ncpr={ncpr}".format(
             client_path=self.client_path,
             ips=ips,
             client_id=str(client_id),
-            result_pipe=result_address,
             ncpr=self.ncpr
         )
 
@@ -33,7 +32,7 @@ class ClientType(Enum):
         return self.value
 
 
-class Etcd(AbstractSystem):
+class Etcd(t.AbstractSystem):
     binary_path = "systems/etcd/bin/etcd"
     additional_flags = ""
 
@@ -48,7 +47,7 @@ class Etcd(AbstractSystem):
     def start_nodes(self, cluster):
         cluster_str = ",".join(
             self.get_node_tag(host) + "=http://" + host.IP() + ":2380"
-            for i, host in enumerate(cluster)
+            for _, host in enumerate(cluster)
         )
 
         restarters = {}
@@ -94,18 +93,11 @@ class Etcd(AbstractSystem):
 
         return restarters, stoppers
 
-    def start_client(self, client, client_id, cluster):
+    def start_client(self, client, client_id, cluster) -> t.Client:
         logging.debug("starting microclient: " + str(client_id))
         tag = self.get_client_tag(client)
-        result_address = "src/utils/sockets/" + tag
 
-        args_ips = ",".join("http://" + host.IP() + ":2379" for host in cluster)
-
-        if os.path.exists(result_address):
-            os.unlink(result_address)
-        os.mkfifo(result_address)
-
-        cmd = self.client_class.cmd(args_ips, client_id, result_address)
+        cmd = self.client_class.cmd([host.IP() for host in cluster], client_id)
         cmd = self.add_logging(cmd, tag + ".log")
 
         logging.debug("Starting client with: " + cmd)
@@ -114,16 +106,13 @@ class Etcd(AbstractSystem):
             cmd, stdin=subprocess.PIPE, stdout=FNULL, stderr=FNULL, shell=True
         )
 
-        results = open(result_address, "r")
-
-        return sp.stdin, results
+        return t.Client(sp.stdin, sp.stdout, client_id)
 
     def parse_resp(self, resp):
         logging.debug("--------------------------------------------------")
         logging.debug(resp)
         logging.debug("--------------------------------------------------")
         endpoint_statuses = resp.split("\n")[0:-1]
-        leader = ""
         for endpoint in endpoint_statuses:
             endpoint_ip = endpoint.split(",")[0].split("://")[-1].split(":")[0]
             if endpoint.split(",")[4].strip() == "true":

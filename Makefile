@@ -14,7 +14,7 @@ reckon: reckon-mininet etcd-image
 .PHONY:test-client-runner
 test-client-runner: reckon
 	docker rm -f reckon-test-client
-	docker run -it --privileged -e DISPLAY \
+	docker run --privileged -e DISPLAY \
 		--tmpfs /data \
 		--network host --name reckon-test-client \
 		cjen1/reckon:latest \

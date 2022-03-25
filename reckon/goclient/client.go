@@ -126,9 +126,9 @@ func get(cli Client, key string, clientid string, expected_start float64) jsonma
 	return resp
 }
 
-func check(e error) {
+func check(e error, s string) {
 	if e != nil {
-		log.Fatal(e)
+		log.Fatal("Fatal error: %s: %v",s, e)
 	}
 }
 
@@ -137,7 +137,7 @@ func perform(op Operation, cli Client, clientid string, test_start_time float64,
 	func_cli := &cli
 	if new_client_per_request {
 		cli, err := client_gen()
-		check(err)
+		check(err, "generating client")
 		defer cli.Close()
 		func_cli = &cli
 	}
@@ -179,7 +179,7 @@ func recv(reader *bufio.Reader) jsonmap {
 
 func send(msg jsonmap) {
 	payload, err := json.Marshal(msg)
-	check(err)
+	check(err, "marshalling json")
 
 	var size int32
 	size = int32(len(payload))
@@ -188,7 +188,7 @@ func send(msg jsonmap) {
 
 	output := append(size_part[:], payload[:]...)
 	_, err = os.Stdout.Write(output)
-	check(err)
+	check(err, "writing packet")
 }
 
 func init() {
@@ -240,7 +240,7 @@ func Run(client_gen func() (Client, error), clientid string, new_client_per_requ
 
 	cli, err := client_gen()
 	defer cli.Close()
-	check(err)
+	check(err, "create client")
 
 	reader := bufio.NewReader(os.Stdin)
 

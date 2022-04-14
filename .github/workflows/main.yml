@@ -1,9 +1,5 @@
-# This is a basic workflow to help you get started with Actions
-
 name: CI
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
 on:
   push:
     branches: [ main ]
@@ -11,117 +7,124 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
         with:
           submodules: true
-          
+
       - name: Build dockerfile
         run: make reckon
 
-      - name: Run client runner tests
+      # ---- Tests ----
+      - name: Client runner tests
         timeout-minutes: 1
+        if: always()
         run: >
-          docker run --privileged -e DISPLAY --rm 
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
           python -c 'import reckon.client_test as c; c.test_client_runner()'
 
       - name: Test client=go
-        timeout-minutes: 2
+        timeout-minutes: 5
+        if: always()
         run: >
-          docker run --privileged -e DISPLAY --rm 
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
           python -m reckon etcd --client go simple uniform none 
 
       - name: Test client=go-tracer
-        timeout-minutes: 2
+        timeout-minutes: 5
+        if: always()
         run: >
-          docker run --privileged -e DISPLAY --rm 
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
           python -m reckon etcd --client go-tracer simple uniform none 
 
       - name: Test topo=simple
-        timeout-minutes: 2
+        timeout-minutes: 5
+        if: always()
         run: >
-          docker run --privileged -e DISPLAY --rm 
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
           python -m reckon etcd --client go simple uniform none --number-nodes=5 --number-clients=2 --link-latency=100ms
 
       - name: Test topo=wan
-        timeout-minutes: 2
+        timeout-minutes: 5
+        if: always()
         run: >
-          docker run --privileged -e DISPLAY --rm 
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
           python -m reckon etcd --client go wan uniform none --number-nodes=5 --link-latency=100ms
 
       - name: Test failure=none
-        timeout-minutes: 2 
+        timeout-minutes: 5 
+        if: always()
         run: >
-          docker run --privileged -e DISPLAY --rm 
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
           python -m reckon etcd --client go wan uniform none
 
       - name: Test failure=leader
-        timeout-minutes: 2 
+        timeout-minutes: 5 
+        if: always()
         run: >
-          docker run --privileged -e DISPLAY --rm 
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
           python -m reckon etcd --client go wan uniform leader
 
       - name: Test failure=partial-partition
-        timeout-minutes: 2 
+        timeout-minutes: 5 
+        if: always()
         run: >
-          docker run --privileged -e DISPLAY --rm 
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
           python -m reckon etcd --client go wan uniform partial-partition
 
       - name: Test failure=intermittent-partial
-        timeout-minutes: 2 
+        timeout-minutes: 5 
+        if: always()
         run: >
-          docker run --privileged -e DISPLAY --rm 
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
           python -m reckon etcd --client go wan uniform intermittent-partial --mtbf=10
 
       - name: Test failure=intermittent-full
-        timeout-minutes: 2 
+        timeout-minutes: 5 
+        if: always()
         run: >
-          docker run --privileged -e DISPLAY --rm 
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
           python -m reckon etcd --client go wan uniform intermittent-full --mtbf=10
 
       - name: Test failure=kill_n
-        timeout-minutes: 2 
+        timeout-minutes: 5 
+        if: always()
         run: >
-          docker run --privileged -e DISPLAY --rm 
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 

@@ -31,7 +31,7 @@ func (c rc_cli) Get(k string) (string, string, error) {
 
 func main() {
 	log.Print("Client: Starting client memory client")
-	f_endpoints := flag.String("targets", "", "Endpoints to send to ie: http://127.0.0.1:4000, http://127.0.0.1:4001")
+	f_endpoints := flag.String("targets", "", "Endpoints to send to ie: http://127.0.0.1:4000,http://127.0.0.1:4001")
 	f_client_id := flag.String("id", "-1", "Client id")
 	f_new_client_per_request := flag.Bool("ncpr", false, "New client per request")
 

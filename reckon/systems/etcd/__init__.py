@@ -1,7 +1,5 @@
 from enum import Enum
-from sys import stdout
 import subprocess
-import os
 import logging
 
 import reckon.reckon_types as t
@@ -16,7 +14,7 @@ class Go(t.AbstractClient):
     def cmd(self, ips, client_id) -> str:
         return "{client_path} --targets={ips} --id={client_id} --ncpr={ncpr}".format(
             client_path=self.client_path,
-            ips=ips,
+            ips=",".join(f"http://{ip}:2379" for ip in ips),
             client_id=str(client_id),
             ncpr=self.ncpr
         )
@@ -42,7 +40,7 @@ class Etcd(t.AbstractSystem):
         elif args.client == str(ClientType.GoTracer):
             return GoTracer(args)
         else:
-            raise Exception("Not supported client type: " + args.client)
+            raise Exception("Not supported client type: " + str(args.client))
 
     def start_nodes(self, cluster):
         cluster_str = ",".join(
@@ -101,11 +99,9 @@ class Etcd(t.AbstractSystem):
         cmd = self.add_logging(cmd, tag + ".log")
 
         logging.debug("Starting client with: " + cmd)
-        FNULL = open(os.devnull, "w")
         sp = client.popen(
-            cmd, stdin=subprocess.PIPE, stdout=FNULL, stderr=FNULL, shell=True
+            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True, bufsize = 4096
         )
-
         return t.Client(sp.stdin, sp.stdout, client_id)
 
     def parse_resp(self, resp):

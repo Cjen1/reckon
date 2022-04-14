@@ -30,12 +30,22 @@ def register_topo_args(parser):
         default=1,
     )
 
+    topo_group.add_argument(
+        "--link_loss",
+        type=float,
+        default=1,
+    )
+
     topo_group.add_argument("--link-latency", default="20ms")
 
 
 def get_topology_provider(args) -> t.AbstractTopologyGenerator:
     if args.topo_type is TopologyType.Simple:
-        return SimpleTopologyProvider(args.number_nodes, args.number_clients)
+        return SimpleTopologyProvider(
+            args.number_nodes,
+            args.number_clients,
+            args.link_latency,
+        )
     elif args.topo_type is TopologyType.Wan:
         return WanTopologyProvider(
             args.number_nodes,

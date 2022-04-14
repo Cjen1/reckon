@@ -3,7 +3,7 @@ module client
 go 1.17
 
 require (
-	github.com/Cjen1/reckon/reckon/goclient v0.0.0-20220309132947-ac973e60bc0b
+	github.com/Cjen1/reckon/reckon/goclient v0.0.0-20220316135159-32bd50772ae3
 	go.etcd.io/etcd v0.0.0-20201125193152-8a03d2e9614b
 )
 
@@ -23,3 +23,5 @@ require (
 	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55 // indirect
 	google.golang.org/grpc v1.26.0 // indirect
 )
+
+replace github.com/Cjen1/reckon/reckon/goclient => ../../../../goclient

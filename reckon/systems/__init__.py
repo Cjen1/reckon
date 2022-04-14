@@ -39,6 +39,6 @@ def get_system(args) -> t.AbstractSystem:
     elif args.system_type is SystemType.EtcdPreVote:
         res = EtcdPreVote(args)
     else:
-        raise Exception("Not supported system type: " + args.system_type)
+        raise Exception("Not supported system type: " + str(args.system_type))
     res.system_type = args.system_type
     return res

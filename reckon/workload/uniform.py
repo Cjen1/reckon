@@ -1,17 +1,18 @@
 import numpy as np
 from time import time
+import string
 
-from typing import List, Iterator
-from reckon.reckon_types import Client, WorkloadOperation, AbstractWorkload, Read, Write, Operation, OperationKind
+from typing import List
+import reckon.reckon_types as t
 
-class UniformOpsProvider(AbstractWorkload):
+class UniformOpsProvider(t.AbstractWorkload):
     def __init__(
         self,
         rate: float,
         write_ratio: float,
         max_key: int,
         payload_size: int,
-        clients: List[Client],
+        clients: List[t.Client],
         rand_seed=int(time()),
     ):
         self._rate = rate
@@ -20,6 +21,7 @@ class UniformOpsProvider(AbstractWorkload):
         self._payload_size = payload_size
         self._rng = np.random.default_rng(rand_seed)
         self._clients = clients
+        self.ALPHABET = np.array(list(string.ascii_lowercase))
 
     #TODO test that _new_key generates correct length keys
     def _new_key(self, i):
@@ -27,10 +29,10 @@ class UniformOpsProvider(AbstractWorkload):
         return str(i).zfill(max_key_digits)
 
     def _rand_key(self):
-        return self._new_key(self._rng.integer(0, self._max_key + 1))
+        return self._new_key(self._rng.integers(0, self._max_key + 1))
 
     def _uniform_payload(self):
-        return self._rng.bytes(self._payload_size)
+        return "".join(self._rng.choice(self.ALPHABET, size=self._payload_size).tolist())
 
     def _should_gen_write_op(self):
         return self._rng.random() < self._write_ratio
@@ -44,38 +46,40 @@ class UniformOpsProvider(AbstractWorkload):
         self._clients = value
 
     @property
-    def prerequisites(self) -> List[WorkloadOperation]:
+    def prerequisites(self) -> List[t.WorkloadOperation]:
         return [
-                (self._clients[0], Operation(
-                    payload = Write(
-                        kind= OperationKind.Write,
+                (self._clients[0], t.Operation(
+                    payload = t.Write(
+                        kind= t.OperationKind.Write,
                         key=self._new_key(k),
                         value = ""), 
                     time = 0))
                 for k in range(self._max_key + 1)
                 ]
 
-    def workload(self, start) -> Iterator[WorkloadOperation]:
-        time = start
+    @property
+    def workload(self):
         i = 0
         period = 1 / self._rate
         while True:
-            if self._should_gen_write_op():
-                yield (self._clients[i % len(self._clients)], 
-                        Operation(
-                            payload = Write(
-                                kind= OperationKind.Write,
-                                key= self._rand_key(),
-                                value= self._uniform_payload()),
-                            time= time))
-            else:
-                yield (self._clients[i % len(self._clients)], 
-                        Operation(
-                            payload= Read(
-                                kind = OperationKind.Read,
-                                key= self._rand_key()),
-                            time=time,
-                            ))
-
-            time += period
+            yield (self._clients[i % len(self._clients)],
+                (
+                    t.Operation(
+                        time = i * period,
+                        payload = t.Write(
+                            kind = t.OperationKind.Write,
+                            key=self._rand_key(),
+                            value=self._uniform_payload()
+                            )
+                        )
+                    if self._should_gen_write_op() else
+                    t.Operation(
+                        time = i * period,
+                        payload = t.Read(
+                            kind = t.OperationKind.Read,
+                            key=self._rand_key(),
+                            )
+                        )
+                    )
+                )
             i += 1

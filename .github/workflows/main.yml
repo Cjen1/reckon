@@ -30,9 +30,99 @@ jobs:
 
       - name: Run client runner tests
         timeout-minutes: 1
-        run: make test-client-runner
+        run: >
+          docker run --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -c 'import reckon.client_test as c; c.test_client_runner()'
 
-      - name: Run basic test
-        timeout-minutes: 10
-        run: 
-          docker run --privileged --tmpfs /data -v /lib/modules:/lib/modules --network host --name rc --entrypoint /root/scripts/test_entrypoint.sh cjen1/reckon:latest
+      - name: Test client=go
+        timeout-minutes: 2
+        run: >
+          docker run --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd --client go simple uniform none 
+
+      - name: Test client=go-tracer
+        timeout-minutes: 2
+        run: >
+          docker run --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd --client go-tracer simple uniform none 
+
+      - name: Test topo=simple
+        timeout-minutes: 2
+        run: >
+          docker run --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd --client go simple uniform none --number-nodes=5 --number-clients=2 --link-latency=100ms
+
+      - name: Test topo=wan
+        timeout-minutes: 2
+        run: >
+          docker run --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd --client go wan uniform none --number-nodes=5 --link-latency=100ms
+
+      - name: Test failure=none
+        timeout-minutes: 2 
+        run: >
+          docker run --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd --client go wan uniform none
+
+      - name: Test failure=leader
+        timeout-minutes: 2 
+        run: >
+          docker run --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd --client go wan uniform leader
+
+      - name: Test failure=partial-partition
+        timeout-minutes: 2 
+        run: >
+          docker run --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd --client go wan uniform partial-partition
+
+      - name: Test failure=intermittent-partial
+        timeout-minutes: 2 
+        run: >
+          docker run --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd --client go wan uniform intermittent-partial --mtbf=10
+
+      - name: Test failure=intermittent-full
+        timeout-minutes: 2 
+        run: >
+          docker run --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd --client go wan uniform intermittent-full --mtbf=10
+
+      - name: Test failure=kill_n
+        timeout-minutes: 2 
+        run: >
+          docker run --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd --client go wan uniform kill_n --kill_n 1

@@ -4,7 +4,7 @@ import time
 import sys
 import selectors 
 
-from typing import List, cast
+from typing import List
 import reckon.reckon_types as t
 
 from tqdm import tqdm
@@ -19,7 +19,7 @@ def preload(ops_provider : t.AbstractWorkload, duration: float) -> int:
     total_reqs = 0
     with tqdm(total=duration) as pbar:
         for client, op in ops_provider.workload: 
-            if op.time > duration:
+            if op.time >= duration:
                 break
 
             total_reqs += 1
@@ -53,23 +53,28 @@ def ready(clients: List[t.Client]):
 def execute(clients: List[t.Client], failures: List[t.AbstractFault], duration: float):
     logging.debug("EXECUTE: begin")
 
-    failures = failures + [t.NullFault()]
+    if len(failures) <= 0:
+        failures = [t.NullFault()]
+
+    first_fault = failures[0]
+    failures = failures[1:]
+
+    first_fault.apply_fault()
+
     n_failures = len(failures)
-    sleep_time = duration / (n_failures)
-
-    start_time = time.time()
-
-    failure_times = [(i + 1) * sleep_time + start_time for i, _ in enumerate(failures)]
+    sleep_time = duration / (n_failures + 1)
 
     for client in clients:
         client.send(t.start())
 
+    start_time = time.time()
+    failure_times = [i * sleep_time + start_time for i, _ in enumerate(failures)]
+
     for i, (failure_time, failure) in enumerate(zip(failure_times, failures)):
         sleep_time : float = failure_time - time.time()
-        sys.stdout.flush()
         if sleep_time > 0:
             time.sleep(sleep_time)
-        logging.info(f"Executing failure #{i}")
+        logging.info(f"Executing failure #{i}:{failure.id}")
         failure.apply_fault()
 
     logging.debug("EXECUTE: end")
@@ -82,7 +87,7 @@ def collate(clients: List[t.Client], total_reqs: int) -> t.Results:
     for i, client in enumerate(clients):
         client.register_selector(sel, selectors.EVENT_READ, i)
 
-    resps = t.Results(responses=[])
+    resps = []
     remaining_clients = len(clients)
     print(f"rem_cli: {remaining_clients}")
     with tqdm(total=total_reqs, desc="Results") as pbar:
@@ -95,10 +100,10 @@ def collate(clients: List[t.Client], total_reqs: int) -> t.Results:
             elif msg.__root__.kind == "result":
                 pbar.update(1)
                 assert(type(msg.__root__) is t.Result)
-                resps.responses.append(msg.__root__)
+                resps.append(msg.__root__)
             else:
                 print(f"Unexpected message: |{msg}|")
-    return resps
+    return t.Results(__root__=resps)
 
 def test_steps(
         clients : List[t.Client], 
@@ -106,6 +111,8 @@ def test_steps(
         failures: List[t.AbstractFault],
         duration: float,
         ) -> t.Results:
+
+    workload.clients = clients
     total_reqs = preload(workload, duration)
     ready(clients)
 

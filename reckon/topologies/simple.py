@@ -16,6 +16,13 @@ class SimpleTopologyProvider(t.AbstractTopologyGenerator):
         self.number_clients = number_clients
         self.link_latency = link_latency
 
+        # since we have 2 links, when we want the abstraction of one direct link
+        # we use link_loss = 1 - sqrt(1 - L)
+        self.per_link_loss = None if not link_loss else (1 - math.sqrt(1 - link_loss/100)) * 100
+        if self.per_link_loss == 0:
+            self.per_link_loss = None
+        # we use link_latency = link_latency / 2
+
         self.switch_num = 0
         self.host_num = 0
         self.client_num = 0
@@ -48,6 +55,7 @@ class SimpleTopologyProvider(t.AbstractTopologyGenerator):
                     host,
                     sw, 
                     delay = self.link_latency,
+                    loss = self.per_link_loss
                     )
 
         self.net.start()

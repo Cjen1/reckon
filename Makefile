@@ -7,6 +7,13 @@ run: reckon
 	     --network host --name reckon \
 	     cjen1/reckon:latest bash
 
+.PHONY: lossy-etcd
+lossy-etcd: reckon
+	docker run -it --privileged -e DISPLAY \
+		--tmpfs /data \
+		--network host --name reckon \
+		cjen1/reckon:latest ./scripts/run.sh python ./scripts/lossy_etcd.py
+
 .PHONY:reckon
 reckon: reckon-mininet etcd-image
 	docker build -t cjen1/reckon:latest .

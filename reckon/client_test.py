@@ -50,7 +50,7 @@ class DummyWorkload(t.AbstractWorkload):
                 )
             i += 1
 
-class FileClient(t.Client):
+class CannedClient(t.Client):
     def __init__(self, canned_output: str):
         self._sent_messages : List[t.Message] = []
         cat = sp.Popen(f"cat {canned_output}", stdout = sp.PIPE, shell = True)
@@ -69,7 +69,6 @@ def client_bootstrap(input_file, output_file):
         cat = sp.Popen(f"cat {output_file}", stdout = sp.PIPE, shell = True)
         c = t.Client(f_in, cat.stdout, "test") # type: ignore
         results = cr.test_steps([c], DummyWorkload(c), [], 10)
-        results = results.responses
         print(results)
 
 class TaggedFailure(t.AbstractFailureGenerator):
@@ -95,12 +94,12 @@ def test_client_runner():
     canned_output_file = "scripts/out.bin"
     expected_input_file = "scripts/in.bin"
 
-    c_out = FileClient(canned_output_file)
+    c_out = CannedClient(canned_output_file)
     fault = TaggedFailure()
     results = cr.test_steps([c_out], DummyWorkload(c_out), fault.get_failures(1,2,3,4), 10)
 
     # Test if the sent messages are as expected
-    c_in = FileClient(expected_input_file)
+    c_in = CannedClient(expected_input_file)
     expected_sent_messages : List[t.Message]= []
     try:
         while True:
@@ -112,7 +111,7 @@ def test_client_runner():
     assert(c_out.sent_messages == expected_sent_messages)
 
     # Test if the results are as expected
-    results = results.responses
+    results = results.__root__
     assert(len(results) == 11)
     assert(all([r.result == "Success" for r in results]))
     assert(len([r for r in results if r.op_kind == t.OperationKind.Write]) == 6)

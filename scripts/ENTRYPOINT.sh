@@ -12,4 +12,4 @@ EXITCODE=$?
 service openvswitch-switch stop
 echo "*** Exiting Container..."
 
-exit $?
+exit $EXITCODE

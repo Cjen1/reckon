@@ -33,7 +33,7 @@ def register_topo_args(parser):
     topo_group.add_argument(
         "--link_loss",
         type=float,
-        default=1,
+        default=0,
     )
 
     topo_group.add_argument("--link-latency", default="20ms")

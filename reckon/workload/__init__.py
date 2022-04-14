@@ -55,4 +55,4 @@ def get_ops_provider(args) -> t.AbstractWorkload:
                 clients=[],
             )
     else:
-        raise Exception("Not supported workload type: " + args.workload_type)
+        raise Exception("Not supported workload type: " + str(args.workload_type))

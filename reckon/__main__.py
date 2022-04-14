@@ -8,11 +8,6 @@ from reckon.topologies import register_topo_args, get_topology_provider
 from reckon.systems import register_system_args, get_system
 
 import logging
-logging.basicConfig(
-    format="%(asctime)s %(message)s", datefmt="%I:%M:%S %p", level=logging.DEBUG
-)
-
-
 if __name__ == "__main__":
     # ------- Parse arguments --------------------------
     parser = argparse.ArgumentParser(
@@ -31,22 +26,47 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    system = get_system(args)
+    print(f"Args = {args}")
 
-    net, cluster, clients = get_topology_provider(args).setup()
-
-    failure_provider = get_failure_provider(args)
-
-    restarters, stoppers = system.start_nodes(cluster)
     if args.d:
         from mininet.cli import CLI
 
-        CLI(net)
-    else:
+        system = get_system(args)
+        topo_provider = get_topology_provider(args)
+        failure_provider = get_failure_provider(args)
         ops_provider = get_ops_provider(args)
+
+        net, cluster, _ = topo_provider.setup()
+
+        _, stoppers = system.start_nodes(cluster)
+
+        CLI(net)
+
+        for stopper in stoppers.values():
+            stopper()
+    else:
+        system = get_system(args)
+        topo_provider = get_topology_provider(args)
+        failure_provider = get_failure_provider(args)
+        ops_provider = get_ops_provider(args)
+
+        net, cluster, clients = get_topology_provider(args).setup()
+
+        restarters, stoppers = system.start_nodes(cluster)
+
         failures = failure_provider.get_failures(cluster, system, restarters, stoppers)
 
-        logging.info("BENCHMARK: Starting Test")
+        print("BENCHMARK: testing connectivity, and allowing network to settle")
+        net.pingAll()
+        from time import sleep
+        sleep(5)
+
+        print("BENCHMARK: Starting Test")
+
+        logging.basicConfig(
+            format="%(asctime)s %(message)s", datefmt="%I:%M:%S %p", level=logging.DEBUG
+        )
+
         run_test(
             args.result_location,
             clients,

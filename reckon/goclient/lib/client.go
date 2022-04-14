@@ -161,14 +161,12 @@ func perform(op Operation, cli Client, clientid string, test_start_time float64,
 
 func recv(reader *bufio.Reader) jsonmap {
 	var size int32
-	if err := binary.Read(reader, binary.LittleEndian, &size); err != nil {
-		log.Fatal(err)
-	}
+	err := binary.Read(reader, binary.LittleEndian, &size)
+	check(err, "recv_len")
 
 	payload := make([]byte, size)
-	if _, err := io.ReadFull(reader, payload); err != nil {
-		log.Fatal(err)
-	}
+	_, err = io.ReadFull(reader, payload)
+	check(err, "recv_payload")
 
 	var msg map[string]interface{}
 	json.Unmarshal(payload, &msg)
@@ -187,8 +185,10 @@ func send(msg jsonmap) {
 	binary.LittleEndian.PutUint32(size_part, uint32(size))
 
 	output := append(size_part[:], payload[:]...)
-	_, err = os.Stdout.Write(output)
+	writer := bufio.NewWriter(os.Stdout)
+	_, err = writer.Write(output)
 	check(err, "writing packet")
+	writer.Flush()
 }
 
 func init() {

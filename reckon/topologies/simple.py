@@ -1,16 +1,20 @@
 from mininet.net import Mininet
 from mininet.node import Controller, Host
 from mininet.log import setLogLevel
+from mininet.link import TCLink
 
 import reckon.reckon_types as t
+
+import math
 
 setLogLevel("info")
 
 
 class SimpleTopologyProvider(t.AbstractTopologyGenerator):
-    def __init__(self, number_nodes, number_clients):
+    def __init__(self, number_nodes, number_clients, link_latency = None, link_loss = None):
         self.number_nodes = number_nodes
         self.number_clients = number_clients
+        self.link_latency = link_latency
 
         self.switch_num = 0
         self.host_num = 0
@@ -32,7 +36,7 @@ class SimpleTopologyProvider(t.AbstractTopologyGenerator):
         return self.net.addHost(name)
 
     def setup(self):
-        self.net = Mininet(controller=Controller)
+        self.net = Mininet(controller=Controller, link = TCLink)
         self.net.addController("c0")
         sw = self.add_switch()
 
@@ -40,7 +44,11 @@ class SimpleTopologyProvider(t.AbstractTopologyGenerator):
         clients = [self.add_client() for _ in range(self.number_clients)]
 
         for host in hosts + clients:
-            self.net.addLink(host, sw)
+            self.net.addLink(
+                    host,
+                    sw, 
+                    delay = self.link_latency,
+                    )
 
         self.net.start()
 

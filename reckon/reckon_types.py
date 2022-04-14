@@ -73,6 +73,7 @@ class Client(object):
     def _send_packet(self, payload: str):
         size = pack("<l", len(payload)) # Little endian signed long (4 bytes)
         self.stdin.write(size + bytes(payload, 'ascii'))
+        self.stdin.flush()
     
     def _recv_packet(self) -> str:
         size = self.stdout.read(4)
@@ -109,7 +110,7 @@ class Client(object):
 WorkloadOperation = Tuple[Client, Operation]
 
 class Results(BaseModel):
-    responses: List[Result]
+    __root__: List[Result]
 
 class AbstractWorkload(ABC):
     @property
@@ -215,7 +216,7 @@ class AbstractSystem(ABC):
         host.cmd(shlex.split(cmd))
 
     def add_logging(self, cmd: str, tag: str):
-        return cmd + " 2>&1 | tee -a {log}/{time_tag}_{tag}".format(
+        return cmd + " 2> {log}/{time_tag}_{tag}.err".format(
             log=self.log_location, tag=tag, time_tag=self.creation_time
         )
 
@@ -236,9 +237,8 @@ class AbstractSystem(ABC):
         return None
 
 class AbstractFault(ABC):
-    @abstractproperty
     def id(self) -> str:
-        return ""
+        return "Generic Fault"
 
     @abstractmethod
     def apply_fault(self):

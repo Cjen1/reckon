@@ -16,6 +16,10 @@ RUN mkdir -p /results/logs
 ADD requirements.txt requirements.txt
 RUN make docker-install-runtime-deps
 
+RUN apt update -y && apt install -y pv lsof vim
+
 ADD . .
 
-COPY --from=etcd-image /system systems/etcd
+ENV PYTHONPATH="/root:${PYTHONPATH}"
+
+COPY --from=etcd-image /reckon/systems/etcd systems/etcd

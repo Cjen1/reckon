@@ -1,6 +1,5 @@
 #!/bin/bash
 # copied from https://github.com/mininet/mininet/pull/968
-set -x
 
 service openvswitch-switch start
 ovs-vsctl set-manager ptcp:6640

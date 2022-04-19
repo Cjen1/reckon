@@ -15,7 +15,7 @@ class FailureType(Enum):
     FPartialPartition = "partial-partition"
     FIntermittentPP = "intermittent-partial"
     FIntermittentFP = "intermittent-full"
-    FKillN = "kill_n"
+    FKillN = "kill-n"
 
     def __str__(self):
         return self.value
@@ -28,7 +28,7 @@ def register_failure_args(parser):
 
     dist_group.add_argument("--mtbf", type=float, default=1)
 
-    dist_group.add_argument("--kill_n", type=int, default=0)
+    dist_group.add_argument("--kill-n", type=int, default=0)
 
 
 def get_failure_provider(args) -> t.AbstractFailureGenerator:

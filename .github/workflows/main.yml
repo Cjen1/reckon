@@ -120,7 +120,7 @@ jobs:
           cjen1/reckon:latest 
           python -m reckon etcd --client go wan uniform intermittent-full --mtbf=10
 
-      - name: Test failure=kill_n
+      - name: Test failure=kill-n
         timeout-minutes: 5 
         if: always()
         run: >
@@ -128,4 +128,4 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd --client go wan uniform kill_n --kill_n 1
+          python -m reckon etcd --client go wan uniform kill-n --kill-n 1

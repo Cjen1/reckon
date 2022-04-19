@@ -31,7 +31,7 @@ def register_topo_args(parser):
     )
 
     topo_group.add_argument(
-        "--link_loss",
+        "--link-loss",
         type=float,
         default=0,
     )

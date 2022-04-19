@@ -31,7 +31,7 @@ Positional arguments are as follows: `<system> <topology> <workload> <fault>`
     - `leader`: The leader is killed at 1/3 of the duration (T), and recovers at 2/3T.
     - `partial-partition`: A partial partition is injected at 1/3T and removed at 2/3T. This blocks communication between the leader of the cluster and one follower
     - `intermittent-partial`/`intermittent-full`: An intermittent full and partial partiion between one node (who is initially the leader) and a follower. The leader is always able to communicate with a majority of nodes. Time between faults is set by `--mtbf`.
-    - `kill_n`: kill `--kill_n` at the start of the test. This tests maximal fault situations when some of the cluster has died at the start of the test. 
+    - `kill-n`: kill `--kill-n` at the start of the test. This tests maximal fault situations when some of the cluster has died at the start of the test. 
   - Other arguments
     - `-d`: enter a debug mininet cli where the topology is constructed and system started.
     - `--duration`: duration of the test.

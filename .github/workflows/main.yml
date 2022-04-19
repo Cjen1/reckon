@@ -58,7 +58,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd --client go simple uniform none --number-nodes=5 --number-clients=2 --link-latency=100ms
+          python -m reckon etcd --client go simple uniform none --number-nodes=5 --number-clients=2 --link-latency=100ms --link-loss=0.1
 
       - name: Test topo=wan
         timeout-minutes: 5

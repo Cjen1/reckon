@@ -8,6 +8,7 @@ from reckon.failures.kill_n import KillN
 
 import reckon.reckon_types as t
 
+
 class FailureType(Enum):
     FNone = "none"
     FLeader = "leader"
@@ -19,6 +20,7 @@ class FailureType(Enum):
     def __str__(self):
         return self.value
 
+
 def register_failure_args(parser):
     dist_group = parser.add_argument_group("failures")
 
@@ -27,6 +29,7 @@ def register_failure_args(parser):
     dist_group.add_argument("--mtbf", type=float, default=1)
 
     dist_group.add_argument("--kill_n", type=int, default=0)
+
 
 def get_failure_provider(args) -> t.AbstractFailureGenerator:
     if args.failure_type is FailureType.FNone:

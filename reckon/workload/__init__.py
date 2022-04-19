@@ -3,11 +3,13 @@ from reckon.workload.uniform import UniformOpsProvider
 
 import reckon.reckon_types as t
 
+
 class WorkloadType(Enum):
     Uniform = "uniform"
 
     def __str__(self):
         return self.value
+
 
 def register_ops_args(parser):
     workload_group = parser.add_argument_group("workload")
@@ -37,7 +39,6 @@ def register_ops_args(parser):
         help="maximum size of the integer key, defaults to %(default)s",
     )
 
-
     workload_group.add_argument(
         "--payload-size",
         type=int,
@@ -45,14 +46,15 @@ def register_ops_args(parser):
         help="upper bound of write operation's payload size in bytes, defaults to %(default)s",
     )
 
+
 def get_ops_provider(args) -> t.AbstractWorkload:
     if args.workload_type is WorkloadType.Uniform:
         return UniformOpsProvider(
-                rate=args.rate,
-                write_ratio=args.write_ratio,
-                max_key=args.max_key,
-                payload_size=args.payload_size,
-                clients=[],
-            )
+            rate=args.rate,
+            write_ratio=args.write_ratio,
+            max_key=args.max_key,
+            payload_size=args.payload_size,
+            clients=[],
+        )
     else:
         raise Exception("Not supported workload type: " + str(args.workload_type))

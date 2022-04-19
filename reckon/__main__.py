@@ -8,6 +8,7 @@ from reckon.topologies import register_topo_args, get_topology_provider
 from reckon.systems import register_system_args, get_system
 
 import logging
+
 if __name__ == "__main__":
     # ------- Parse arguments --------------------------
     parser = argparse.ArgumentParser(
@@ -20,7 +21,7 @@ if __name__ == "__main__":
     register_failure_args(parser)
 
     arg_group = parser.add_argument_group("benchmark")
-    arg_group.add_argument("-d",action="store_true",help="Debug mode")
+    arg_group.add_argument("-d", action="store_true", help="Debug mode")
     arg_group.add_argument("--duration", type=float, default=60)
     arg_group.add_argument("--result-location", default="test.res")
 
@@ -59,6 +60,7 @@ if __name__ == "__main__":
         print("BENCHMARK: testing connectivity, and allowing network to settle")
         net.pingAll()
         from time import sleep
+
         sleep(5)
 
         print("BENCHMARK: Starting Test")

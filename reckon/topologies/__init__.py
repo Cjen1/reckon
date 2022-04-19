@@ -42,10 +42,7 @@ def register_topo_args(parser):
 def get_topology_provider(args) -> t.AbstractTopologyGenerator:
     if args.topo_type is TopologyType.Simple:
         return SimpleTopologyProvider(
-            args.number_nodes,
-            args.number_clients,
-            args.link_latency,
-            args.link_loss
+            args.number_nodes, args.number_clients, args.link_latency, args.link_loss
         )
     elif args.topo_type is TopologyType.Wan:
         return WanTopologyProvider(

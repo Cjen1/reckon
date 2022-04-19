@@ -5,18 +5,22 @@ import reckon.reckon_types as t
 from typing import Union
 from typing_extensions import Literal
 
-class Shared():
-    def __init__(self, partitioned = [], fault_state=None):
+
+class Shared:
+    def __init__(self, partitioned=[], fault_state=None):
         self.partitioned = partitioned
         self.fault_state = fault_state
 
+
 class IntermittentPartialPartition(t.AbstractFault):
-    def __init__(self, 
-            kind: Union[Literal['create'], Literal['remove']],
-            shared : Shared, 
-            sleep_duration,
-            cluster,
-            system):
+    def __init__(
+        self,
+        kind: Union[Literal["create"], Literal["remove"]],
+        shared: Shared,
+        sleep_duration,
+        cluster,
+        system,
+    ):
         self._kind = kind
         self._shared = shared
         self._sleep_duration = sleep_duration
@@ -40,6 +44,7 @@ class IntermittentPartialPartition(t.AbstractFault):
         leader = self._system.get_leader(self._cluster)
         non_leader = [h for h in self._cluster if not h == leader][0]
         self.failure_fixed = threading.Event()
+
         def thread_fn(self=self, leader=leader, non_leader=non_leader):
             while not self.failure_fixed.isSet():
                 print("Partitioning {0} {1}".format(leader.name, non_leader.name))
@@ -49,10 +54,7 @@ class IntermittentPartialPartition(t.AbstractFault):
                 self.heal_partition()
                 time.sleep(self.sleep_duration)
 
-        thread = threading.Thread(
-                target=thread_fn,
-                args=[]
-                )
+        thread = threading.Thread(target=thread_fn, args=[])
         thread.start()
 
     def remove_failure(self):
@@ -60,10 +62,11 @@ class IntermittentPartialPartition(t.AbstractFault):
             self._shared.fault_state.set()
 
     def apply_fault(self):
-        if self._kind == 'create':
+        if self._kind == "create":
             self.initiate_failure()
-        elif self._kind == 'remove':
+        elif self._kind == "remove":
             self.remove_failure
+
 
 class IntermittentPPartitionFailure(t.AbstractFailureGenerator):
     def __init__(self, sleep_duration):
@@ -72,6 +75,10 @@ class IntermittentPPartitionFailure(t.AbstractFailureGenerator):
     def get_failures(self, cluster, system, restarters, stoppers):
         shared = Shared()
         return [
-                IntermittentPartialPartition('create', shared, self.sleep_duration, cluster, system),
-                IntermittentPartialPartition('remove', shared, self.sleep_duration, cluster, system),
+            IntermittentPartialPartition(
+                "create", shared, self.sleep_duration, cluster, system
+            ),
+            IntermittentPartialPartition(
+                "remove", shared, self.sleep_duration, cluster, system
+            ),
         ]

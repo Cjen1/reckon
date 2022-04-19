@@ -3,8 +3,9 @@ import reckon.reckon_types as t
 from typing import Union
 from typing_extensions import Literal
 
-class Shared():
-    def __init__(self, partitioned = []):
+
+class Shared:
+    def __init__(self, partitioned=[]):
         self._partitioned = partitioned
 
     @property
@@ -15,14 +16,15 @@ class Shared():
     def partitioned(self, value):
         self._partitioned = value
 
+
 class PartitionFault(t.AbstractFault):
     def __init__(
-            self, 
-            kind: Union[Literal['create'], Literal['remove']],
-            shared: Shared,
-            system,
-            cluster
-            ):
+        self,
+        kind: Union[Literal["create"], Literal["remove"]],
+        shared: Shared,
+        system,
+        cluster,
+    ):
         self._kind = kind
         self._shared = shared
         self.system = system
@@ -49,9 +51,9 @@ class PartitionFault(t.AbstractFault):
         self._shared.partitioned = []
 
     def apply_fault(self):
-        if self._kind == 'create':
+        if self._kind == "create":
             self.initiate_partition()
-        elif self._kind == 'remove':
+        elif self._kind == "remove":
             self.remove_partition()
 
 
@@ -59,6 +61,6 @@ class PPartitionFailure(t.AbstractFailureGenerator):
     def get_failures(self, cluster, system, restarters, stoppers):
         shared = Shared()
         return [
-            PartitionFault('create', shared, system, cluster),
-            PartitionFault('remove', shared, system, cluster),
+            PartitionFault("create", shared, system, cluster),
+            PartitionFault("remove", shared, system, cluster),
         ]

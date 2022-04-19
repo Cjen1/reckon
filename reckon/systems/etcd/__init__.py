@@ -16,11 +16,13 @@ class Go(t.AbstractClient):
             client_path=self.client_path,
             ips=",".join(f"http://{ip}:2379" for ip in ips),
             client_id=str(client_id),
-            ncpr=self.ncpr
+            ncpr=self.ncpr,
         )
+
 
 class GoTracer(Go):
     client_path = "systems/etcd/clients/go-tracer/client"
+
 
 class ClientType(Enum):
     Go = "go"
@@ -68,7 +70,11 @@ class Etcd(t.AbstractSystem):
                     + "--initial-cluster-state {cluster_state} "
                     + "--heartbeat-interval=100 "
                     + "--election-timeout=500"
-                    + ((" " + self.additional_flags) if self.additional_flags != "" else "")
+                    + (
+                        (" " + self.additional_flags)
+                        if self.additional_flags != ""
+                        else ""
+                    )
                 ).format(
                     binary=self.binary_path,
                     tag=tag,
@@ -100,7 +106,12 @@ class Etcd(t.AbstractSystem):
 
         logging.debug("Starting client with: " + cmd)
         sp = client.popen(
-            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True, bufsize = 4096
+            cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            shell=True,
+            bufsize=4096,
         )
         return t.Client(sp.stdin, sp.stdout, client_id)
 
@@ -125,6 +136,7 @@ class Etcd(t.AbstractSystem):
                 return leader
             except:
                 pass
+
 
 class EtcdPreVote(Etcd):
     additional_flags = "--pre-vote=True"

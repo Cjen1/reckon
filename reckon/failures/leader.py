@@ -1,5 +1,6 @@
 import reckon.reckon_types as t
 
+
 class Fault(t.AbstractFault):
     def __init__(self, recovery, cluster, system, stoppers):
         self.r_rec = recovery
@@ -16,8 +17,9 @@ class Fault(t.AbstractFault):
         self.stoppers[self.system.get_node_tag(leader)]()
         self.r_rec.killed = leader
 
+
 class Recovery(t.AbstractFault):
-    def __init__(self, system, restarters, killed = None):
+    def __init__(self, system, restarters, killed=None):
         self.system = system
         self.restarters = restarters
         self.killed = killed
@@ -28,6 +30,7 @@ class Recovery(t.AbstractFault):
 
     def apply_fault(self):
         self.restarters[self.system.get_node_tag(self.killed)]()
+
 
 class LeaderFailure(t.AbstractFailureGenerator):
     def get_failures(self, cluster, system, restarters, stoppers):

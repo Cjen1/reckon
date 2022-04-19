@@ -14,38 +14,48 @@ from mininet.net import Mininet
 from mininet.node import Host
 from pydantic import BaseModel, Field
 
+
 class OperationKind(str, Enum):
     Write = "write"
     Read = "read"
+
     def __str__(self):
         return self.value
+
 
 class Write(BaseModel):
     kind: Literal[OperationKind.Write]
     key: str
     value: str
 
+
 class Read(BaseModel):
     kind: Literal[OperationKind.Read]
     key: str
 
+
 class Operation(BaseModel):
-    payload: Union[Write, Read] = Field( ..., descriminator="kind")
+    payload: Union[Write, Read] = Field(..., descriminator="kind")
     time: float
+
 
 class Preload(BaseModel):
     kind: Literal["preload"]
     prereq: bool
     operation: Operation
 
+
 class Finalise(BaseModel):
     kind: Literal["finalise"]
+
 
 class Ready(BaseModel):
     kind: Literal["ready"]
 
+
 class Start(BaseModel):
     kind: Literal["start"]
+
 
 class Result(BaseModel):
     kind: Literal["result"]
@@ -56,31 +66,34 @@ class Result(BaseModel):
     clientid: str
     other: dict
 
+
 class Finished(BaseModel):
     kind: Literal["finished"]
 
+
 class Message(BaseModel):
     __root__: Union[Preload, Finalise, Ready, Start, Result, Finished] = Field(
-            ..., discriminator="kind"
-            )
+        ..., discriminator="kind"
+    )
+
 
 class Client(object):
-    def __init__(self, p_in : IO[bytes], p_out : IO[bytes], id : str):
+    def __init__(self, p_in: IO[bytes], p_out: IO[bytes], id: str):
         self.stdin = p_in
         self.stdout = p_out
         self.id = id
 
     def _send_packet(self, payload: str):
-        size = pack("<l", len(payload)) # Little endian signed long (4 bytes)
-        self.stdin.write(size + bytes(payload, 'ascii'))
+        size = pack("<l", len(payload))  # Little endian signed long (4 bytes)
+        self.stdin.write(size + bytes(payload, "ascii"))
         self.stdin.flush()
-    
+
     def _recv_packet(self) -> str:
         size = self.stdout.read(4)
         if size:
-            size = unpack("<l", bytearray(size)) # Little endian signed long (4 bytes)
+            size = unpack("<l", bytearray(size))  # Little endian signed long (4 bytes)
             payload = self.stdout.read(size[0])
-            return str(payload, 'ascii')
+            return str(payload, "ascii")
         else:
             logging.error(f"Tried to recv from |{self.id}|, received nothing")
             raise EOFError
@@ -107,10 +120,13 @@ class Client(object):
             return s.unregister(self.stdin)
         raise KeyError()
 
+
 WorkloadOperation = Tuple[Client, Operation]
+
 
 class Results(BaseModel):
     __root__: List[Result]
+
 
 class AbstractWorkload(ABC):
     @property
@@ -134,50 +150,50 @@ class AbstractWorkload(ABC):
         """
         return iter([])
 
+
 # Helper constructors
-def preload(prereq : bool, operation : Operation) -> Message:
+def preload(prereq: bool, operation: Operation) -> Message:
     return Message(
-            __root__= Preload(
-                kind= "preload",
-                prereq= prereq,
-                operation= operation),
-            )
+        __root__=Preload(kind="preload", prereq=prereq, operation=operation),
+    )
+
 
 def finalise() -> Message:
-    return Message(
-            __root__= Finalise(kind="finalise")
-            )
+    return Message(__root__=Finalise(kind="finalise"))
+
 
 def ready() -> Message:
-    return Message(
-            __root__ = Ready(kind="ready")
-            )
+    return Message(__root__=Ready(kind="ready"))
+
 
 def start() -> Message:
-    return Message(
-            __root__ = Start(kind="start")
-            )
+    return Message(__root__=Start(kind="start"))
 
-def result(t_s: float, t_r: float, result: str, kind: OperationKind, clientid: str, other: dict) -> Message:
+
+def result(
+    t_s: float, t_r: float, result: str, kind: OperationKind, clientid: str, other: dict
+) -> Message:
     return Message(
-            __root__ = Result(
-                kind="result",
-                t_submitted=t_s,
-                t_result=t_r,
-                result=result,
-                op_kind=kind,
-                clientid=clientid,
-                other=other
-                )
-            )
+        __root__=Result(
+            kind="result",
+            t_submitted=t_s,
+            t_result=t_r,
+            result=result,
+            op_kind=kind,
+            clientid=clientid,
+            other=other,
+        )
+    )
 
 
 MininetHost = NewType("MininetHost", Host)
+
 
 class AbstractClient(ABC):
     @abstractmethod
     def cmd(self, ips: List[str], client_id: str) -> str:
         pass
+
 
 class AbstractSystem(ABC):
     def __init__(self, args):
@@ -225,16 +241,21 @@ class AbstractSystem(ABC):
         pass
 
     @abstractmethod
-    def start_nodes(self, cluster: List[MininetHost]) -> Tuple[Dict[Any, Callable[[], None]], Dict[Any, Callable[[], None]]]:
+    def start_nodes(
+        self, cluster: List[MininetHost]
+    ) -> Tuple[Dict[Any, Callable[[], None]], Dict[Any, Callable[[], None]]]:
         pass
 
     @abstractmethod
-    def start_client(self, client: MininetHost, client_id: str, cluster: List[MininetHost]) -> Client:
+    def start_client(
+        self, client: MininetHost, client_id: str, cluster: List[MininetHost]
+    ) -> Client:
         pass
 
     @abstractmethod
     def get_leader(self, cluster: List[MininetHost]) -> MininetHost:
         return None
+
 
 class AbstractFault(ABC):
     def id(self) -> str:
@@ -244,6 +265,7 @@ class AbstractFault(ABC):
     def apply_fault(self):
         pass
 
+
 class NullFault(AbstractFault):
     def id(self):
         return ""
@@ -251,30 +273,37 @@ class NullFault(AbstractFault):
     def apply_fault(self):
         pass
 
+
 class AbstractFailureGenerator(ABC):
     @abstractmethod
     def get_failures(
-            self,
-            cluster : List[MininetHost],
-            system : AbstractSystem,
-            restarters: Dict[Any, Callable[[], None]],
-            stoppers: Dict[Any, Callable[[], None]]) -> List[AbstractFault]:
+        self,
+        cluster: List[MininetHost],
+        system: AbstractSystem,
+        restarters: Dict[Any, Callable[[], None]],
+        stoppers: Dict[Any, Callable[[], None]],
+    ) -> List[AbstractFault]:
         pass
+
 
 class AbstractTopologyGenerator(ABC):
     @abstractmethod
     def setup(self) -> Tuple[Mininet, List[MininetHost], List[MininetHost]]:
         pass
 
+
 class ThreadWithResult(threading.Thread):
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):
-        self._result : Any = None
+    def __init__(
+        self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None
+    ):
+        self._result: Any = None
+
         def function():
             if target:
                 self._result = target(*args, **kwargs)
+
         super().__init__(group=group, target=function, name=name, daemon=daemon)
 
     @property
     def result(self) -> Any:
         return self._result
-

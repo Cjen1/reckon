@@ -11,14 +11,16 @@ setLogLevel("info")
 
 
 class SimpleTopologyProvider(t.AbstractTopologyGenerator):
-    def __init__(self, number_nodes, number_clients, link_latency = None, link_loss = None):
+    def __init__(self, number_nodes, number_clients, link_latency=None, link_loss=None):
         self.number_nodes = number_nodes
         self.number_clients = number_clients
         self.link_latency = link_latency
 
         # since we have 2 links, when we want the abstraction of one direct link
         # we use link_loss = 1 - sqrt(1 - L)
-        self.per_link_loss = None if not link_loss else (1 - math.sqrt(1 - link_loss/100)) * 100
+        self.per_link_loss = (
+            None if not link_loss else (1 - math.sqrt(1 - link_loss / 100)) * 100
+        )
         if self.per_link_loss == 0:
             self.per_link_loss = None
         # we use link_latency = link_latency / 2
@@ -43,7 +45,7 @@ class SimpleTopologyProvider(t.AbstractTopologyGenerator):
         return self.net.addHost(name)
 
     def setup(self):
-        self.net = Mininet(controller=Controller, link = TCLink)
+        self.net = Mininet(controller=Controller, link=TCLink)
         self.net.addController("c0")
         sw = self.add_switch()
 
@@ -51,12 +53,7 @@ class SimpleTopologyProvider(t.AbstractTopologyGenerator):
         clients = [self.add_client() for _ in range(self.number_clients)]
 
         for host in hosts + clients:
-            self.net.addLink(
-                    host,
-                    sw, 
-                    delay = self.link_latency,
-                    loss = self.per_link_loss
-                    )
+            self.net.addLink(host, sw, delay=self.link_latency, loss=self.per_link_loss)
 
         self.net.start()
 

@@ -1,4 +1,4 @@
-FROM iwaseyusuke/mininet as base
+FROM cjen1/reckon-mininet:latest as base
 
 RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
     build-essential \
@@ -14,9 +14,12 @@ RUN mkdir -p /results/logs
 
 # Cache runtime deps
 ADD requirements.txt requirements.txt
-ADD src src
 RUN make docker-install-runtime-deps
+
+RUN apt update -y && apt install -y pv lsof vim
 
 ADD . .
 
-COPY --from=etcd-image /system systems/etcd
+ENV PYTHONPATH="/root:${PYTHONPATH}"
+
+COPY --from=etcd-image /reckon/systems/etcd systems/etcd

@@ -38,7 +38,7 @@ def run_test(system='etcd', topo='simple', failure="none", nn='3', nc='1', clien
         }
 
     tag = (
-            "{system}.{topo}.{client}.{failure}.nn_{nn}.nc_{nc}.write_ratio_{write_ratio}.rate_{rate}.duration_{duration}.kill_n_{kill_n}.loss_{loss}.tag_{tag}"
+            "{system}.{topo}.{client}.{failure}.nn_{nn}.nc_{nc}.write_ratio_{write_ratio}.rate_{rate}.duration_{duration}.kill-n_{kill_n}.loss_{loss}.tag_{tag}"
         ).format(**config)
 
     config['tag'] = tag
@@ -46,7 +46,7 @@ def run_test(system='etcd', topo='simple', failure="none", nn='3', nc='1', clien
     cmd = (
             "python -m reckon {system} {topo} --number-nodes {nn} --number-clients {nc} uniform --write-ratio {write_ratio} " +
             "{failure} --client {client} --system_logs /results/logs " +
-            "--rate {rate} --duration {duration} --result-location /results/res_{tag}.res --kill_n {kill_n} --link_loss {loss}"
+            "--rate {rate} --duration {duration} --result-location /results/res_{tag}.res --kill-n {kill_n} --link-loss {loss}"
         ).format(**config)
 
     print(f"Calling {cmd}\n")
@@ -70,4 +70,4 @@ for repeat in range(5):
     rng.shuffle(params)
 
     for nn, loss, minNodes in params:
-        run_test(failure='kill_n', nn=nn, kill_n=str(int(nn/2)) if minNodes else '0', tag=tag, loss=loss, client='go-tracer', rate=10)
+        run_test(failure='kill-n', nn=nn, kill_n=str(int(nn/2)) if minNodes else '0', tag=tag, loss=loss, client='go-tracer', rate=10)

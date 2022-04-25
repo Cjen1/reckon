@@ -7,6 +7,13 @@ run: reckon
 	     --network host --name reckon \
 	     cjen1/reckon:latest bash
 
+.PHONY: etcd
+etcd: reckon
+	docker run -it --privileged -e DISPLAY \
+		--tmpfs /data --rm \
+		--network host --name reckon-etcd \
+		cjen1/reckon:latest ./scripts/run.sh python -m reckon etcd simple uniform none
+
 .PHONY: lossy-etcd
 lossy-etcd: reckon
 	docker run -it --privileged -e DISPLAY \
@@ -29,30 +36,3 @@ etcd-image:
 .PHONY: ocamlpaxos-image
 ocamlpaxos-image:
 	docker build -f Dockerfile.ocamlpaxos -t ocamlpaxos-image .
-
-.PHONY:python-deps
-python-deps:
-	pip3 install --upgrade wheel setuptools
-	pip3 install -r requirements.txt
-
-.PHONY:docker-build-deps
-docker-build-deps:
-	apt-get update
-	apt-get install --no-install-recommends -yy -qq \
-		autoconf \
-		automake \
-		libtool \
-		curl \
-		g++ \
-		unzip
-
-.PHONY:docker-install-runtime-deps
-docker-install-runtime-deps: python-deps 
-	apt-get install --no-install-recommends -yy -qq \
-		tmux \
-		screen \
-		psmisc \
-		iptables \
-		strace \
-		linux-tools \
-		tcpdump

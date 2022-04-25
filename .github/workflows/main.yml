@@ -30,7 +30,27 @@ jobs:
           cjen1/reckon:latest 
           python -c 'import reckon.client_test as c; c.test_client_runner()'
 
-      - name: Test client=go
+      - name: Test system=etcd
+        timeout-minutes: 5
+        if: always()
+        run: >
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd simple uniform none 
+
+      - name: Test system=etcd-pre-vote
+        timeout-minutes: 5
+        if: always()
+        run: >
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon etcd-pre-vote simple uniform none 
+
+      - name: Test system=etcd client=go
         timeout-minutes: 5
         if: always()
         run: >
@@ -40,7 +60,7 @@ jobs:
           cjen1/reckon:latest 
           python -m reckon etcd --client go simple uniform none 
 
-      - name: Test client=go-tracer
+      - name: Test system=etcd client=go-tracer
         timeout-minutes: 5
         if: always()
         run: >
@@ -58,7 +78,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd --client go simple uniform none --number-nodes=5 --number-clients=2 --link-latency=100ms --link-loss=0.1
+          python -m reckon etcd simple uniform none --number-nodes=5 --number-clients=2 --link-latency=100ms --link-loss=0.1
 
       - name: Test topo=wan
         timeout-minutes: 5
@@ -68,7 +88,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd --client go wan uniform none --number-nodes=5 --link-latency=100ms
+          python -m reckon etcd wan uniform none --number-nodes=5 --link-latency=100ms
 
       - name: Test failure=none
         timeout-minutes: 5 
@@ -78,7 +98,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd --client go wan uniform none
+          python -m reckon etcd wan uniform none
 
       - name: Test failure=leader
         timeout-minutes: 5 
@@ -88,7 +108,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd --client go wan uniform leader
+          python -m reckon etcd wan uniform leader
 
       - name: Test failure=partial-partition
         timeout-minutes: 5 
@@ -98,7 +118,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd --client go wan uniform partial-partition
+          python -m reckon etcd wan uniform partial-partition
 
       - name: Test failure=intermittent-partial
         timeout-minutes: 5 
@@ -108,7 +128,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd --client go wan uniform intermittent-partial --mtbf=10
+          python -m reckon etcd wan uniform intermittent-partial --mtbf=10
 
       - name: Test failure=intermittent-full
         timeout-minutes: 5 
@@ -118,7 +138,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd --client go wan uniform intermittent-full --mtbf=10
+          python -m reckon etcd wan uniform intermittent-full --mtbf=10
 
       - name: Test failure=kill-n
         timeout-minutes: 5 
@@ -128,4 +148,4 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd --client go wan uniform kill-n --kill-n 1
+          python -m reckon etcd wan uniform kill-n --kill-n 1

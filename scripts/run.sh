@@ -10,6 +10,3 @@ sudo bash -c "$*" 2>&1 | tee /results/run.log
 
 # Clean state
 bash scripts/clean.sh
-
-# Return stats of test for approximate analysis
-python scripts/throughput.py /results/*.res 

@@ -6,20 +6,38 @@ RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
 
 RUN ln /usr/bin/ovs-testcontroller /usr/bin/controller
 
-# Cache docker-build-deps
-ADD Makefile Makefile
-RUN make docker-build-deps
+# Build dependencies
+RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
+    autoconf \
+    automake \
+    libtool \
+    curl \
+    g++ \
+    unzip
 
-RUN mkdir -p /results/logs
-
-# Cache runtime deps
+# Runtime dependencies
+RUN pip3 install --upgrade wheel setuptools
 ADD requirements.txt requirements.txt
-RUN make docker-install-runtime-deps
+RUN pip3 install -r requirements.txt
+RUN apt-get update && apt-get install --no-install-recommends -yy -qq psmisc iptables
 
-RUN apt update -y && apt install -y pv lsof vim
+# Test dependencies
+RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
+    tmux \
+    screen \
+    strace \
+    linux-tools \
+    tcpdump \
+    lsof \
+    vim
 
+
+# Add reckon code
 ADD . .
-
 ENV PYTHONPATH="/root:${PYTHONPATH}"
 
+# Make directory for logs
+RUN mkdir -p /results/logs
+
+# Add built etcd artefacts
 COPY --from=etcd-image /reckon/systems/etcd systems/etcd

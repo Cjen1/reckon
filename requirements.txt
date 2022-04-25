@@ -2,3 +2,4 @@ tqdm
 numpy
 pytest
 pydantic
+pandas

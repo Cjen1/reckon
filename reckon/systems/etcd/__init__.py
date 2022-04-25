@@ -37,7 +37,7 @@ class Etcd(t.AbstractSystem):
     additional_flags = ""
 
     def get_client(self, args):
-        if args.client == str(ClientType.Go):
+        if args.client == str(ClientType.Go) or args.client is None:
             return Go(args)
         elif args.client == str(ClientType.GoTracer):
             return GoTracer(args)

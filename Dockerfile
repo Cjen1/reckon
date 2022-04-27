@@ -40,5 +40,5 @@ ENV SHELL=/bin/bash
 # Make directory for logs
 RUN mkdir -p /results/logs
 
-# Add built etcd artefacts
-COPY --from=etcd-image /reckon/systems/etcd systems/etcd
+# Add built artefacts
+COPY --from=etcd-image /reckon/systems/etcd reckon/systems/etcd

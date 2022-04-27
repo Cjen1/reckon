@@ -6,7 +6,7 @@ import reckon.reckon_types as t
 
 
 class Go(t.AbstractClient):
-    client_path = "systems/etcd/clients/go/client"
+    client_path = "reckon/systems/etcd/clients/go/client"
 
     def __init__(self, args):
         self.ncpr = args.new_client_per_request
@@ -21,7 +21,7 @@ class Go(t.AbstractClient):
 
 
 class GoTracer(Go):
-    client_path = "systems/etcd/clients/go-tracer/client"
+    client_path = "reckon/systems/etcd/clients/go-tracer/client"
 
 
 class ClientType(Enum):
@@ -33,7 +33,7 @@ class ClientType(Enum):
 
 
 class Etcd(t.AbstractSystem):
-    binary_path = "systems/etcd/bin/etcd"
+    binary_path = "reckon/systems/etcd/bin/etcd"
     additional_flags = ""
 
     def get_client(self, args):
@@ -129,7 +129,7 @@ class Etcd(t.AbstractSystem):
         ips = [host.IP() for host in cluster]
         for host in cluster:
             try:
-                cmd = "ETCDCTL_API=3 systems/etcd/bin/etcdctl endpoint status --cluster"
+                cmd = "ETCDCTL_API=3 reckon/systems/etcd/bin/etcdctl endpoint status --cluster"
                 resp = host.cmd(cmd)
                 leader_ip = self.parse_resp(resp)
                 leader = cluster[ips.index(leader_ip)]

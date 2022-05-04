@@ -1,0 +1,11 @@
+FROM nixos/nix
+RUN mkdir -p ~/.config/nix && echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
+RUN nix-channel --update
+
+# Build and cache nix environments
+COPY reckon/javaclient/flake.* reckon/javaclient/
+RUN cd reckon/javaclient && nix develop -c echo done
+
+# Build java client jar
+COPY reckon/javaclient reckon/javaclient
+RUN cd reckon/javaclient && nix develop -c gradle --no-daemon build

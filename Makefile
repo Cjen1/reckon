@@ -22,8 +22,8 @@ lossy-etcd: reckon
 		cjen1/reckon:latest ./scripts/run.sh python ./scripts/lossy_etcd.py
 
 .PHONY:reckon
-reckon: reckon-mininet etcd-image
-	docker build -t cjen1/reckon:latest .
+reckon: reckon-mininet etcd-image zk-image
+		docker build -t cjen1/reckon:latest .
 
 .PHONY: reckon-mininet
 reckon-mininet: 
@@ -31,7 +31,11 @@ reckon-mininet:
 
 .PHONY: etcd-image
 etcd-image:
-	docker build -f Dockerfile.etcd -t etcd-image .
+		docker build -f Dockerfile.etcd -t etcd-image .
+
+.PHONY: zk-image
+zk-image:
+		docker build -f Dockerfile.zookeeper -t zk-image .
 
 .PHONY: ocamlpaxos-image
 ocamlpaxos-image:

@@ -11,7 +11,7 @@ RUN cd reckon/systems/zookeeper/clients && nix develop -c echo done
 
 # Build java client jar
 COPY reckon/javaclient reckon/javaclient
-RUN cd reckon/javaclient && nix develop -c gradle --no-daemon build
+RUN cd reckon/javaclient && nix develop -c gradle --no-daemon build -x test
 
 # Install Zookeeper binaries
 RUN mkdir -p reckon/systems/zookeeper/bins && nix-env -i wget
@@ -24,9 +24,8 @@ RUN cd reckon/systems/zookeeper/bins \
 COPY reckon/systems/zookeeper/clients reckon/systems/zookeeper/clients
 
 # Copy built library jar to client directories
-RUN cp reckon/javaclient/lib/build/libs/lib.jar reckon/systems/zookeeper/clients/app
-
-RUN cd reckon/systems/zookeeper/clients \
+RUN cp reckon/javaclient/lib/build/libs/lib.jar reckon/systems/zookeeper/clients/app/libs \
+    && cd reckon/systems/zookeeper/clients \
     && nix develop -c gradle --no-daemon installShadowDist
 
 RUN cd reckon/systems/zookeeper \

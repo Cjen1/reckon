@@ -4,11 +4,12 @@ public class WaitGroup {
 	private int jobs = 0;
 
 	public synchronized void add(int i) {
-		jobs += 1;
+		jobs += i;
 	}
 
 	public synchronized void done() {
-		if (--jobs == 0) {
+    jobs -= 1;
+		if (jobs == 0) {
 			notifyAll();
 		}
 	}

@@ -20,13 +20,8 @@ class Java(t.AbstractClient):
         )
 
 
-class JavaTracer(Java):
-    client_path = "reckon/systems/etcd/clients/go-tracer/client"
-
-
 class ClientType(Enum):
     Java = "java"
-    JavaTracer = "java-tracer"
 
     def __str__(self):
         return self.value
@@ -40,8 +35,6 @@ class Zookeeper(t.AbstractSystem):
     def get_client(self, args):
         if args.client == str(ClientType.Java) or args.client is None:
             return Java(args)
-        elif args.client == str(ClientType.JavaTracer):
-            return JavaTracer(args)
         else:
             raise Exception("Not supported client type: " + str(args.client))
 

@@ -87,6 +87,31 @@ class ZKClient implements Client {
 	}
 }
 
+class TestClient implements Client {
+  public TestClient() {
+    try {
+      Thread.sleep(100);
+    } catch(InterruptedException e) {}
+  }
+
+  static String key_to_path(String k) { return "/" + k; }
+
+  @Override
+  public void Create(String k, Runnable c, Consumer<Exception> e) {
+    c.run();
+  }
+
+  @Override
+  public void Put(String k, String v, Runnable c, Consumer<Exception> e) {
+    c.run();
+  }
+
+	@Override
+	public void Get(String k, Consumer<String> c, Consumer<Exception> e) {
+    c.accept("test");
+	}
+}
+
 public class App {
   public static void main(String[] args) throws JsonProcessingException, IOException, ClientException {
     if (args.length != 3) {
@@ -100,7 +125,7 @@ public class App {
     boolean ncpr = false;
     String clientId = "";
      
-    Supplier<Client> cb = () -> {
+    Supplier<Client> cs = () -> {
       while(true) {
         try {
           return new ZKClient(connectString);
@@ -108,6 +133,16 @@ public class App {
       }
     };
 
-    Library.Run(cb, clientId, ncpr);
+    Supplier<Client> tcs = () -> {
+      return new TestClient();
+    };
+
+    boolean debug = false;
+
+    if (!debug) {
+      Library.Run(cs, clientId, ncpr);
+    } else {
+      Library.Run(tcs, clientId, ncpr);
+    }
   }
 }

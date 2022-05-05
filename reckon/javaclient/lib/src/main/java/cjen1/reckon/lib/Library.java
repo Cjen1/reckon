@@ -1,15 +1,20 @@
 package cjen1.reckon.lib;
 
-import java.util.ArrayList;
 import java.io.IOException;
-import java.time.*;
-import java.util.function.*;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 
 class Response {
@@ -101,11 +106,15 @@ public class Library {
     ObjectMapper om = new ObjectMapper();
     System.err.println("Client: Starting run");
 
-    Supplier<Client> getClient = cb;
+    Supplier<Client> getClientTmp = cb;
     if (!new_client_per_request) {
       Client c = cb.get();
-      getClient = () -> { return c; };
+      getClientTmp = () -> { return c; };
     }
+
+    final Supplier<Client> getClient = getClientTmp;
+
+    ExecutorService ex = Executors.newFixedThreadPool(4);
 
     System.err.println("Phase 1: preload");
     ArrayList<JsonNode> operations = new ArrayList<JsonNode>();
@@ -117,13 +126,14 @@ public class Library {
         case "preload":
           if (data.get("prereq").asBoolean()) {
             preload_wg.add(1);
-            perform(
-                clientid,
-                getClient,
-                data.get("operation"),
-                (Response R)->preload_wg.done(),
-                true
-                );
+            ex.execute(() -> 
+                perform(
+                  clientid,
+                  getClient,
+                  data.get("operation"),
+                  (Response R)->preload_wg.done(),
+                  true
+                  ));
           } else {
             operations.add(data.get("operation"));
           }
@@ -146,6 +156,8 @@ public class Library {
     });
     preload_wg.await();
 
+    System.err.println(String.format("Phase 1: Preload complete got %d requests", operations.size()));
+
     System.err.println("Phase 2: readying");
     io.write_packet(om.readTree("{\"kind\": \"ready\"}"), om);
 
@@ -165,46 +177,70 @@ public class Library {
     } while(!got_start);
 
     System.err.println("Phase 3: starting");
-    ArrayList<Response> responses = new ArrayList<Response>(operations.size());
+    ConcurrentMap<Response,Integer> resp_map = new ConcurrentHashMap<Response,Integer>();
     WaitGroup execute_wg = new WaitGroup();
     double start_time = to_epoch(Instant.now()); 
 
+    Consumer<Response> resp_callback = (Response r)->{
+      resp_map.put(r, Integer.valueOf(0));
+      execute_wg.done();
+    };
+
+    double max_behind = 0;
     for (JsonNode operation : operations) {
       double target = operation.get("time").asDouble();
+
+      // Sleep until target
       while(true) {
         double current = to_epoch(Instant.now()) - start_time;
         double diff = target - current;
-        long sleep_time_ms = (long)(diff * 1000.);
 
-        if (sleep_time_ms > 0) {
-          try {
-            Thread.sleep(sleep_time_ms);
-          } catch (InterruptedException e) {}
-        } else {
-          // Should not wait longer => break out of loop
+        // rounds down on cast to long
+        double diff_ms = diff * 1000;
+        max_behind = Math.max(max_behind, -diff_ms);
+        if (diff_ms < 0.1) { // within 100us
           break;
         }
-        execute_wg.add(1);
-        perform(
+
+        double diff_rem_ms = diff_ms - Math.floor(diff_ms);
+        double diff_rem_ns = diff_rem_ms * 1e6;
+        long sleep_time_ms = (long)(diff_ms);
+        int sleep_time_rem_ns = (int)(diff_rem_ns);
+        try {
+          Thread.sleep(sleep_time_ms, sleep_time_rem_ns);
+        } catch (InterruptedException e) {}
+      }
+
+      execute_wg.add(1);
+      ex.execute(() ->
+          perform(
             clientid,
             getClient,
             operation,
-            (Response r)->{ 
-              responses.add(r);
-              execute_wg.done();
-            },
-            false);
-      }
+            resp_callback,
+            false
+            ));
     }
+
+    System.err.println(String.format("Phase 3: fell behind by at most %.3f ms", max_behind));
 
     System.err.println("Phase 3: waiting for requests to finish");
     execute_wg.await();
 
     System.err.println("Phase 4: collate");
+    // Take responses from map, and sort by submit time
+    ArrayList<Response> responses = new ArrayList<Response>(resp_map.size());
+    for (Response r : resp_map.keySet()) {
+      responses.add(r);
+    }
+    responses.sort((Response l, Response r) -> Double.compare(l.t_submitted, r.t_submitted));
+
+    // Write responses to disk
     for (Response r : responses) {
       io.write_packet(r, om);
     }
-    System.err.println("Phase 4: results sent");
+
+    System.err.println(String.format("Phase 4: Sent %d results", responses.size()));
 
     System.err.println("Phase 5: finalise");
     io.write_packet(om.readTree("{\"kind\":\"finished\"}"), om);

@@ -111,6 +111,7 @@ def collate(clients: List[t.Client], total_reqs: int) -> t.Results:
                 resps.append(msg.__root__)
             else:
                 print(f"Unexpected message: |{msg}|")
+    print("finished collate")
     return t.Results(__root__=resps)
 
 

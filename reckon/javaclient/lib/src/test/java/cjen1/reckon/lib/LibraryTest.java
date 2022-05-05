@@ -3,16 +3,18 @@
  */
 package cjen1.reckon.lib;
 
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.nio.channels.*;
-import java.nio.file.*;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.time.Instant;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import java.io.RandomAccessFile;
+import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class LibraryTest {
 
@@ -29,4 +31,149 @@ class LibraryTest {
     fin.close();
     fout.close();
   }
+
+  private static double to_epoch(Instant t) {
+    double seconds = (double)t.getEpochSecond();
+    double nanos = (double)t.getNano() / 1e9;
+    double res = seconds + nanos;
+    return res;
+  }
+
+  @Test void wait_group_waits() {
+    WaitGroup wg = new WaitGroup();
+    ExecutorService ex = Executors.newCachedThreadPool();
+    AtomicInteger completed = new AtomicInteger(0);
+    double start = to_epoch(Instant.now());
+    for (int i = 0; i < 1000; i ++) {
+      wg.add(1);
+      ex.execute(() -> {
+        try {
+          Thread.sleep(2000);
+        } catch (InterruptedException e) {}
+        completed.incrementAndGet();
+        wg.done();
+      });
+    }
+    double dispatch_end = to_epoch(Instant.now()); 
+
+    wg.await();
+    double end = to_epoch(Instant.now()); 
+    System.err.println(String.format("Threads took %.3f ms", (end - start) * 1000));
+    System.err.println(String.format("Dispatch took %.3f ms", (dispatch_end - start) * 1000));
+    int finished = completed.get();
+    assert(end - start > 1);
+  }
+
+  /*
+  @Test void load_generator_perf() {
+    int n = 1000000;
+
+    {
+      System.err.println("Cached thread pool");
+      WaitGroup wg = new WaitGroup();
+      ExecutorService ex = Executors.newCachedThreadPool();
+      AtomicInteger completed = new AtomicInteger(0);
+      double start = to_epoch(Instant.now());
+      for (int i = 0; i < n; i ++) {
+        wg.add(1);
+        ex.execute(() -> {
+          completed.incrementAndGet();
+          wg.done();
+        });
+      }
+      double dispatch_end = to_epoch(Instant.now()); 
+      wg.await();
+      double end = to_epoch(Instant.now()); 
+      System.err.println(String.format("Threads took %.3f ms", (end - start) * 1000));
+      System.err.println(String.format("Dispatch took %.3f ms", (dispatch_end - start) * 1000));
+      int finished = completed.get();
+      System.err.println(String.format("%d threads completed", finished));
+    }
+
+    for (int tc = 1; tc <= 16; tc *= 2) {
+      System.err.println(String.format("Fixed thread pool of %d threads", tc));
+      WaitGroup wg = new WaitGroup();
+      ExecutorService ex = Executors.newFixedThreadPool(tc);
+      AtomicInteger completed = new AtomicInteger(0);
+      double start = to_epoch(Instant.now());
+      for (int i = 0; i < n; i ++) {
+        wg.add(1);
+        ex.execute(() -> {
+          completed.incrementAndGet();
+          wg.done();
+        });
+      }
+      double dispatch_end = to_epoch(Instant.now()); 
+      wg.await();
+      double end = to_epoch(Instant.now()); 
+      System.err.println(String.format("Threads: %.3f ms, Dispatch: %.3f ms", (end - start) * 1000, (dispatch_end - start) * 1000));
+    }
+
+    {
+      System.err.println("fixed thread 4 pool, avoid obj alloc");
+      WaitGroup wg = new WaitGroup();
+      ExecutorService ex = Executors.newFixedThreadPool(4);
+      AtomicInteger completed = new AtomicInteger(0);
+      Runnable[] closures = new Runnable[n];
+      for (int i = 0; i < n; i ++) {
+        closures[i] = () -> {
+          completed.incrementAndGet();
+          wg.done();
+        };
+      }
+      double start = to_epoch(Instant.now());
+      for (int i = 0; i < n; i ++) {
+        wg.add(1);
+        ex.execute(closures[i]);
+      }
+      double dispatch_end = to_epoch(Instant.now()); 
+      wg.await();
+      double end = to_epoch(Instant.now()); 
+      System.err.println(String.format("Threads: %.3f ms, Dispatch: %.3f ms", (end - start) * 1000, (dispatch_end - start) * 1000));
+    }
+
+    {
+      System.err.println("prealloced fixed thread pool, sync queue");
+      WaitGroup wg = new WaitGroup();
+      ExecutorService ex = new ThreadPoolExecutor(4, 4,
+          60L, TimeUnit.SECONDS,
+          new SynchronousQueue<Runnable>());
+      AtomicInteger completed = new AtomicInteger(0);
+      double start = to_epoch(Instant.now());
+      for (int i = 0; i < n; i ++) {
+        wg.add(1);
+        ex.execute(() -> {
+          completed.incrementAndGet();
+          wg.done();
+        });
+      }
+      double dispatch_end = to_epoch(Instant.now()); 
+      wg.await();
+      double end = to_epoch(Instant.now()); 
+      System.err.println(String.format("Threads: %.3f ms, Dispatch: %.3f ms", (end - start) * 1000, (dispatch_end - start) * 1000));
+    }
+
+    {
+      System.err.println("prealloced fixed thread pool, LinkedBlockingQueue");
+      WaitGroup wg = new WaitGroup();
+      ExecutorService ex = new ThreadPoolExecutor(4, 4,
+          60L, TimeUnit.SECONDS,
+          new LinkedBlockingQueue<Runnable>());
+      AtomicInteger completed = new AtomicInteger(0);
+      double start = to_epoch(Instant.now());
+      for (int i = 0; i < n; i ++) {
+        wg.add(1);
+        ex.execute(() -> {
+          completed.incrementAndGet();
+          wg.done();
+        });
+      }
+      double dispatch_end = to_epoch(Instant.now()); 
+      wg.await();
+      double end = to_epoch(Instant.now()); 
+      System.err.println(String.format("Threads: %.3f ms, Dispatch: %.3f ms", (end - start) * 1000, (dispatch_end - start) * 1000));
+    }
+
+  }
+  */
 }

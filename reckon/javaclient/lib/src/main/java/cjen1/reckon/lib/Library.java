@@ -43,8 +43,7 @@ public class Library {
     return res;
   }
 
-  private static void perform(String clientid, Supplier<Client> getClient, JsonNode operation, Consumer<Response> response_callback, Boolean prereq) {
-    Client cli = getClient.get();
+  private static void perform(String clientid, Client cli, JsonNode operation, Consumer<Response> response_callback, Boolean prereq) {
     JsonNode payload = operation.get("payload");
     final String kind = payload.get("kind").asText();
     Instant start = Instant.now();
@@ -102,17 +101,9 @@ public class Library {
     System.exit(1);
   }
 
-  public static void Run(IO io, Supplier<Client> cb, String clientid, boolean new_client_per_request) throws IOException, JsonProcessingException, ClientException {
+  public static void Run(IO io, Supplier<Client> getClient, String clientid, boolean new_client_per_request, int number_client_objs) throws IOException, JsonProcessingException, ClientException {
     ObjectMapper om = new ObjectMapper();
     System.err.println("Client: Starting run");
-
-    Supplier<Client> getClientTmp = cb;
-    if (!new_client_per_request) {
-      Client c = cb.get();
-      getClientTmp = () -> { return c; };
-    }
-
-    final Supplier<Client> getClient = getClientTmp;
 
     ExecutorService ex = Executors.newFixedThreadPool(4);
 
@@ -120,6 +111,7 @@ public class Library {
     ArrayList<JsonNode> operations = new ArrayList<JsonNode>();
     boolean got_finalise = false;
     WaitGroup preload_wg = new WaitGroup();
+    Client preloadClient = getClient.get();
     do {
       JsonNode data = io.read_packet(om);
       switch( data.get("kind").asText() ) {
@@ -129,7 +121,7 @@ public class Library {
             ex.execute(() -> 
                 perform(
                   clientid,
-                  getClient,
+                  preloadClient,
                   data.get("operation"),
                   (Response R)->preload_wg.done(),
                   true
@@ -187,8 +179,15 @@ public class Library {
     };
 
     double max_behind = 0;
+    int cmd_num = 0;
+    Client[] clis = new Client[number_client_objs];
+    for (int i = 0; i < number_client_objs; i ++) {
+      clis[i] = getClient.get();
+    }
+
     for (JsonNode operation : operations) {
       double target = operation.get("time").asDouble();
+      Client c = new_client_per_request ? getClient.get() : clis[cmd_num++ % number_client_objs];
 
       // Sleep until target
       while(true) {
@@ -215,7 +214,7 @@ public class Library {
       ex.execute(() ->
           perform(
             clientid,
-            getClient,
+            c,
             operation,
             resp_callback,
             false
@@ -247,7 +246,7 @@ public class Library {
     System.err.println("Phase 5: exit");
   }
 
-  public static void Run(Supplier<Client> cb, String clientid, boolean new_client_per_request) throws IOException, JsonProcessingException, ClientException {
-	  Run(new IO(), cb, clientid, new_client_per_request);
+  public static void Run(Supplier<Client> cb, String clientid, boolean new_client_per_request, int number_client_objs) throws IOException, JsonProcessingException, ClientException {
+	  Run(new IO(), cb, clientid, new_client_per_request, number_client_objs);
   }
 }

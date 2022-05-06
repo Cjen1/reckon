@@ -26,7 +26,7 @@ class LibraryTest {
 
     IO io = new IO(in_c, out_c); 
 
-    Library.Run(io, ()->new TestClient(), "test client", false);
+    Library.Run(io, ()->new TestClient(), "test client", false, 2);
 
     fin.close();
     fout.close();

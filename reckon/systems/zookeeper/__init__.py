@@ -12,7 +12,7 @@ class Java(t.AbstractClient):
         self.ncpr = args.new_client_per_request
 
     def cmd(self, ips, client_id) -> str:
-        return "java -jar {client_path} {ips} {client_id} {ncpr}".format(
+        return "java -jar {client_path} {ips} {client_id} {ncpr} 20".format(
             client_path=self.client_path,
             ips=",".join(f"{ip}:2379" for ip in ips),
             client_id=str(client_id),

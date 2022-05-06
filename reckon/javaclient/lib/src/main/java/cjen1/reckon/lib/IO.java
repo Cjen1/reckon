@@ -12,8 +12,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 
 class IO {
+  // These 3 properties need to be overridden in any system
 	private ReadableByteChannel in = Channels.newChannel(System.in);
 	private WritableByteChannel out = Channels.newChannel(System.out);
+
+  private void flush() {
+    System.out.flush();
+  }
 
   public IO() {
 	  in = Channels.newChannel(System.in);
@@ -74,6 +79,7 @@ class IO {
 		write_uint4(len);
 		ByteBuffer bb = StandardCharsets.US_ASCII.encode(packet);
 		out.write(bb);
+    flush();
 	}
 
 	public void write_packet(Object packet, ObjectMapper om) throws IOException {

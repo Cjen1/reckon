@@ -24,11 +24,10 @@ RUN cd reckon/systems/zookeeper/bins \
 COPY reckon/systems/zookeeper/clients reckon/systems/zookeeper/clients
 
 # Copy built library jar to client directories
-RUN cp reckon/javaclient/lib/build/libs/lib.jar reckon/systems/zookeeper/clients/app/libs \
+RUN mkdir -p reckon/systems/zookeeper/clients/app/libs \
+    && cp reckon/javaclient/lib/build/libs/lib.jar reckon/systems/zookeeper/clients/app/libs/lib.jar \
     && cd reckon/systems/zookeeper/clients \
     && nix develop -c gradle --no-daemon installShadowDist
 
 RUN cd reckon/systems/zookeeper \
     && cp clients/app/build/install/app-shadow/lib/app-all.jar bins/client.jar
-
-COPY reckon/systems/zookeeper reckon/systems/zookeeper

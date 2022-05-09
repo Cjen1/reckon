@@ -47,4 +47,4 @@ RUN mkdir -p /results/logs
 
 # Add built artefacts
 COPY --from=etcd-image /reckon/systems/etcd reckon/systems/etcd
-COPY --from=zk-image /reckon/systems/zookeeper reckon/systems/zookeeper
+COPY --from=zk-image /reckon/systems/zookeeper/bins reckon/systems/zookeeper/bins

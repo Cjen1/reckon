@@ -28,9 +28,7 @@ class ClientType(Enum):
 
 
 class Zookeeper(t.AbstractSystem):
-    server_bin = (
-        "reckon/systems/zookeeper/bins/apache-zookeeper-3.8.0-bin/bin/zkServer.sh"
-    )
+    bin_dir = "reckon/systems/zookeeper/bins/apache-zookeeper-3.8.0-bin"
 
     def get_client(self, args):
         if args.client == str(ClientType.Java) or args.client is None:
@@ -56,7 +54,7 @@ class Zookeeper(t.AbstractSystem):
             initLimit = 1000  # How long should new followers be allowed to wait before being kicked
             syncLimit = 10  # How long before a follower is removed from the cluster and clients are forced to reconnect to another node
 
-            dataDir = f"/data/{tag}"
+            dataDir = f"{self.data_dir}/{tag}"
 
             cluster_config = "\n".join(
                 f"server.{i+1}={node.IP()}:{serverPort}:{electionPort}"
@@ -70,42 +68,55 @@ class Zookeeper(t.AbstractSystem):
                     f"clientPort={clientPort}",
                     f"initLimit={int(initLimit)}",
                     f"syncLimit={int(syncLimit)}",
+                    f"4lw.commands.whitelist=*",
+                    f"snap_count=1000000",
+                    f"max_client_connections=5000",
                     cluster_config,
                 ]
             )
 
-            subprocess.run(f"mkdir {dataDir}", shell=True).check_returncode()
+            subprocess.run(f"mkdir -p {dataDir}", shell=True).check_returncode()
             subprocess.run(f"echo {i} > {dataDir}/myid", shell=True).check_returncode()
 
             print(config)
 
             # Write cfg
-            cfg_dir = f"/data/{tag}.cfg"
+            cfg_dir = f"{dataDir}/config"
             subprocess.run(f"mkdir -p {cfg_dir}", shell=True).check_returncode()
+            # Copy logback config into config directory
+            subprocess.run(f"cp {self.bin_dir}/conf/logback.xml {cfg_dir}/logback.xml", shell=True) .check_returncode()
+
             cfg_path = f"{cfg_dir}/zoo.cfg"
             with open(cfg_path, "w") as f:
                 f.write(config)
                 f.flush()
 
-            zk_cmd = " ".join(
+            # --config is passed to zkEnv which then sets up the classpath to have cfg within that directory
+            cmd = " ".join(
                 [
                     f"ZOO_LOG_FILE=/results/logs/{tag}.zklogfile",
                     f"ZOO_LOG_DIR=/results/logs/{tag}.zklogdir",
-                    f"{self.server_bin}",
+                    f"JVMFLAGS=\"-Xms10G -Xmx10G \"",
+                    f"{self.bin_dir}/bin/zkServer.sh",
                     f"--config {cfg_dir}",
                     f"start-foreground",
                 ]
             )
-            zk_cmd = self.add_logging(zk_cmd, tag + ".log")
 
-            self.start_screen(host, zk_cmd)
-            print("Start cmd: " + zk_cmd)
+            #qcmd = cmd.translate(str.maketrans({"\\": r"\\", "\"": r"\""})) # Quote all punctuation
+            #cmd = f'bash -c "{qcmd}"' # Encapsulate cmd within a bash environment to ensure logging occurs correctly
+
+            cmd = self.add_stderr_logging(cmd, tag + ".log")
+            cmd = self.add_stdout_logging(cmd, tag + ".log")
+
+            self.start_screen(host, cmd)
+            print("Start cmd: " + cmd)
 
             # We use the default arguemnt to capture the host variable semantically rather than lexically
             stoppers[tag] = lambda host=host: self.kill_screen(host)
 
-            restarters[tag] = lambda host=host, zk_cmd=zk_cmd: self.start_screen(
-                host, zk_cmd
+            restarters[tag] = lambda host=host, cmd=cmd: self.start_screen(
+                host, cmd
             )
 
         return restarters, stoppers
@@ -151,3 +162,8 @@ class Zookeeper(t.AbstractSystem):
         #        return leader
         #    except:
         #        pass
+
+    def stat(self, host: t.MininetHost) -> str:
+        ret = host.cmd("echo stat | nc 127.0.0.1 2379")
+        assert(ret)
+        return ret

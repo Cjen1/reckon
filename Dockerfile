@@ -34,7 +34,8 @@ RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
     linux-tools \
     tcpdump \
     lsof \
-    vim
+    vim \
+    netcat
 
 
 # Add reckon code

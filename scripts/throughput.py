@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# type: ignore
 
 import sys
 import pandas as pd
@@ -19,8 +20,13 @@ for filepath in sys.argv[1:]:
 
     length = df["t_result"].max() - df["t_result"].min()
     throughput = len(df["t_result"]) / length
-    print("Throughput for {} = {}".format(filepath, throughput))
-    print("Latency for {} =".format(filepath))
+    errors = df["result"].unique()
+    print("--------------------------------------------------")
+    print(f"{filepath}")
+    print("--------------------------------------------------")
+    print(f"Errors: {errors}")
+    print(f"Throughput: {throughput}")
+    print("Latency:")
     print(latency(df))
     print("Inter-arrivial times for {} =".format(filepath))
     print(interarrivial(df))

@@ -84,7 +84,9 @@ class Etcd(t.AbstractSystem):
                     cluster_state=cluster_state,
                     cluster_token="urop_cluster",
                 )
-                return self.add_logging(etcd_cmd, tag + ".log")
+                cmd = self.add_stderr_logging(etcd_cmd, tag + ".log")
+                cmd = self.add_stdout_logging(cmd, tag + ".log")
+                return cmd
 
             self.start_screen(host, start_cmd("new"))
             logging.debug("Start cmd: " + start_cmd("new"))
@@ -103,7 +105,7 @@ class Etcd(t.AbstractSystem):
         tag = self.get_client_tag(client)
 
         cmd = self.client_class.cmd([host.IP() for host in cluster], client_id)
-        cmd = self.add_logging(cmd, tag + ".log")
+        cmd = self.add_stderr_logging(cmd, tag + ".log")
 
         logging.debug("Starting client with: " + cmd)
         sp = client.popen(

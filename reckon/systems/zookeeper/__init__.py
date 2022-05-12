@@ -115,7 +115,7 @@ class Zookeeper(t.AbstractSystem):
         tag = self.get_client_tag(client)
 
         cmd = self.client_class.cmd([host.IP() for host in cluster], client_id)
-        cmd = self.add_logging(cmd, tag + ".log")
+        cmd = self.add_stderr_logging(cmd, tag + ".log")
 
         logging.debug("Starting client with: " + cmd)
         sp = client.popen(

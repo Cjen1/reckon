@@ -61,6 +61,8 @@ class PPartitionFailure(t.AbstractFailureGenerator):
     def get_failures(self, cluster, system, restarters, stoppers):
         shared = Shared()
         return [
-            PartitionFault("create", shared, system, cluster),
-            PartitionFault("remove", shared, system, cluster),
+                t.NullFault(),
+                PartitionFault("create", shared, system, cluster),
+                PartitionFault("remove", shared, system, cluster),
+                t.NullFault(),
         ]

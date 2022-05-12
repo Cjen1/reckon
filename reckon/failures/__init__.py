@@ -5,6 +5,7 @@ from reckon.failures.partialpartition import PPartitionFailure
 from reckon.failures.intermittent_partial import IntermittentPPartitionFailure
 from reckon.failures.intermittent_full import IntermittentFPartitionFailure
 from reckon.failures.kill_n import KillN
+from reckon.failures.stat import StatFault
 
 import reckon.reckon_types as t
 
@@ -16,6 +17,7 @@ class FailureType(Enum):
     FIntermittentPP = "intermittent-partial"
     FIntermittentFP = "intermittent-full"
     FKillN = "kill-n"
+    Stat = "stat"
 
     def __str__(self):
         return self.value
@@ -44,5 +46,7 @@ def get_failure_provider(args) -> t.AbstractFailureGenerator:
         return IntermittentFPartitionFailure(args.mtbf)
     elif args.failure_type is FailureType.FKillN:
         return KillN(args.kill_n)
+    elif args.failure_type is FailureType.Stat:
+        return StatFault()
     else:
         raise Exception("Not supported failure type: " + str(args.dist_type))

@@ -3,6 +3,7 @@ from threading import Thread
 import time
 import sys
 import selectors
+import itertools as it
 
 from typing import List
 import itertools as it
@@ -56,36 +57,45 @@ def ready(clients: List[t.Client]):
 
     logging.debug("READY: end")
 
+def sleep_til(x):
+    diff = x - time.time() 
+    if diff > 0:
+        time.sleep(diff)
+
+def roundrobin(*iterables):
+    from itertools import cycle, islice
+    "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
+    # Recipe credited to George Sakkis
+    num_active = len(iterables)
+    nexts = cycle(iter(it).__next__ for it in iterables)
+    while num_active:
+        try:
+            for next in nexts:
+                yield next()
+        except StopIteration:
+            # Remove the iterator we just exhausted from the cycle.
+            num_active -= 1
+            nexts = cycle(islice(nexts, num_active))
 
 def execute(clients: List[t.Client], failures: List[t.AbstractFault], duration: float):
     logging.debug("EXECUTE: begin")
+    assert(len(failures) >= 2) # fence pole style, one at start, one at end, some in the middle
 
-    if len(failures) <= 0:
-        failures = [t.NullFault()]
+    sleep_dur = duration / (len(failures) - 1)
 
-    first_fault = failures[0]
-    failures = failures[1:]
+    start_time = time.time()
 
-    first_fault.apply_fault()
-
-    n_failures = len(failures)
-    sleep_time = duration / (n_failures + 1)
+    fault_times = [start_time + i * sleep_dur for i, _ in enumerate(failures)]
+    sleep_funcs = [lambda t=t: sleep_til(t) for t in fault_times][1:]
+    fault_funcs = [lambda f=f: f.apply_fault() for f in failures]
 
     for client in clients:
         client.send(t.start())
 
-    start_time = time.time()
-    failure_times = [i * sleep_time + start_time for i, _ in enumerate(failures)]
-
-    for i, (failure_time, failure) in enumerate(zip(failure_times, failures)):
-        sleep_time: float = failure_time - time.time()
-        if sleep_time > 0:
-            time.sleep(sleep_time)
-        logging.info(f"Executing failure #{i}:{failure.id}")
-        failure.apply_fault()
+    for f in roundrobin(fault_funcs, sleep_funcs): # alternate between sleeping and 
+        f()
 
     logging.debug("EXECUTE: end")
-
 
 def collate(clients: List[t.Client], total_reqs: int) -> t.Results:
     logging.debug("COLLATE: begin")
@@ -121,6 +131,8 @@ def test_steps(
     failures: List[t.AbstractFault],
     duration: float,
 ) -> t.Results:
+
+    assert(len(failures) >= 2)
 
     workload.clients = clients
     total_reqs = preload(workload, duration)

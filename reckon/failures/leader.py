@@ -36,4 +36,4 @@ class LeaderFailure(t.AbstractFailureGenerator):
     def get_failures(self, cluster, system, restarters, stoppers):
         r = Recovery(system, restarters)
         f = Fault(r, cluster, system, stoppers)
-        return [t.NullFault(), f, r]
+        return [t.NullFault(), f, r, t.NullFault()]

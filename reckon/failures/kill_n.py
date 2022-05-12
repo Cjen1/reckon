@@ -26,4 +26,4 @@ class KillN(t.AbstractFailureGenerator):
         stoppers: Dict[Any, Callable[[], None]],
     ) -> List[t.AbstractFault]:
         fault = Fault(self.n, cluster, stoppers, system)
-        return [fault]
+        return [t.NullFault(), fault, t.NullFault(), ]

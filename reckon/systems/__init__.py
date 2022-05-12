@@ -26,13 +26,20 @@ def register_system_args(parser):
     system_group.add_argument(
         "--system_logs",
         default="./logs",
-        help="Log location for the system and its clients",
+        help="Log location for the system and its clients.",
     )
+
+    system_group.add_argument(
+        "--data-dir",
+        default="./data",
+        help="Location of any data stores, should be empty at the start of each test.",
+    )
+
 
     system_group.add_argument(
         "--new_client_per_request",
         default=False,
-        help="Should a new client be created per request",
+        help="Should a new client be created per request.",
         type=lambda x: bool(strtobool(x)),
     )
 

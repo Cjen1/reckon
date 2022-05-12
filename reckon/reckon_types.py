@@ -226,6 +226,8 @@ class AbstractSystem(ABC):
         self.creation_time = creation_time
         self.client_class = self.get_client(args)
         self.client_type = args.client
+        self.data_dir = args.data_dir
+
         super(AbstractSystem, self).__init__()
 
     def __str__(self):
@@ -254,6 +256,10 @@ class AbstractSystem(ABC):
         return cmd + " 2> {log}/{time_tag}_{tag}.err".format(
             log=self.log_location, tag=tag, time_tag=self.creation_time
         )
+
+    @abstractmethod
+    def stat(self, host: MininetHost) -> str:
+        pass
 
     @abstractmethod
     def get_client(self, args) -> AbstractClient:

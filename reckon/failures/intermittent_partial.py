@@ -75,10 +75,12 @@ class IntermittentPPartitionFailure(t.AbstractFailureGenerator):
     def get_failures(self, cluster, system, restarters, stoppers):
         shared = Shared()
         return [
+            t.NullFault(),
             IntermittentPartialPartition(
                 "create", shared, self.sleep_duration, cluster, system
             ),
             IntermittentPartialPartition(
                 "remove", shared, self.sleep_duration, cluster, system
             ),
+            t.NullFault(),
         ]

@@ -59,7 +59,7 @@ class Etcd(t.AbstractSystem):
             def start_cmd(cluster_state, tag=tag, host=host):
                 etcd_cmd = (
                     "{binary} "
-                    + "--data-dir=/data/{tag} "
+                    + "--data-dir={datadir}/{tag} "
                     + "--name {tag} "
                     + "--initial-advertise-peer-urls http://{ip}:2380 "
                     + "--listen-peer-urls http://{ip}:2380 "
@@ -77,6 +77,7 @@ class Etcd(t.AbstractSystem):
                     )
                 ).format(
                     binary=self.binary_path,
+                    datadir= self.data_dir,
                     tag=tag,
                     ip=host.IP(),
                     cluster=cluster_str,

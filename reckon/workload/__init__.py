@@ -1,22 +1,40 @@
 from enum import Enum
-from reckon.workload.uniform import UniformOpsProvider
+from typing import List, Iterator
+import itertools as it
+from reckon.workload.uniform import UniformKeys, UniformArrival
 
 import reckon.reckon_types as t
 
-
-class WorkloadType(Enum):
+class KeyType(Enum):
     Uniform = "uniform"
 
     def __str__(self):
         return self.value
 
+class ArrivalType(Enum):
+    Uniform = "uniform"
+
+    def __str__(self):
+        return self.value
 
 def register_ops_args(parser):
     workload_group = parser.add_argument_group("workload")
 
     workload_group.add_argument(
-        "workload_type", type=WorkloadType, choices=list(WorkloadType)
-    )
+        "--arrival-process",
+        type=ArrivalType,
+        choices=list(ArrivalType),
+        default=ArrivalType.Uniform,
+        help="The process type to approximate for the arrival times of requests",
+        )
+
+    workload_group.add_argument(
+        "--key-distribution",
+        type=KeyType,
+        choices=list(KeyType),
+        default=KeyType.Uniform,
+        help="The distribution of keys",
+        )
 
     workload_group.add_argument(
         "--rate",
@@ -46,15 +64,55 @@ def register_ops_args(parser):
         help="upper bound of write operation's payload size in bytes, defaults to %(default)s",
     )
 
+class Workload(t.AbstractWorkload):
+  def __init__(self, keys : t.AbstractKeyGenerator, proc : t.AbstractArrivalProcess):
+    self._keys = keys
+    self._proc = proc
 
-def get_ops_provider(args) -> t.AbstractWorkload:
-    if args.workload_type is WorkloadType.Uniform:
-        return UniformOpsProvider(
-            rate=args.rate,
+  def prerequisites(self) -> List[t.Operation]:
+    op_iter = it.starmap(
+        lambda op: t.Operation(time=0, payload=op),
+        self._keys.prerequisites
+        )
+    return list(op_iter)
+
+  def workload(self) -> Iterator[t.WorkloadOperation]:
+    operations = self._keys.workload
+    arrival_times = self._proc.arrival_times
+
+    op_iter : Iterator[t.Operation] = it.starmap(
+        lambda op, t: t.Operation(time=t, payload = op),
+        zip(operations, arrival_times)
+    )
+    
+    # Uniformly distribute requests from and to all clients
+    wo_iter : Iterator[t.WorkloadOperation] = it.starmap(
+        lambda i, op: (
+          (self._clients[i% len(self._clients)]),
+          op
+          ),
+        enumerate(op_iter)
+        )
+
+    return wo_iter
+
+def get_key_provider(args) -> t.AbstractKeyGenerator:
+  if args.key_distribution is KeyType.Uniform:
+    return UniformKeys(
             write_ratio=args.write_ratio,
             max_key=args.max_key,
             payload_size=args.payload_size,
-            clients=[],
-        )
-    else:
-        raise Exception("Not supported workload type: " + str(args.workload_type))
+            )
+  else:
+    raise Exception("Not supported key distribution: " + str(args.key_distribution))
+
+def get_arrival_provider(args) -> t.AbstractArrivalProcess:
+  if args.arrival_process is KeyType.Uniform:
+    return UniformArrival(rate = args.rate)
+  else:
+    raise Exception("Not supported arrival process: " + str(args.key_distribution))
+
+def get_ops_provider(args) -> t.AbstractWorkload:
+  keys = get_key_provider(args)
+  arrival = get_arrival_provider(args)
+  return Workload(keys, arrival)

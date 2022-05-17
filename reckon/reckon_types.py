@@ -127,6 +127,25 @@ WorkloadOperation = Tuple[Client, Operation]
 class Results(BaseModel):
     __root__: List[Result]
 
+class AbstractKeyGenerator(ABC):
+    @abstractproperty
+    def prerequisites(self) -> List[Write]:
+        return []
+
+    @abstractproperty
+    def workload(self) -> Iterator[Union[Read, Write]]:
+        """
+        Returns an iterator through the workload from time = 0
+
+        The time for each operation strictly increases.
+        """
+        return iter([])
+
+
+class AbstractArrivalProcess(ABC):
+    @abstractproperty
+    def arrival_times(self) -> Iterator[float]:
+        return iter([])
 
 class AbstractWorkload(ABC):
     @property
@@ -138,7 +157,7 @@ class AbstractWorkload(ABC):
         self._clients = value
 
     @abstractproperty
-    def prerequisites(self) -> List[WorkloadOperation]:
+    def prerequisites(self) -> List[Operation]:
         return []
 
     @abstractproperty

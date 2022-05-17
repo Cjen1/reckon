@@ -2,6 +2,7 @@ from enum import Enum
 from typing import List, Iterator
 import itertools as it
 from reckon.workload.uniform import UniformKeys, UniformArrival
+from reckon.workload.poisson import PoissonArrival
 
 import reckon.reckon_types as t
 
@@ -13,6 +14,7 @@ class KeyType(Enum):
 
 class ArrivalType(Enum):
     Uniform = "uniform"
+    Poisson = "poisson"
 
     def __str__(self):
         return self.value
@@ -107,8 +109,10 @@ def get_key_provider(args) -> t.AbstractKeyGenerator:
     raise Exception("Not supported key distribution: " + str(args.key_distribution))
 
 def get_arrival_provider(args) -> t.AbstractArrivalProcess:
-  if args.arrival_process is KeyType.Uniform:
+  if args.arrival_process is ArrivalType.Uniform:
     return UniformArrival(rate = args.rate)
+  elif args.arrival_process is ArrivalType.Poisson:
+    return PoissonArrival(rate = args.rate)
   else:
     raise Exception("Not supported arrival process: " + str(args.key_distribution))
 

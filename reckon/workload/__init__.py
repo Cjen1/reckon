@@ -71,29 +71,29 @@ class Workload(t.AbstractWorkload):
     self._keys = keys
     self._proc = proc
 
+  @property
   def prerequisites(self) -> List[t.Operation]:
-    op_iter = it.starmap(
+    op_iter = map( 
         lambda op: t.Operation(time=0, payload=op),
         self._keys.prerequisites
         )
     return list(op_iter)
 
+  @property
   def workload(self) -> Iterator[t.WorkloadOperation]:
     operations = self._keys.workload
     arrival_times = self._proc.arrival_times
 
-    op_iter : Iterator[t.Operation] = it.starmap(
-        lambda op, t: t.Operation(time=t, payload = op),
-        zip(operations, arrival_times)
+    op_iter : Iterator[t.Operation] = map(
+        lambda op, time: t.Operation(time=time, payload = op),
+        operations,
+        arrival_times,
     )
     
     # Uniformly distribute requests from and to all clients
-    wo_iter : Iterator[t.WorkloadOperation] = it.starmap(
-        lambda i, op: (
-          (self._clients[i% len(self._clients)]),
-          op
-          ),
-        enumerate(op_iter)
+    wo_iter : Iterator[t.WorkloadOperation] = zip(
+        it.cycle(self.clients),
+        op_iter
         )
 
     return wo_iter

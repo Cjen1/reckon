@@ -98,7 +98,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          bash -c "python -m reckon etcd simple none --arrival-process=uniform && python scripts/throughput.py test.res"
+          bash -c "python -m reckon etcd simple none --arrival-process=poisson && python scripts/throughput.py test.res"
 
       - name: Test topo=simple
         timeout-minutes: 5

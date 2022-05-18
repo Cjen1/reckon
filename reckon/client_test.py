@@ -28,15 +28,12 @@ class DummyWorkload(t.AbstractWorkload):
     @property
     def prerequisites(self):
         return [
-            (
-                self.client,
-                t.Operation(
-                    time=-1,
-                    payload=t.Write(
-                        kind=t.OperationKind.Write, key="preload", value="preload"
-                    ),
+            t.Operation(
+              time=-1,
+              payload=t.Write(
+                kind=t.OperationKind.Write, key="preload", value="preload"
                 ),
-            )
+              )
             for _ in range(3)
         ]
 

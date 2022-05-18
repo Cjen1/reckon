@@ -5,6 +5,8 @@ import sys
 import selectors
 
 from typing import List
+import itertools as it
+
 import reckon.reckon_types as t
 
 from tqdm import tqdm
@@ -13,7 +15,9 @@ from tqdm import tqdm
 def preload(ops_provider: t.AbstractWorkload, duration: float) -> int:
     logging.debug("PRELOAD: begin")
 
-    for client, op in ops_provider.prerequisites:
+    
+
+    for op, client in zip(ops_provider.prerequisites, it.cycle(ops_provider.clients)):
         client.send(t.preload(prereq=True, operation=op))
 
     sim_t = 0

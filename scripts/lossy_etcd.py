@@ -44,7 +44,7 @@ def run_test(system='etcd', topo='simple', failure="none", nn='3', nc='1', clien
     config['tag'] = tag
 
     cmd = (
-            "python -m reckon {system} {topo} --number-nodes {nn} --number-clients {nc} uniform --write-ratio {write_ratio} " +
+            "python -m reckon {system} {topo} --number-nodes {nn} --number-clients {nc} --arrival-process=poisson --write-ratio {write_ratio} " +
             "{failure} --client {client} --system_logs /results/logs " +
             "--rate {rate} --duration {duration} --result-location /results/res_{tag}.res --kill-n {kill_n} --link-loss {loss}"
         ).format(**config)

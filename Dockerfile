@@ -35,6 +35,7 @@ RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
 # Add reckon code
 ADD . .
 ENV PYTHONPATH="/root:${PYTHONPATH}"
+ENV SHELL=/bin/bash
 
 # Make directory for logs
 RUN mkdir -p /results/logs

@@ -43,7 +43,7 @@ def run_test(system='etcd', topo='simple', nn='3', nc='1', write_rate='1', failu
     config['tag'] = tag
 
     cmd = (
-            "python -m reckon {system} {topo} --number-nodes {nn} --number-clients {nc} uniform --write-ratio {write_ratio} " +
+            "python -m reckon {system} {topo} --number-nodes {nn} --number-clients {nc} --write-ratio {write_ratio} " +
             "{failure} --mtbf {mtbf} --client {client} --new_client_per_request {ncpr} --system_logs /results/logs " +
             "--rate {rate} --duration {duration} --result-location /results/res_{tag}.res"
         ).format(**config)

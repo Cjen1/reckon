@@ -140,6 +140,12 @@ class Etcd(t.AbstractSystem):
             except:
                 pass
 
+    def stat(self, host: t.MininetHost) -> str:
+        cmd = "ETCDCTL_API=3 reckon/systems/etcd/bin/etcdctl endpoint metrics"
+        resp = host.cmd(cmd)
+        assert(resp)
+        return resp
+
 
 class EtcdPreVote(Etcd):
     additional_flags = "--pre-vote=True"

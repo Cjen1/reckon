@@ -48,7 +48,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon zookeeper simple uniform none 
+          python -m reckon zookeeper simple none 
 
       - name: Test system=etcd-pre-vote
         timeout-minutes: 5

@@ -1,17 +1,15 @@
 package cjen1.reckon.zkclient;
 
 import java.io.IOException;
-import java.util.function.Consumer;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
 
 import cjen1.reckon.lib.Client;
 import cjen1.reckon.lib.ClientException;
@@ -28,88 +26,56 @@ class ZKClient implements Client {
         );
   }
 
-  static void run_callback(int rc, Runnable c, Consumer<Exception> e) {
-    if (rc == KeeperException.Code.OK.intValue()) {
-      c.run();
-    } else {
-      e.accept(new Exception("Failed to create with: " + KeeperException.Code.get(rc).toString()));
+  static String key_to_path(String k) { return "/" + k; }
+
+  @Override
+  public void Create(String k) throws ClientException {
+    try {
+      client.create(
+          key_to_path(k), 
+          "NULL".getBytes(), 
+          ZooDefs.Ids.OPEN_ACL_UNSAFE,
+          CreateMode.PERSISTENT,
+          null
+          );
+    } catch (KeeperException ex) {
+      throw new ClientException("Cause: " + ex.toString());
+    } catch (InterruptedException ex) {
+      throw new ClientException("Cause: " + ex.toString());
     }
   }
 
-  static String key_to_path(String k) { return "/" + k; }
-
   @Override
-  public void Create(String k, Runnable c, Consumer<Exception> e) {
-    client.create(
-        key_to_path(k), 
-        "NULL".getBytes(), 
-        ZooDefs.Ids.OPEN_ACL_UNSAFE,
-        CreateMode.PERSISTENT,
-        new AsyncCallback.StringCallback() {
-          public void processResult(int rc, String result, Object ctx, String name) {
-            run_callback(rc, c, e);
-          }
-        },
-        null
-        );
-  }
-
-  @Override
-  public void Put(String k, String v, Runnable c, Consumer<Exception> e) {
-    client.setData(
-        key_to_path(k), 
-        v.getBytes(), 
-        -1,// Match all versions
-        new AsyncCallback.StatCallback() {
-
-          @Override
-          public void processResult(int rc, String path, Object ctx, Stat stat) {
-            run_callback(rc, c, e);
-          }
-        },
-        null
-        );
-  }
-
-	@Override
-	public void Get(String k, Consumer<String> c, Consumer<Exception> e) {
-    client.getData(
-        key_to_path(k),
-        false,
-        new AsyncCallback.DataCallback() {
-          @Override
-          public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-            run_callback(rc, () -> c.accept(data.toString()), e);
-          }
-        },
-        null
-        );
-	}
-}
-
-class TestClient implements Client {
-  public TestClient() {
+  public void Put(String k, String v) throws ClientException {
     try {
-      Thread.sleep(100);
-    } catch(InterruptedException e) {}
+      client.setData(
+          key_to_path(k), 
+          v.getBytes(), 
+          -1// Match all versions
+          );
+    } catch (KeeperException ex) {
+      throw new ClientException("Cause: " + ex.toString());
+    } catch (InterruptedException ex) {
+      throw new ClientException("Cause: " + ex.toString());
+    }
   }
-
-  static String key_to_path(String k) { return "/" + k; }
 
   @Override
-  public void Create(String k, Runnable c, Consumer<Exception> e) {
-    c.run();
+  public String Get(String k) throws ClientException {
+    try {
+      return new String(
+          client.getData(
+            key_to_path(k),
+            false,
+            null
+            ), 
+          StandardCharsets.UTF_8);
+    } catch (KeeperException ex) {
+      throw new ClientException("Cause: " + ex.toString());
+    } catch (InterruptedException ex) {
+      throw new ClientException("Cause: " + ex.toString());
+    }
   }
-
-  @Override
-  public void Put(String k, String v, Runnable c, Consumer<Exception> e) {
-    c.run();
-  }
-
-	@Override
-	public void Get(String k, Consumer<String> c, Consumer<Exception> e) {
-    c.accept("test");
-	}
 }
 
 public class App {
@@ -126,7 +92,7 @@ public class App {
     boolean ncpr = Boolean.valueOf(args[1]);
     String clientId = args[2];
     int number_of_clients = Integer.valueOf(args[3]);
-     
+
     Supplier<Client> cs = () -> {
       while(true) {
         try {
@@ -135,17 +101,7 @@ public class App {
       }
     };
 
-    Supplier<Client> tcs = () -> {
-      return new TestClient();
-    };
-
-    boolean debug = false;
-
-    if (!debug) {
-      Library.Run(cs, clientId, ncpr, number_of_clients); // 20 clients since each client can do 2k ops/s 
-    } else {
-      Library.Run(tcs, clientId, ncpr, number_of_clients);
-    }
+    Library.Run(cs, clientId, ncpr, number_of_clients); // 20 clients since each client can do 2k ops/s 
 
     System.err.println("Finished Library.Run");
     System.exit(0);

@@ -47,50 +47,67 @@ public class Library {
     JsonNode payload = operation.get("payload");
     final String kind = payload.get("kind").asText();
     Instant start = Instant.now();
-    Consumer<String> op_callback = (String result) -> {
-      Instant end = Instant.now();
-      response_callback.accept(new Response(
-            to_epoch(start),
-            to_epoch(end),
-            result,
-            kind,
-            clientid
-            ));
-    };
-    switch (kind) {
-      case "write":
-        if (prereq) {
-          cli.Create(
-              payload.get("key").asText(), 
-              ( ) -> { op_callback.accept("Success");},
-              (Exception e) -> { op_callback.accept(String.format("Failed: %s", e.toString())); }
+    try {
+      switch (kind) {
+        case "write":
+          if (prereq) {
+            cli.Create(
+                payload.get("key").asText()
+                );
+            Instant end = Instant.now();
+            response_callback.accept(new Response(
+                to_epoch(start),
+                to_epoch(end),
+                "Success",
+                kind,
+                clientid
+                ));
+          } else {
+            cli.Put(
+                payload.get("key").asText(), 
+                payload.get("value").asText()
+                );
+            Instant end = Instant.now();
+            response_callback.accept( new Response(
+                to_epoch(start),
+                to_epoch(end),
+                "Success",
+                kind,
+                clientid
+                ));
+          }
+          break;
+        case "read":
+          cli.Get(
+              payload.get("key").asText()
               );
-        } else {
-          cli.Put(
-              payload.get("key").asText(), 
-              payload.get("value").asText(), 
-              ( ) -> { op_callback.accept("Success");},
-              (Exception e) -> { op_callback.accept(String.format("Failed: %s", e.toString())); }
-              );
-        }
-        break;
-      case "read":
-        cli.Get(
-            payload.get("key").asText(), 
-            (String s) -> { op_callback.accept("Success");},
-            (Exception e) -> { op_callback.accept(String.format("Failed: %s", e.toString())); }
-          );
-        break;
-      default:
-        response_callback.accept(
-            new Response(
+          Instant end = Instant.now();
+          response_callback.accept( new Response(
+              to_epoch(start),
+              to_epoch(end),
+              "Success",
+              kind,
+              clientid
+              ));
+          break;
+        default:
+          response_callback.accept( new Response(
               (float)-1.,
               (float)-1.,
               String.format("Error operation %s was not supported", kind),
               kind,
               clientid
               ));
-        break;
+          break;
+      }
+    } catch (ClientException ex) {
+      response_callback.accept( new Response(
+          (float)-1.,
+          (float)-1.,
+          String.format("Failed with client exception: %s", ex.toString()),
+          kind,
+          clientid
+          ));
     }
   }
 
@@ -105,7 +122,7 @@ public class Library {
     ObjectMapper om = new ObjectMapper();
     System.err.println("Client: Starting run");
 
-    ExecutorService ex = Executors.newFixedThreadPool(4);
+    ExecutorService ex = Executors.newCachedThreadPool();
 
     System.err.println("Phase 1: preload");
     ArrayList<JsonNode> operations = new ArrayList<JsonNode>();
@@ -146,9 +163,17 @@ public class Library {
       b.get("time").asDouble()
       );
     });
+
+    System.err.println(String.format("Phase 1: Preload requests loaded, and prerequisites dispatched"));
+
     preload_wg.await();
 
     System.err.println(String.format("Phase 1: Preload complete got %d requests", operations.size()));
+
+    Client[] clis = new Client[number_client_objs];
+    for (int i = 0; i < number_client_objs; i ++) {
+      clis[i] = getClient.get();
+    }
 
     System.err.println("Phase 2: readying");
     io.write_packet(om.readTree("{\"kind\": \"ready\"}"), om);
@@ -180,11 +205,6 @@ public class Library {
 
     double max_behind = 0;
     int cmd_num = 0;
-    Client[] clis = new Client[number_client_objs];
-    for (int i = 0; i < number_client_objs; i ++) {
-      clis[i] = getClient.get();
-    }
-
     for (JsonNode operation : operations) {
       double target = operation.get("time").asDouble();
       Client c = new_client_per_request ? getClient.get() : clis[cmd_num++ % number_client_objs];

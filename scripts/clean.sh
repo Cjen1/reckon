@@ -4,7 +4,7 @@
 sudo mn -c
 # Clean up all processes from previous runs (TODO track from mininet?)
 sudo killall -9 client
-sudo killall -9 etcd etcdctl ocaml-paxos
+sudo killall -9 etcd etcdctl ocaml-paxos java
 # Clean up zookeeper
 rm -rf ../systems/zookeeper/scripts/zktmp/*
 # Remove benchmark socket, to prevent mixing of data from runs

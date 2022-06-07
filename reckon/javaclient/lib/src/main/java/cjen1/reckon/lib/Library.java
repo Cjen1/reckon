@@ -263,7 +263,10 @@ public class Library {
 
     System.err.println("Phase 5: finalise");
     io.write_packet(om.readTree("{\"kind\":\"finished\"}"), om);
+
+    ex.shutdownNow();
     System.err.println("Phase 5: exit");
+    System.exit(0);
   }
 
   public static void Run(Supplier<Client> cb, String clientid, boolean new_client_per_request, int number_client_objs) throws IOException, JsonProcessingException, ClientException {

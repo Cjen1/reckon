@@ -71,6 +71,7 @@ class Zookeeper(t.AbstractSystem):
                     f"4lw.commands.whitelist=*",
                     f"snap_count=1000000",
                     f"max_client_connections=5000",
+                    f"globalOutstandingLimit=10000",
                     cluster_config,
                 ]
             )

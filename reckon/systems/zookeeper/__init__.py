@@ -140,29 +140,15 @@ class Zookeeper(t.AbstractSystem):
         )
         return t.Client(sp.stdin, sp.stdout, client_id)
 
-    # def parse_resp(self, resp):
-    #    logging.debug("--------------------------------------------------")
-    #    logging.debug(resp)
-    #    logging.debug("--------------------------------------------------")
-    #    endpoint_statuses = resp.split("\n")[0:-1]
-    #    for endpoint in endpoint_statuses:
-    #        endpoint_ip = endpoint.split(",")[0].split("://")[-1].split(":")[0]
-    #        if endpoint.split(",")[4].strip() == "true":
-    #            return endpoint_ip
-
     def get_leader(self, cluster):
-        # TODO
-        pass
-        # ips = [host.IP() for host in cluster]
-        # for host in cluster:
-        #    try:
-        #        cmd = "ETCDCTL_API=3 reckon/systems/etcd/bin/etcdctl endpoint status --cluster"
-        #        resp = host.cmd(cmd)
-        #        leader_ip = self.parse_resp(resp)
-        #        leader = cluster[ips.index(leader_ip)]
-        #        return leader
-        #    except:
-        #        pass
+        for host in cluster:
+           try:
+               cmd = "echo stat | nc localhost 2379 | grep Mode"
+               resp = host.cmd(cmd)
+               if "Mode: leader" in resp:
+                   return host
+           except:
+               pass
 
     def stat(self, host: t.MininetHost) -> str:
         ret = host.cmd("echo stat | nc 127.0.0.1 2379")

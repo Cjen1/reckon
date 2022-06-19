@@ -11,16 +11,13 @@ setLogLevel("info")
 
 
 class WanTopologyProvider(t.AbstractTopologyGenerator):
-    def __init__(self, number_nodes, number_clients, link_latency=None, link_loss=None):
+    def __init__(self, number_nodes, link_latency=None, link_loss=None):
         self.number_nodes = number_nodes
-        self.number_clients = number_clients
 
         # Since we have a star topology we use link_latency = link_latency / 2
         self.per_link_latency = (
                 None if not link_latency else f"{link_latency / 2}ms"
         )
-        if self.per_link_latency == 0:
-            self.per_link_latency = None
 
         # since we have 2 links, when we want the abstraction of one direct link
         # we use link_loss = 1 - sqrt(1 - L)

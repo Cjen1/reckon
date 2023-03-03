@@ -1,22 +1,31 @@
 from mininet.net import Mininet
-from mininet.node import Controller, UserSwitch, IVSSwitch, OVSSwitch
-from mininet.log import info, setLogLevel
+from mininet.node import Controller, Host
+from mininet.log import setLogLevel
 from mininet.link import TCLink
 
 import reckon.reckon_types as t
+
+import math
 
 setLogLevel("info")
 
 
 class WanTopologyProvider(t.AbstractTopologyGenerator):
-    def __init__(
-        self,
-        number_nodes,
-        link_latency,
-    ):
+    def __init__(self, number_nodes, link_latency=None, link_loss=None):
         self.number_nodes = number_nodes
-        self.link_latency = link_latency
-        self.net = None
+
+        # Since we have a star topology we use link_latency = link_latency / 2
+        self.per_link_latency = (
+                None if not link_latency else f"{link_latency / 2}ms"
+        )
+
+        # since we have 2 links, when we want the abstraction of one direct link
+        # we use link_loss = 1 - sqrt(1 - L)
+        self.per_link_loss = (
+            None if not link_loss else (1 - math.sqrt(1 - link_loss / 100)) * 100
+        )
+        if self.per_link_loss == 0:
+            self.per_link_loss = None
 
         self.switch_num = 0
         self.host_num = 0
@@ -55,7 +64,7 @@ class WanTopologyProvider(t.AbstractTopologyGenerator):
         clusters = [create_cluster() for _ in range(self.number_nodes)]
 
         for _, _, swc in clusters:
-            self.net.addLink(sw, swc, delay=self.link_latency)
+            self.net.addLink(sw, swc, delay=self.per_link_latency, loss=self.per_link_loss)
 
         hosts = [host for host, _, _ in clusters]
         clients = [client for _, client, _ in clusters]

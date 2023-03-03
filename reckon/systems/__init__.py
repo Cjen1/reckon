@@ -2,12 +2,14 @@ from enum import Enum
 from distutils.util import strtobool
 
 from reckon.systems.etcd import Etcd, EtcdPreVote
+from reckon.systems.zookeeper import Zookeeper
 import reckon.reckon_types as t
 
 
 class SystemType(Enum):
     Etcd = "etcd"
     EtcdPreVote = "etcd-pre-vote"
+    Zookeeper = "zookeeper"
 
     def __str__(self):
         return self.value
@@ -24,13 +26,20 @@ def register_system_args(parser):
     system_group.add_argument(
         "--system_logs",
         default="./logs",
-        help="Log location for the system and its clients",
+        help="Log location for the system and its clients.",
     )
+
+    system_group.add_argument(
+        "--data-dir",
+        default="./data",
+        help="Location of any data stores, should be empty at the start of each test.",
+    )
+
 
     system_group.add_argument(
         "--new_client_per_request",
         default=False,
-        help="Should a new client be created per request",
+        help="Should a new client be created per request.",
         type=lambda x: bool(strtobool(x)),
     )
 
@@ -41,6 +50,8 @@ def get_system(args) -> t.AbstractSystem:
         res = Etcd(args)
     elif args.system_type is SystemType.EtcdPreVote:
         res = EtcdPreVote(args)
+    elif args.system_type is SystemType.Zookeeper:
+        res = Zookeeper(args)
     else:
         raise Exception("Not supported system type: " + str(args.system_type))
     res.system_type = args.system_type

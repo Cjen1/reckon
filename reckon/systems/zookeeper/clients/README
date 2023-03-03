@@ -1,0 +1,3 @@
+Logging is done in Zookeeper via slf4j, which is a shim around a variety of logging frameworks.
+This shimming is done automatically at compile time and I've currently set it to slf4j-simple which just logs to stderr.
+This note is primarily here to remind me of this problem if/when I want to change how I've solved it.

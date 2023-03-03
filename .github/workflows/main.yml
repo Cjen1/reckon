@@ -40,6 +40,16 @@ jobs:
           cjen1/reckon:latest 
           python -m reckon etcd simple none 
 
+      - name: Test system=zookeeper
+        timeout-minutes: 5
+        if: always()
+        run: >
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon zookeeper simple none 
+
       - name: Test system=etcd-pre-vote
         timeout-minutes: 5
         if: always()
@@ -108,7 +118,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd simple none --number-nodes=5 --number-clients=2 --link-latency=100ms --link-loss=0.1
+          python -m reckon etcd simple none --number-nodes=5 --number-clients=2 --link-latency=100 --link-loss=0.1
 
       - name: Test topo=wan
         timeout-minutes: 5
@@ -118,7 +128,7 @@ jobs:
           --tmpfs /data 
           --network host --name reckon-test 
           cjen1/reckon:latest 
-          python -m reckon etcd wan none --number-nodes=5 --link-latency=100ms
+          python -m reckon etcd wan none --number-nodes=5 --link-latency=100
 
       - name: Test failure=none
         timeout-minutes: 5 

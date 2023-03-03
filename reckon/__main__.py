@@ -1,11 +1,10 @@
 import argparse
 
 from reckon.client_runner import run_test
-from reckon.workload import register_ops_args
-from reckon.workload import get_ops_provider
-from reckon.failures import register_failure_args, get_failure_provider
-from reckon.topologies import register_topo_args, get_topology_provider
-from reckon.systems import register_system_args, get_system
+from reckon.workload   import register_ops_args,     get_ops_provider
+from reckon.failures   import register_failure_args, get_failure_provider
+from reckon.topologies import register_topo_args,    get_topology_provider
+from reckon.systems    import register_system_args,  get_system
 
 import logging
 

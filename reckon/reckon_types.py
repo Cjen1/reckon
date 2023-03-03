@@ -226,6 +226,8 @@ class AbstractSystem(ABC):
         self.creation_time = creation_time
         self.client_class = self.get_client(args)
         self.client_type = args.client
+        self.data_dir = args.data_dir
+
         super(AbstractSystem, self).__init__()
 
     def __str__(self):
@@ -239,10 +241,11 @@ class AbstractSystem(ABC):
 
     def start_screen(self, host: MininetHost, command: str):
         FNULL = open(os.devnull, "w")
+        quotedcommand = command.translate(str.maketrans({"\\": r"\\", "\"": r"\""})) # Quote all speech marks
         cmd = 'screen -dmS {tag} bash -c "{command}"'.format(
-            tag=self.get_node_tag(host), command=command
+            tag=self.get_node_tag(host), command=quotedcommand
         )
-        logging.debug("Starting screen on {0} with cmd {1}".format(host.name, cmd))
+        print("Starting screen on {0} with cmd: {1}".format(host.name, cmd))
         host.popen(shlex.split(cmd), stdout=FNULL, stderr=FNULL)
 
     def kill_screen(self, host: MininetHost):
@@ -250,10 +253,19 @@ class AbstractSystem(ABC):
         logging.debug("Killing screen on host {0} with cmd {1}".format(host.name, cmd))
         host.cmd(shlex.split(cmd))
 
-    def add_logging(self, cmd: str, tag: str):
-        return cmd + " 2> {log}/{time_tag}_{tag}.err".format(
-            log=self.log_location, tag=tag, time_tag=self.creation_time
-        )
+    def add_stderr_logging(self, cmd: str, tag: str):
+        time = self.creation_time
+        log = self.log_location
+        return f"{cmd} 2> {log}/{time}_{tag}.err"
+
+    def add_stdout_logging(self, cmd: str, tag: str):
+        time = self.creation_time
+        log = self.log_location
+        return f"{cmd} > {log}/{time}_{tag}.out"
+
+    @abstractmethod
+    def stat(self, host: MininetHost) -> str:
+        pass
 
     @abstractmethod
     def get_client(self, args) -> AbstractClient:

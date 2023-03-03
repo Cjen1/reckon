@@ -14,7 +14,11 @@ class SimpleTopologyProvider(t.AbstractTopologyGenerator):
     def __init__(self, number_nodes, number_clients, link_latency=None, link_loss=None):
         self.number_nodes = number_nodes
         self.number_clients = number_clients
-        self.link_latency = link_latency
+
+        # Since we have a star topology we use link_latency = link_latency / 2
+        self.per_link_latency = (
+                None if not link_latency else f"{link_latency / 2}ms"
+        )
 
         # since we have 2 links, when we want the abstraction of one direct link
         # we use link_loss = 1 - sqrt(1 - L)
@@ -23,7 +27,6 @@ class SimpleTopologyProvider(t.AbstractTopologyGenerator):
         )
         if self.per_link_loss == 0:
             self.per_link_loss = None
-        # we use link_latency = link_latency / 2
 
         self.switch_num = 0
         self.host_num = 0
@@ -53,7 +56,7 @@ class SimpleTopologyProvider(t.AbstractTopologyGenerator):
         clients = [self.add_client() for _ in range(self.number_clients)]
 
         for host in hosts + clients:
-            self.net.addLink(host, sw, delay=self.link_latency, loss=self.per_link_loss)
+            self.net.addLink(host, sw, delay=self.per_link_latency, loss=self.per_link_loss)
 
         self.net.start()
 

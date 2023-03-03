@@ -15,6 +15,11 @@ RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
     g++ \
     unzip
 
+# Add stretch backports
+RUN echo 'deb http://ftp.debian.org/debian stretch-backports main' | sudo tee /etc/apt/sources.list.d/stretch-backports.list
+RUN apt-get update && apt-get install -yy -qq \
+    openjdk-11-jdk
+
 # Runtime dependencies
 RUN pip3 install --upgrade wheel setuptools
 ADD requirements.txt requirements.txt
@@ -29,7 +34,9 @@ RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
     linux-tools \
     tcpdump \
     lsof \
-    vim
+    vim \
+    netcat \
+    locales-all
 
 
 # Add reckon code
@@ -40,5 +47,6 @@ ENV SHELL=/bin/bash
 # Make directory for logs
 RUN mkdir -p /results/logs
 
-# Add built etcd artefacts
-COPY --from=etcd-image /reckon/systems/etcd systems/etcd
+# Add built artefacts
+COPY --from=etcd-image /reckon/systems/etcd reckon/systems/etcd
+COPY --from=zk-image /reckon/systems/zookeeper/bins reckon/systems/zookeeper/bins

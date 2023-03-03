@@ -6,7 +6,7 @@ import reckon.reckon_types as t
 
 
 class Go(t.AbstractClient):
-    client_path = "systems/etcd/clients/go/client"
+    client_path = "reckon/systems/etcd/clients/go/client"
 
     def __init__(self, args):
         self.ncpr = args.new_client_per_request
@@ -21,7 +21,7 @@ class Go(t.AbstractClient):
 
 
 class GoTracer(Go):
-    client_path = "systems/etcd/clients/go-tracer/client"
+    client_path = "reckon/systems/etcd/clients/go-tracer/client"
 
 
 class ClientType(Enum):
@@ -33,7 +33,7 @@ class ClientType(Enum):
 
 
 class Etcd(t.AbstractSystem):
-    binary_path = "systems/etcd/bin/etcd"
+    binary_path = "reckon/systems/etcd/bin/etcd"
     additional_flags = ""
 
     def get_client(self, args):
@@ -59,7 +59,7 @@ class Etcd(t.AbstractSystem):
             def start_cmd(cluster_state, tag=tag, host=host):
                 etcd_cmd = (
                     "{binary} "
-                    + "--data-dir=/data/{tag} "
+                    + "--data-dir={datadir}/{tag} "
                     + "--name {tag} "
                     + "--initial-advertise-peer-urls http://{ip}:2380 "
                     + "--listen-peer-urls http://{ip}:2380 "
@@ -77,13 +77,16 @@ class Etcd(t.AbstractSystem):
                     )
                 ).format(
                     binary=self.binary_path,
+                    datadir= self.data_dir,
                     tag=tag,
                     ip=host.IP(),
                     cluster=cluster_str,
                     cluster_state=cluster_state,
                     cluster_token="urop_cluster",
                 )
-                return self.add_logging(etcd_cmd, tag + ".log")
+                cmd = self.add_stderr_logging(etcd_cmd, tag + ".log")
+                cmd = self.add_stdout_logging(cmd, tag + ".log")
+                return cmd
 
             self.start_screen(host, start_cmd("new"))
             logging.debug("Start cmd: " + start_cmd("new"))
@@ -102,7 +105,7 @@ class Etcd(t.AbstractSystem):
         tag = self.get_client_tag(client)
 
         cmd = self.client_class.cmd([host.IP() for host in cluster], client_id)
-        cmd = self.add_logging(cmd, tag + ".log")
+        cmd = self.add_stderr_logging(cmd, tag + ".log")
 
         logging.debug("Starting client with: " + cmd)
         sp = client.popen(
@@ -129,13 +132,19 @@ class Etcd(t.AbstractSystem):
         ips = [host.IP() for host in cluster]
         for host in cluster:
             try:
-                cmd = "ETCDCTL_API=3 systems/etcd/bin/etcdctl endpoint status --cluster"
+                cmd = "ETCDCTL_API=3 reckon/systems/etcd/bin/etcdctl endpoint status --cluster"
                 resp = host.cmd(cmd)
                 leader_ip = self.parse_resp(resp)
                 leader = cluster[ips.index(leader_ip)]
                 return leader
             except:
                 pass
+
+    def stat(self, host: t.MininetHost) -> str:
+        cmd = "ETCDCTL_API=3 reckon/systems/etcd/bin/etcdctl endpoint metrics"
+        resp = host.cmd(cmd)
+        assert(resp)
+        return resp
 
 
 class EtcdPreVote(Etcd):

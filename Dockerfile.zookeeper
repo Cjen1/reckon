@@ -1,0 +1,33 @@
+FROM nixos/nix
+RUN mkdir -p ~/.config/nix && echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
+RUN nix-channel --update
+
+# Install Zookeeper binaries
+RUN mkdir -p reckon/systems/zookeeper/bins
+RUN cd reckon/systems/zookeeper/bins \
+    && nix-shell -p wget --command "wget https://dlcdn.apache.org/zookeeper/zookeeper-3.8.0/apache-zookeeper-3.8.0-bin.tar.gz" \
+    && tar -zxf apache-zookeeper-3.8.0-bin.tar.gz \
+    && rm apache-zookeeper-3.8.0-bin.tar.gz
+
+# Build and cache nix environments
+COPY reckon/javaclient/flake.* reckon/javaclient/
+RUN cd reckon/javaclient && nix develop -c echo done
+
+COPY reckon/systems/zookeeper/clients/flake.* reckon/systems/zookeeper/clients/
+RUN cd reckon/systems/zookeeper/clients && nix develop -c echo done
+
+# Build java client jar
+COPY reckon/javaclient reckon/javaclient
+RUN cd reckon/javaclient && nix develop -c gradle --no-daemon build -x test
+
+# Add zk client build files
+COPY reckon/systems/zookeeper/clients reckon/systems/zookeeper/clients
+
+# Copy built library jar to client directories
+RUN mkdir -p reckon/systems/zookeeper/clients/app/libs \
+    && cp reckon/javaclient/lib/build/libs/lib.jar reckon/systems/zookeeper/clients/app/libs/lib.jar \
+    && cd reckon/systems/zookeeper/clients \
+    && nix develop -c gradle --no-daemon installShadowDist
+
+RUN cd reckon/systems/zookeeper \
+    && cp clients/app/build/install/app-shadow/lib/app-all.jar bins/client.jar

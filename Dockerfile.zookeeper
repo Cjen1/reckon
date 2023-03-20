@@ -5,9 +5,9 @@ RUN nix-channel --update
 # Install Zookeeper binaries
 RUN mkdir -p reckon/systems/zookeeper/bins
 RUN cd reckon/systems/zookeeper/bins \
-    && nix-shell -p wget --command "wget https://dlcdn.apache.org/zookeeper/zookeeper-3.8.0/apache-zookeeper-3.8.0-bin.tar.gz" \
-    && tar -zxf apache-zookeeper-3.8.0-bin.tar.gz \
-    && rm apache-zookeeper-3.8.0-bin.tar.gz
+    && nix-shell -p wget --command "https://dlcdn.apache.org/zookeeper/zookeeper-3.5.10/apache-zookeeper-3.5.10-bin.tar.gz" \
+    && tar -zxf apache-zookeeper-3.5.10-bin.tar.gz \
+    && rm apache-zookeeper-3.5.10-bin.tar.gz
 
 # Build and cache nix environments
 COPY reckon/javaclient/flake.* reckon/javaclient/

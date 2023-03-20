@@ -28,7 +28,8 @@ class ClientType(Enum):
 
 
 class Zookeeper(t.AbstractSystem):
-    bin_dir = "reckon/systems/zookeeper/bins/apache-zookeeper-3.8.0-bin"
+    bin_dir = "reckon/systems/zookeeper/bins/apache-zookeeper-3.5.10-bin"
+    electionAlg = 0
 
     def get_client(self, args):
         if args.client == str(ClientType.Java) or args.client is None:
@@ -72,6 +73,7 @@ class Zookeeper(t.AbstractSystem):
                     f"snap_count=1000000",
                     f"max_client_connections=5000",
                     f"globalOutstandingLimit=10000",
+                    f"electionAlg={self.electionAlg}",
                     cluster_config,
                 ]
             )
@@ -154,3 +156,6 @@ class Zookeeper(t.AbstractSystem):
         ret = host.cmd("echo stat | nc 127.0.0.1 2379")
         assert(ret)
         return ret
+
+class ZookeeperFLE(Zookeeper):
+    electionAlg = 3 # Use FastLeaderElection

@@ -1,17 +1,28 @@
-(lang dune 2.5)
-(name rcclient)
-(source (github Cjen1/ResolvingConsensus))
+(lang dune 2.7)
+(name reckon-shim)
+(source (github cjen1/OcamlPaxos))
 (authors "Chris Jensen")
+
+(allow_approximate_merlin)
 
 (generate_opam_files true)
 
 (package
-  (name rcclient)
-  (synopsis "")
-  (depends
-    (ocaml (>= 4.08.0))
-    lwt
-    lwt_ppx
-    logs
-    ocaml-protoc
+  (name reckon-shim)
+  (synopsis "Reckon")
+  (depends 
+    (ocaml (= 5.0.0))
+    yojson
+    cmdliner
+    iter
+    accessor
+    crowbar
+    ppx_jane
+    ppx_log
+    ppx_accessor
+    accessor
+    base
+    core
+    core_unix
+    owl
     ))

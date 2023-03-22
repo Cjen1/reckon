@@ -4,3 +4,6 @@
 [submodule "vendor/mininet"]
 	path = vendor/mininet
 	url = git@github.com:mininet/mininet
+[submodule "reckon/ocaml_client/vendor/eio"]
+	path = reckon/ocaml_client/vendor/eio
+	url = git@github.com:ocaml-multicore/eio.git

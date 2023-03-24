@@ -1,0 +1,18 @@
+(lang dune 2.7)
+(name reckon-ocons)
+(source (github cjen1/OcamlPaxos))
+(authors "Chris Jones" "Chris Jensen")
+
+(allow_approximate_merlin)
+
+(generate_opam_files true)
+
+(package
+  (name reckon-ocons)
+  (synopsis "Reckon client for ocons")
+  (depends 
+    (ocaml (= 5.0.0))
+    cmdliner
+    ocons
+    reckon-shim
+    ))

@@ -1,0 +1,4 @@
+(executable
+  (name client)
+  (public_name reckon-ocons)
+  (libraries ocons reckon-shim))

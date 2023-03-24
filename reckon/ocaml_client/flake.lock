@@ -85,7 +85,9 @@
         "mirage-opam-overlays": "mirage-opam-overlays",
         "nixpkgs": "nixpkgs",
         "opam-overlays": "opam-overlays",
-        "opam-repository": "opam-repository",
+        "opam-repository": [
+          "opam-repository"
+        ],
         "opam2json": "opam2json"
       },
       "locked": {
@@ -121,16 +123,17 @@
     "opam-repository": {
       "flake": false,
       "locked": {
-        "lastModified": 1673100816,
-        "narHash": "sha256-v5E5ZymUpTE3ytxjs6vfiNsFCPGbWJviAnrk6q7SfbM=",
+        "lastModified": 1675611819,
+        "narHash": "sha256-MOZzBiG/jyNSebQc3zrCDMH7YGfZaF7Mq8f48GAMHDQ=",
         "owner": "ocaml",
         "repo": "opam-repository",
-        "rev": "9f576a1b9dd69b86bde542d9f89d534c0cc916b8",
+        "rev": "562afb69b736d0b96a88588228dd55ae9cfefe60",
         "type": "github"
       },
       "original": {
         "owner": "ocaml",
         "repo": "opam-repository",
+        "rev": "562afb69b736d0b96a88588228dd55ae9cfefe60",
         "type": "github"
       }
     },
@@ -162,7 +165,8 @@
           "opam-nix",
           "nixpkgs"
         ],
-        "opam-nix": "opam-nix"
+        "opam-nix": "opam-nix",
+        "opam-repository": "opam-repository"
       }
     }
   },

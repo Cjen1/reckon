@@ -78,6 +78,26 @@ class Zookeeper(t.AbstractSystem):
                 ]
             )
 
+            logdir = f"/results/logs/{tag}.zklogdir"
+
+            log_4j = "\n".join(
+                    [
+                        "zookeeper.root.logger=INFO, CONSOLE",
+                        "zookeeper.console.threshold=INFO",
+                        f"zookeeper.log.dir={logdir}/log4j",
+                        "zookeeper.log.file=zookeeper.log",
+                        "zookeeper.log.threshold=INFO",
+                        "zookeeper.log.maxfilesize=256MB",
+                        "zookeeper.log.maxbackupindex=20",
+                        "zookeeper.tracelog.dir=${zookeeper.log.dir}",
+                        "zookeeper.tracelog.file=zookeeper_trace.log",
+                        "log4j.rootLogger=${zookeeper.root.logger}",
+                        "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender",
+                        "log4j.appender.CONSOLE.Threshold=${zookeeper.console.threshold}",
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout",
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} [myid:%X{myid}] - %-5p [%t:%C{1}@%L] - %m%n"
+                        ])
+
             subprocess.run(f"mkdir -p {dataDir}", shell=True).check_returncode()
             subprocess.run(f"echo {i} > {dataDir}/myid", shell=True).check_returncode()
 

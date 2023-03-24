@@ -50,6 +50,16 @@ jobs:
           cjen1/reckon:latest 
           python -m reckon zookeeper simple none 
 
+      - name: Test system=zookeeper-fle
+        timeout-minutes: 5
+        if: always()
+        run: >
+          docker run --env SHELL=/bin/bash --privileged -e DISPLAY --rm 
+          --tmpfs /data 
+          --network host --name reckon-test 
+          cjen1/reckon:latest 
+          python -m reckon zookeeper-fle simple none 
+
       - name: Test system=etcd-pre-vote
         timeout-minutes: 5
         if: always()

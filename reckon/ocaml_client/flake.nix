@@ -1,10 +1,17 @@
 {
   inputs = {
-    opam-nix.url = "github:tweag/opam-nix";
     flake-utils.url = "github:numtide/flake-utils";
     nixpkgs.follows = "opam-nix/nixpkgs";
+    opam-repository = {
+      url = "github:ocaml/opam-repository/562afb69b736d0b96a88588228dd55ae9cfefe60";
+      flake = false;
+    };
+    opam-nix = {
+      url = "github:tweag/opam-nix";
+      inputs.opam-repository.follows = "opam-repository";
+    };
   };
-  outputs = { self, flake-utils, opam-nix, nixpkgs }:
+  outputs = { self, flake-utils, opam-nix, nixpkgs, opam-repository}:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
@@ -13,24 +20,11 @@
           ocaml-lsp-server = "*";
           ocamlformat = "*";
           utop = "*";
-
-
-          bigstringaf = "*";
-          cstruct = "*";
-          lwt-dllist = "*";
-          optint = "*";
-          psq = "*";
-          fmt = "*";
-          hmap = "*";
-          mtime = "*";
-          uring = "*";
-          logs = "*";
-          luv_unix = "*";
         };
         query = devPackagesQuery // {
           ocaml-base-compiler = "5.0.0";
         };
-        scope = on.buildDuneProject {} "reckon-shim" ./. query;
+        scope = on.buildDuneProject { } "reckon-shim" ./. query;
         devPackages = builtins.attrValues
           (pkgs.lib.getAttrs (builtins.attrNames query) scope);
       in

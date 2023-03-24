@@ -7,3 +7,6 @@
 [submodule "reckon/ocaml_client/vendor/eio"]
 	path = reckon/ocaml_client/vendor/eio
 	url = git@github.com:ocaml-multicore/eio.git
+[submodule "reckon/systems/ocons/ocons-src"]
+	path = reckon/systems/ocons/ocons-src
+	url = git@github.com:cjen1/ocons.git

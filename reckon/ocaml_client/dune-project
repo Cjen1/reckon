@@ -25,4 +25,6 @@
     core
     core_unix
     owl
+    (eio (>= 0.8.1))
+    (eio_main (>= 0.8.1))
     ))

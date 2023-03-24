@@ -2,7 +2,7 @@ from enum import Enum
 from distutils.util import strtobool
 
 from reckon.systems.etcd import Etcd, EtcdPreVote
-from reckon.systems.zookeeper import Zookeeper
+from reckon.systems.zookeeper import Zookeeper, ZookeeperFLE
 import reckon.reckon_types as t
 
 
@@ -10,6 +10,7 @@ class SystemType(Enum):
     Etcd = "etcd"
     EtcdPreVote = "etcd-pre-vote"
     Zookeeper = "zookeeper"
+    ZookeeperFLE = "zookeeper-fle"
 
     def __str__(self):
         return self.value
@@ -52,6 +53,8 @@ def get_system(args) -> t.AbstractSystem:
         res = EtcdPreVote(args)
     elif args.system_type is SystemType.Zookeeper:
         res = Zookeeper(args)
+    elif args.system_type is SystemType.ZookeeperFLE:
+        res = ZookeeperFLE(args)
     else:
         raise Exception("Not supported system type: " + str(args.system_type))
     res.system_type = args.system_type

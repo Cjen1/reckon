@@ -109,7 +109,7 @@ end = struct
       ; version= "Init" }
     in
     let mgr =
-      Cli.create ~sw
+      Cli.create ~sw ~env
         ~f:(catcher_iter (Eio.Stdenv.clock env) state)
         ~urls ~id:cid
     in

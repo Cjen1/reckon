@@ -6,7 +6,7 @@ module Cli = struct
 
   let submit t v = Eio.Stream.add t v; Eio.Fiber.yield ()
 
-  let create ~sw ~f:(callback : recv_callback) ~urls:_ ~id:_ =
+  let create ~sw ~env:_ ~f:(callback : recv_callback) ~urls:_ ~id:_ =
     let mgr = Eio.Stream.create Int.max_int in
     Eio.Fiber.fork_daemon ~sw (fun () ->
         while true do

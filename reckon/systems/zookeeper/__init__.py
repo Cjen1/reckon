@@ -80,7 +80,7 @@ class Zookeeper(t.AbstractSystem):
 
             logdir = f"/results/logs/{tag}.zklogdir"
 
-            log_4j = "\n".join(
+            log4j_config = "\n".join(
                     [
                         "zookeeper.root.logger=INFO, CONSOLE",
                         "zookeeper.console.threshold=INFO",
@@ -106,19 +106,24 @@ class Zookeeper(t.AbstractSystem):
             # Write cfg
             cfg_dir = f"{dataDir}/config"
             subprocess.run(f"mkdir -p {cfg_dir}", shell=True).check_returncode()
-            # Copy logback config into config directory
-            subprocess.run(f"cp {self.bin_dir}/conf/logback.xml {cfg_dir}/logback.xml", shell=True) .check_returncode()
 
+            # Write zoo.cfg
             cfg_path = f"{cfg_dir}/zoo.cfg"
             with open(cfg_path, "w") as f:
                 f.write(config)
+                f.flush()
+
+            # Write log4j config file
+            log4j_path = f"{cfg_dir}/log4j.properties"
+            with open(log4j_path, "w") as f:
+                f.write(log4j_config)
                 f.flush()
 
             # --config is passed to zkEnv which then sets up the classpath to have cfg within that directory
             cmd = " ".join(
                 [
                     f"ZOO_LOG_FILE=/results/logs/{tag}.zklogfile",
-                    f"ZOO_LOG_DIR=/results/logs/{tag}.zklogdir",
+                    f"ZOO_LOG_DIR={logdir}",
                     f"JVMFLAGS=\"-Xms10G -Xmx10G \"",
                     f"{self.bin_dir}/bin/zkServer.sh",
                     f"--config {cfg_dir}",

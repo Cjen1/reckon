@@ -1,4 +1,4 @@
-from subprocess import call, Popen
+from subprocess import call, Popen, run
 import shlex
 import itertools as it
 import uuid
@@ -6,15 +6,17 @@ from datetime import datetime
 import json
 import os
 
+from typing import Dict, Any, AnyStr
+
 import math
 
-def call_tcp_dump(tag, cmd):
+def call_tcp_dump(tcpdump_path, cmd):
     tcp_dump_cmd = [
         "tcpdump",
         "-i",
         "any",
         "-w",
-        ("/results/pcap_" + tag + ".pcap"),
+        tcpdump_path,
         "net",
         "10.0.0.0/16",
         "-n",
@@ -31,7 +33,7 @@ default_parameters = {
         'failure':'none',
         'nn':3,
         'nc':1,
-        'delay':0,
+        'delay':20,
         'loss':0,
         'ncpr':'False',
         'mtbf':1,
@@ -46,12 +48,15 @@ default_parameters = {
         'notes':{},
         }
 
-def run_test(folder_path, config):
+def run_test(folder_path, config : Dict[str, Any]):
+    run('rm -rf /data/*', shell=True).check_returncode()
+    run('mn -c', shell=True).check_returncode()
+
     uid = uuid.uuid4()
 
     # Set params
     params = default_parameters.copy()
-    for k,v in config:
+    for k,v in config.items():
         params[k] = v
     del config
 
@@ -74,8 +79,8 @@ def run_test(folder_path, config):
         f"--system_logs {log_path} --result-location {result_path} --data-dir=/data",
         ])
 
-    os.mkdir(result_folder)
-    os.mkdir(log_path)
+    run(f'mkdir -p {result_folder}', shell=True).check_returncode()
+    run(f'mkdir -p {log_path}', shell=True).check_returncode()
 
     with open(config_path, "w") as of:
         json.dump(params, of)
@@ -90,53 +95,123 @@ def run_test(folder_path, config):
     else:
         call(cmd)
 
-from numpy.random import default_rng
-rng = default_rng()
+#from numpy.random import default_rng
+#rng = default_rng()
 
 run_time = datetime.now().strftime("%Y%m%d%H%M%S")
 folder_path = f"/results/{run_time}"
 
 actions = []
 
-# Steady state graphs
-for sys, nn, rate, repeat in it.product(
+## Leader election heat maps
+#for sys, repeat in it.product(
+#        [('etcd', 'go'), ('zookeeper', 'java'),
+#        ('etcd-pre-vote', 'go'), ('zookeeper-fle', 'java')],
+#        range(10),
+#        ):
+#    system, client = sys
+#    actions.append(
+#            lambda params = {
+#                'failure': 'leader-only',
+#                'system':system,
+#                'client':client,
+#                'duration':30,
+#                'repeat':repeat,
+#                'rate':5000,
+#                'delay':50,
+#                'nn':str(3),
+#                'tcpdump': True,
+#                }:
+#            run_test(folder_path, params)
+#            )
+
+# Leader election bulk
+for sys, repeat in it.product(
+        [('etcd', 'go'), ('zookeeper', 'java'),
+        ('etcd-pre-vote', 'go'), ('zookeeper-fle', 'java')],
+        range(100),
+        ):
+    system, client = sys
+    actions.append(
+            lambda params = {
+                'failure': 'leader-only',
+                'system':system,
+                'client':client,
+                'duration':30,
+                'repeat':repeat,
+                'rate':5000,
+                'delay':50,
+                'nn':3,
+                }:
+            run_test(folder_path, params)
+            )
+
+# Steady latency (DC and WAN)
+for sys, repeat in it.product(
         [('etcd', 'go'), ('zookeeper', 'java')],
-        [1,3,5,7],
-        [1000, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000],
+        range(10)
+        ):
+    system, client = sys
+    actions.append(
+            lambda params = {
+                'failure': 'none',
+                'system':system,
+                'client':client,
+                'duration':30,
+                'rate':5000,
+                'delay':50,
+                'nn':3,
+                'repeat':repeat,
+                }:
+            run_test(folder_path, params)
+            )
+    actions.append(
+            lambda params = {
+                'failure': 'none',
+                'system':system,
+                'client':client,
+                'duration':30,
+                'rate':5000,
+                'delay':0,
+                'nn':3,
+                'repeat':repeat,
+                }:
+            run_test(folder_path, params)
+            )
+
+# Steady latency WAN
+for sys, rate, repeat in it.product(
+        [('etcd', 'go'), ('zookeeper', 'java')],
+        [1000,5000,10000,15000,20000,25000,30000,35000],
         range(10),
         ):
     system, client = sys
     actions.append(
             lambda params = {
+                'failure': 'none',
                 'system':system,
                 'client':client,
                 'duration':30,
-                'repeat':repeat,
                 'rate':rate,
-                'nn':str(nn),
-                }:
-            run_test(folder_path, params)
-            )
-
-# Leader faults
-for sys, repeat in it.product(
-        [('etcd', 'go'), ('zookeeper', 'java')],
-        range(100)
-        ):
-    system, client = sys
-    actions.append(
-            lambda params={
-                'failure':'leader',
-                'system':system,
-                'client':client,
-                'duration':30,
+                'delay':50,
+                'nn':3,
                 'repeat':repeat,
+                'notes':'rate-lat',
                 }:
             run_test(folder_path, params)
             )
-
 # Shuffle to isolate ordering effects
-rng.shuffle(actions)
+#rng.shuffle(actions)
 
-for act in actions:
-    act()
+print(len(actions))
+
+bar = '##################################################'
+#for i, act in enumerate(actions):
+#    print(bar, flush=True)
+#    print(f"TEST-{i}", flush=True)
+#    print(bar, flush=True)
+#    act()
+
+print(bar, flush=True)
+print(f"TESTING DONE", flush=True)
+print(bar, flush=True)

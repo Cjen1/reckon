@@ -28,7 +28,8 @@ RUN apt update -yq && apt install -yq \
     wget \
     libbz2-dev
 
-RUN mkdir /python && \
+RUN apt update -yq && \
+    mkdir /python && \
     cd /python && \
     wget https://www.python.org/ftp/python/3.9.10/Python-3.9.10.tgz && \
     tar -xf Python-3.9.10.tgz && \
@@ -41,7 +42,8 @@ RUN bash -c "ln -s `which python3` /usr/local/bin/python"
 
 ARG INSTALL_FLAGS="-fnv"
 COPY ./vendor/mininet /root/mininet
-RUN sh -c "PYTHON=python /root/mininet/util/install.sh ${INSTALL_FLAGS}"
+RUN apt update -yq && \
+    sh -c "PYTHON=python /root/mininet/util/install.sh ${INSTALL_FLAGS}"
 
 RUN apt-get clean
 

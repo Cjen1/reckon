@@ -38,6 +38,15 @@ RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
     netcat \
     locales-all
 
+# Add ocons dependencies
+RUN bash -c "sh <(curl -L https://nixos.org/nix/install) --daemon"
+RUN bash -c "echo 'experimental-features = nix-command flakes' > /etc/nix/nix.conf"
+
+# Build ocons impl and client
+# Required for silly reasons that ocaml has difficulty 
+RUN git init . && git add .
+RUN bash -l -c "nix build ./reckon/systems/ocons/ocons-src"
+RUN bash -l -c "nix build ./reckon/systems/ocons/clients"
 
 # Add reckon code
 ADD . .

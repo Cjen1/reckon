@@ -39,7 +39,7 @@
           (pkgs.lib.getAttrs (builtins.attrNames query) scope);
       in
       {
-        defaultPackage = pkgs.hello;
+        defaultPackage = scope.reckon-ocons;
         devShell = pkgs.mkShell {
           inputsFrom = [scope.reckon-ocons];
           buildInputs = devPackages ++ [

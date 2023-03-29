@@ -1,6 +1,7 @@
 open! Eio.Std
 module O = Ocons_core
 open Reckon_shim
+let () = Ocons_conn_mgr.set_debug_flag ()
 
 module Ocons_cli_shim : Types.S = struct
   type mgr = {cmgr: O.Client.cmgr; callback: Types.recv_callback}
@@ -18,6 +19,7 @@ module Ocons_cli_shim : Types.S = struct
         O.Types.Command.
           {op; id= rid; trace_start= Mtime.of_uint64_ns Int64.min_int}
       in
+      traceln "Submitting request %d" rid;
       O.Client.submit_request t.cmgr cmd
     with e when O.Utils.is_not_cancel e -> t.callback (rid, Failure (`Error e))
 
@@ -30,6 +32,7 @@ module Ocons_cli_shim : Types.S = struct
              ) )
     in
     let recv_callback ((_, (rid, res, _)) : _ * O.Client.response) =
+      traceln "got result for %d" rid;
       let res =
         match res with
         | O.Types.Failure msg ->
@@ -43,6 +46,7 @@ module Ocons_cli_shim : Types.S = struct
       O.Client.create_cmgr ~kind:(Ocons_conn_mgr.Iter recv_callback) ~sw
         con_ress id (fun () -> Eio.Time.sleep env#clock 1.)
     in
+    Eio.Time.sleep env#clock 1.;
     {cmgr; callback= f}
 end
 

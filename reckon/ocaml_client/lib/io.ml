@@ -9,8 +9,8 @@ type input_message =
 let pp_msg : input_message Fmt.t =
  fun ppf msg ->
   match msg with
-  | Preload _ ->
-      Fmt.pf ppf "Preload"
+  | Preload s ->
+      Fmt.pf ppf "Preload{prereq:%b; aim_submit:%f; _}" s.prereq s.aim_submit
   | Finalise ->
       Fmt.pf ppf "Finalise"
   | Start ->
@@ -53,7 +53,8 @@ module O = struct
           ; ("op_kind", `String op_kind)
           ; ("result", `String result)
           ; ("t_submitted", `Float s.t_submitted)
-          ; ("t_result", `Float s.t_result) ]
+          ; ("t_result", `Float s.t_result)
+          ; ("other", `Assoc []) ]
 
   let send out msg =
     let json = out_msg_to_json msg in

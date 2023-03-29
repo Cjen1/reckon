@@ -44,9 +44,14 @@ RUN bash -c "echo 'experimental-features = nix-command flakes' > /etc/nix/nix.co
 
 # Build ocons impl and client
 # Required for silly reasons that ocaml has difficulty 
-RUN git init . && git add .
-RUN bash -l -c "nix build ./reckon/systems/ocons/ocons-src"
-RUN bash -l -c "nix build ./reckon/systems/ocons/clients"
+RUN git init . 
+ADD ./reckon/systems/ocons/ocons-src/flake.nix ./reckon/systems/ocons/ocons-src/flake.lock ./reckon/systems/ocons/ocons-src/dune-project reckon/systems/ocons/ocons-src/
+RUN git add . && bash -l -c "nix build -j auto ./reckon/systems/ocons/ocons-src" # Cache reckon build without files (also caches client deps)
+ADD ./reckon/systems/ocons/ocons-src reckon/systems/ocons/ocons-src
+RUN git add . && bash -l -c "nix build -j auto ./reckon/systems/ocons/ocons-src"
+ADD ./reckon/ocaml_client reckon/ocaml_client
+ADD ./reckon/systems/ocons/clients reckon/systems/ocons/clients
+RUN git add . && bash -l -c "nix build ./reckon/systems/ocons/clients"
 
 # Add reckon code
 ADD . .

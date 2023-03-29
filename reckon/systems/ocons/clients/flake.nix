@@ -12,6 +12,7 @@
     };
     ocons-src = {
       url = "github:cjen1/ocons";
+      #url = "./../ocons-src";
       flake = false;
     };
   };
@@ -25,7 +26,7 @@
           ocamlformat = "*";
           utop = "*";
         };
-        reckon-shim-src = ../../../ocaml_client;
+        reckon-shim-src = ./../../../ocaml_client;
         query = devPackagesQuery // {
           ocaml-base-compiler = "5.0.0";
         };

@@ -8,6 +8,11 @@ from reckon.systems    import register_system_args,  get_system
 
 import logging
 
+logging.basicConfig(
+  format="%(asctime)s %(message)s", datefmt="%I:%M:%S %p", level=logging.DEBUG
+)
+
+
 if __name__ == "__main__":
     # ------- Parse arguments --------------------------
     parser = argparse.ArgumentParser(
@@ -66,10 +71,6 @@ if __name__ == "__main__":
           sleep(5)
 
           print("BENCHMARK: Starting Test")
-
-          logging.basicConfig(
-              format="%(asctime)s %(message)s", datefmt="%I:%M:%S %p", level=logging.DEBUG
-          )
 
           run_test(
               args.result_location,

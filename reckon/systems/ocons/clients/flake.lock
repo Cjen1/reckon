@@ -81,11 +81,11 @@
     "ocons-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1679655508,
-        "narHash": "sha256-QgJj2ZgR4vfnX/aV2ECDyCp/qPjLfWy0sKLbOOTcnNo=",
+        "lastModified": 1679675660,
+        "narHash": "sha256-tGAs32RqKppeC6LbSXa7Wj3aarVBVvfXAptfM5dgwWg=",
         "owner": "cjen1",
         "repo": "ocons",
-        "rev": "df6b75e4e9e4f85cf5035d70af8c233ff4151524",
+        "rev": "1e880d7e414e3c45535fbb423c9b244b631560f3",
         "type": "github"
       },
       "original": {
@@ -107,11 +107,11 @@
         "opam2json": "opam2json"
       },
       "locked": {
-        "lastModified": 1677575814,
-        "narHash": "sha256-Lc1GXBw0AiXGukJqzwtVEqBYv+DLUqcsqc8Lc3OtgUA=",
+        "lastModified": 1680084639,
+        "narHash": "sha256-GDalP6niYAKvB0EsZWGhqH4ryCyzXwgodCC6FjKEnnw=",
         "owner": "tweag",
         "repo": "opam-nix",
-        "rev": "4bb1a4c372f639f44fc6745f13c86f4397e82d34",
+        "rev": "a98614af305ce44076cf244ea3a0b098f2be2254",
         "type": "github"
       },
       "original": {

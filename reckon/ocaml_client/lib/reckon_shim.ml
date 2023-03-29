@@ -39,7 +39,6 @@ end = struct
    fun (rid, res) ->
     traceln "Got result for %d" rid ;
     if rid < Array.length t.req_state && t.should_record_result then (
-      traceln "Using version %s" t.version ;
       t.req_state.@(nth rid @> ReqState.t_result) <- Eio.Time.now clock ;
       t.req_state.@(nth rid @> ReqState.result) <- res ) ;
     t.recv_prereq_hwm <- max t.recv_prereq_hwm rid ;
@@ -47,12 +46,14 @@ end = struct
 
   let retry_prereq t clock mgr rid op =
     dtraceln "Got prereq" ;
-    Cli.submit mgr (rid, op);
+    Cli.submit mgr (rid, op) ;
     while rid > t.recv_prereq_hwm do
       (* Wait for response or timeout *)
       Eio.Fiber.first
         (fun () -> Eio.Condition.await_no_mutex t.recv)
-        (fun () -> Eio.Time.sleep clock 0.1; Cli.submit mgr (rid, op))
+        (fun () ->
+          Eio.Time.sleep clock 0.1 ;
+          Cli.submit mgr (rid, op) )
     done
 
   let preload reqsQ stdin mgr t clock =
@@ -67,7 +68,7 @@ end = struct
       | Preload {prereq= true; op; _} ->
           let lrid = !trid in
           trid := !trid + 1 ;
-          retry_prereq t clock mgr lrid op;
+          retry_prereq t clock mgr lrid op ;
           aux ()
       | Preload s ->
           dtraceln "Got op" ;
@@ -80,20 +81,36 @@ end = struct
     in
     aux ()
 
-  let readying stdout =
+  let readying stdout stdin =
     traceln "Phase 2: Readying" ;
-    O.send stdout Ready
+    O.send stdout Ready ;
+    match I.recv_msg stdin with
+    | Start ->
+        traceln "Got start"
+    | m ->
+        Fmt.failwith "Unexpected msg: %a" pp_msg m
 
-  let execute state mgr clock =
+  let execute state mgr clock start_time =
     traceln "Phase 3: Execute" ;
     traceln "execute uses %s" state.version ;
     (* For each request try to submit it *)
+    let maybe_yield =
+      let te = 100 in
+      let e = ref te in
+      fun () ->
+        if !e <= 0 then (
+          e := te ;
+          Eio.Fiber.yield () ) ;
+        e := !e - 1
+    in
     Array.iteri state.req_state ~f:(fun rid {op; aim_submit; _} ->
         let t_curr = Eio.Time.now clock in
+        let aim_submit = start_time +. aim_submit in
         if t_curr < aim_submit then Eio.Time.sleep_until clock aim_submit ;
         Cli.submit mgr (rid, op) ;
         traceln "Updating %d" rid ;
-        state.req_state.@(nth rid @> ReqState.t_submitted) <- Eio.Time.now clock )
+        state.req_state.@(nth rid @> ReqState.t_submitted) <- Eio.Time.now clock ;
+        maybe_yield () )
 
   let collate state cid stdout =
     traceln "Phase 4: Collate" ;
@@ -145,13 +162,15 @@ end = struct
       state.req_state ;
     state.version <- "execute" ;
     (* Notify ready*)
-    readying stdout ;
+    readying stdout stdin ;
     (* Submit requests *)
-    execute state mgr (Eio.Stdenv.clock env) ;
+    execute state mgr (Eio.Stdenv.clock env) (Eio.Time.now env#clock) ;
     (* Collate *)
     Eio.Time.sleep (Eio.Stdenv.clock env) 1. ;
     collate state cid stdout ;
-    traceln "Finished execution"
+    traceln "Finished execution" ;
+    Eio.Buf_write.flush stdout ;
+    exit 0
 
   let cmd = Command_line.cmd run
 end

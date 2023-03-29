@@ -7,7 +7,7 @@ module Types = Types
 
 let dtraceln fmt =
   let ignore_format = Format.ikfprintf ignore Fmt.stderr in
-  if false then Eio.traceln fmt else ignore_format fmt
+  if true then Eio.traceln fmt else ignore_format fmt
 
 module Make (Cli : S) : sig
   val run : url list -> rid -> unit
@@ -24,7 +24,7 @@ end = struct
 
   type t =
     { recv: Eio.Condition.t
-    ; mutable recv_prereq_count: int
+    ; mutable recv_prereq_hwm: int
     ; mutable req_state: req_state array
     ; mutable should_record_result: bool
     ; mutable version: string }
@@ -42,23 +42,32 @@ end = struct
       traceln "Using version %s" t.version ;
       t.req_state.@(nth rid @> ReqState.t_result) <- Eio.Time.now clock ;
       t.req_state.@(nth rid @> ReqState.result) <- res ) ;
-    t.recv_prereq_count <- t.recv_prereq_count + 1 ;
+    t.recv_prereq_hwm <- max t.recv_prereq_hwm rid ;
     Eio.Condition.broadcast t.recv
 
-  let preload reqsQ stdin mgr t =
-    let trid = ref @@ (Int32.(to_int max_int) / 2) in
+  let retry_prereq t clock mgr rid op =
+    dtraceln "Got prereq" ;
+    Cli.submit mgr (rid, op);
+    while rid > t.recv_prereq_hwm do
+      (* Wait for response or timeout *)
+      Eio.Fiber.first
+        (fun () -> Eio.Condition.await_no_mutex t.recv)
+        (fun () -> Eio.Time.sleep clock 0.1; Cli.submit mgr (rid, op))
+    done
+
+  let preload reqsQ stdin mgr t clock =
+    (* Giving Int30.max_int -> Int31.max_int*)
+    let trid = ref @@ (Int32.(to_int max_int) / 4) in
     traceln "Phase 1: Preload" ;
+    (* At most one prereq outstanding at a time
+       => Can use a high water mark for trid to check for response
+    *)
     let rec aux () =
       match I.recv_msg stdin with
       | Preload {prereq= true; op; _} ->
-          dtraceln "Got prereq" ;
-          let prereq_count = t.recv_prereq_count in
-          Cli.submit mgr (!trid, op) ;
-          trid := !trid - 1 ;
-          (* Wait for response *)
-          while prereq_count + 1 > t.recv_prereq_count do
-            Eio.Condition.await_no_mutex t.recv
-          done ;
+          let lrid = !trid in
+          trid := !trid + 1 ;
+          retry_prereq t clock mgr lrid op;
           aux ()
       | Preload s ->
           dtraceln "Got op" ;
@@ -105,7 +114,7 @@ end = struct
       { req_state= Array.init 0 ~f:(fun _ -> assert false)
       ; should_record_result= true
       ; recv= Eio.Condition.create ()
-      ; recv_prereq_count= 0
+      ; recv_prereq_hwm= 0
       ; version= "Init" }
     in
     let mgr =
@@ -119,7 +128,7 @@ end = struct
     let stdin = Eio.Stdenv.stdin env |> Eio.Buf_read.of_flow ~max_size:4096 in
     let reqs = Queue.create () in
     (* fill reqs and apply initial requests synchronously *)
-    preload reqs stdin mgr state ;
+    preload reqs stdin mgr state env#clock ;
     let req_state =
       reqs |> Queue.to_seq
       |> Seq.map (fun (op, aim_submit) ->

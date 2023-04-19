@@ -16,4 +16,6 @@ module type S = sig
   val submit : mgr -> rid * op -> unit
 
   val create : sw:Eio.Switch.t -> env:Eio.Stdenv.t -> f:recv_callback -> urls:url list -> id:int -> mgr
+
+  val flush : mgr -> unit
 end

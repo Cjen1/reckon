@@ -1,20 +1,16 @@
 {
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    nixpkgs.follows = "opam-nix/nixpkgs";
-    opam-repository = {
-      url = "github:ocaml/opam-repository/562afb69b736d0b96a88588228dd55ae9cfefe60";
-      flake = false;
-    };
     opam-nix = {
       url = "github:tweag/opam-nix";
       inputs.opam-repository.follows = "opam-repository";
     };
     ocons-src = {
       url = "github:cjen1/ocons";
-      #url = "./../ocons-src";
-      flake = false;
+      inputs.opam-repository.follows = "opam-repository";
     };
+    opam-repository.follows = "ocons-src/opam-repository";
+    nixpkgs.follows = "ocons-src/nixpkgs";
   };
   outputs = { self, flake-utils, opam-nix, nixpkgs, opam-repository, ocons-src}:
     flake-utils.lib.eachDefaultSystem (system:
@@ -29,11 +25,12 @@
         reckon-shim-src = ./../../../ocaml_client;
         query = devPackagesQuery // {
           ocaml-base-compiler = "5.0.0";
+          ocamlfind = "1.9.5";
         };
         repos = [
           (on.makeOpamRepo ocons-src)
           (on.makeOpamRepo reckon-shim-src)
-          on.opamRepository
+          opam-repository
         ];
         scope = on.buildDuneProject { inherit repos; } "reckon-ocons" ./. query;
         devPackages = builtins.attrValues

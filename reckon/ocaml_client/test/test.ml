@@ -4,7 +4,7 @@ open Reckon_shim.Types
 module Cli = struct
   type mgr = (rid * op) Eio.Stream.t
 
-  let submit t v = Eio.Stream.add t v; Eio.Fiber.yield ()
+  let submit t v = Eio.Stream.add t v ; Eio.Fiber.yield ()
 
   let create ~sw ~env ~f:(callback : recv_callback) ~urls:_ ~id:_ =
     let mgr = Eio.Stream.create Int.max_int in
@@ -12,19 +12,20 @@ module Cli = struct
         while true do
           let rid, op = Eio.Stream.take mgr in
           Eio.Fiber.fork ~sw (fun () ->
-            let res =
-              match op with
-              | Write _ ->
-                  Success
-              | Read _ ->
-                  Failure (`Msg "TEST FAILURE")
-            in
-            Eio.Time.sleep env#clock 1.;
-            callback (rid, res)
-          );
+              let res =
+                match op with
+                | Write _ ->
+                    Success
+                | Read _ ->
+                    Failure (`Msg "TEST FAILURE")
+              in
+              Eio.Time.sleep env#clock 1. ;
+              callback (rid, res) )
         done ;
         Eio.Fiber.await_cancel () ) ;
     mgr
+
+  let flush _ = Eio.Fiber.yield ()
 end
 
 module T = Make (Cli)

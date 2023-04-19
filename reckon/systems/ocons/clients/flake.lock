@@ -129,16 +129,15 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1671359686,
-        "narHash": "sha256-3MpC6yZo+Xn9cPordGz2/ii6IJpP2n8LE8e/ebUXLrs=",
+        "lastModified": 1681903854,
+        "narHash": "sha256-U3vbSEdct4aUu+vk3YsBiwokN3th4Jvde7S8gnVmeAA=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "04f574a1c0fde90b51bf68198e2297ca4e7cccf4",
+        "rev": "bb2009ca185d97813e75736c2b8d1d8bb81bde05",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -159,25 +158,37 @@
         "type": "github"
       }
     },
+    "nixpkgs_3": {
+      "locked": {
+        "lastModified": 1671359686,
+        "narHash": "sha256-3MpC6yZo+Xn9cPordGz2/ii6IJpP2n8LE8e/ebUXLrs=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "04f574a1c0fde90b51bf68198e2297ca4e7cccf4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "ocons-src": {
       "inputs": {
         "flake-utils": "flake-utils_2",
-        "nixpkgs": [
-          "ocons-src",
-          "opam-nix",
-          "nixpkgs"
-        ],
+        "nixpkgs": "nixpkgs",
         "opam-nix": "opam-nix",
         "opam-repository": [
           "opam-repository"
         ]
       },
       "locked": {
-        "lastModified": 1681905869,
-        "narHash": "sha256-sYiQTh9VL+0n0G31wXBvytLA/mPHNoMEFQgAvhJGSBE=",
+        "lastModified": 1681908125,
+        "narHash": "sha256-mGHaKBxM3ppw2VbGkuu0KeadTJ8TzAf4BYTI4M5GWxk=",
         "owner": "cjen1",
         "repo": "ocons",
-        "rev": "0d7045deed6e9c64b2795c02ecdf6bfa3c708bfd",
+        "rev": "902d8230f84c75cc7cfe81891003444479527fd1",
         "type": "github"
       },
       "original": {
@@ -191,7 +202,7 @@
         "flake-compat": "flake-compat",
         "flake-utils": "flake-utils_3",
         "mirage-opam-overlays": "mirage-opam-overlays",
-        "nixpkgs": "nixpkgs",
+        "nixpkgs": "nixpkgs_2",
         "opam-overlays": "opam-overlays",
         "opam-repository": [
           "ocons-src",
@@ -218,7 +229,7 @@
         "flake-compat": "flake-compat_2",
         "flake-utils": "flake-utils_4",
         "mirage-opam-overlays": "mirage-opam-overlays_2",
-        "nixpkgs": "nixpkgs_2",
+        "nixpkgs": "nixpkgs_3",
         "opam-overlays": "opam-overlays_2",
         "opam-repository": [
           "opam-repository"

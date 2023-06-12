@@ -55,7 +55,6 @@ RUN git add . && bash -l -c "nix build ./reckon/systems/ocons/clients"
 # Build build server
 ADD ./reckon/systems/ocons/ocons-src reckon/systems/ocons/ocons-src
 RUN git add . && bash -l -c "nix build -j auto ./reckon/systems/ocons/ocons-src"
-RUN git add . && bash -l -c "cd reckon/systems/ocons/ocons-src && nix develop -j auto"
 
 # Add reckon code
 ADD . .

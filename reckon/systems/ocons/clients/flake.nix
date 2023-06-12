@@ -5,12 +5,8 @@
       url = "github:tweag/opam-nix";
       inputs.opam-repository.follows = "opam-repository";
     };
-    ocons-src = {
-      url = "github:cjen1/ocons";
-      inputs.opam-repository.follows = "opam-repository";
-    };
+    ocons-src.url = "github:cjen1/ocons";
     opam-repository.follows = "ocons-src/opam-repository";
-    nixpkgs.follows = "ocons-src/nixpkgs";
   };
   outputs = { self, flake-utils, opam-nix, nixpkgs, opam-repository, ocons-src}:
     flake-utils.lib.eachDefaultSystem (system:

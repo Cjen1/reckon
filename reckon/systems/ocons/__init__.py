@@ -56,7 +56,8 @@ class Ocons(t.AbstractSystem):
                     f"-p {server_port}",
                     f"-q {client_port}",
                     f"-t 0.1",
-                    f"--stat 1",
+                    f"--election-timeout 10",
+                    f"--rand-start 1",
                     self.system_kind,
                     str(hidx),
                     cluster_str,
@@ -125,3 +126,9 @@ class OconsPaxos(Ocons):
     system_kind = "paxos"
 class OconsRaft(Ocons):
     system_kind = "raft"
+class OconsRaftSBN(Ocons):
+    system_kind = "raft+sbn"
+class OconsRaftPrevote(Ocons):
+    system_kind = "prevote-raft"
+class OconsRaftPrevoteSBN(Ocons):
+    system_kind = "prevote-raft+sbn"

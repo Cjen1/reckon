@@ -122,6 +122,8 @@ public class Library {
     ObjectMapper om = new ObjectMapper();
     System.err.println("Client: Starting run");
 
+    // This will emulate a open loop load generate for 30s at 5k req/s
+    //ExecutorService ex = Executors.newFixedThreadPool(50000);
     ExecutorService ex = Executors.newCachedThreadPool();
 
     System.err.println("Phase 1: preload");
@@ -195,23 +197,25 @@ public class Library {
 
     System.err.println("Phase 3: starting");
     ConcurrentMap<Response,Integer> resp_map = new ConcurrentHashMap<Response,Integer>();
-    WaitGroup execute_wg = new WaitGroup();
     double start_time = to_epoch(Instant.now()); 
 
+    var complete = new Object(){ boolean t = false; };
+
     Consumer<Response> resp_callback = (Response r)->{
-      resp_map.put(r, Integer.valueOf(0));
-      execute_wg.done();
+      if(!complete.t){
+        resp_map.put(r, Integer.valueOf(0));
+      }
     };
 
     double max_behind = 0;
     int cmd_num = 0;
     for (JsonNode operation : operations) {
-      double target = operation.get("time").asDouble();
+      double target = operation.get("time").asDouble() + start_time;
       Client c = new_client_per_request ? getClient.get() : clis[cmd_num++ % number_client_objs];
 
       // Sleep until target
       while(true) {
-        double current = to_epoch(Instant.now()) - start_time;
+        double current = to_epoch(Instant.now());
         double diff = target - current;
 
         // rounds down on cast to long
@@ -230,7 +234,6 @@ public class Library {
         } catch (InterruptedException e) {}
       }
 
-      execute_wg.add(1);
       ex.execute(() ->
           perform(
             clientid,
@@ -243,10 +246,13 @@ public class Library {
 
     System.err.println(String.format("Phase 3: fell behind by at most %.3f ms", max_behind));
 
-    System.err.println("Phase 3: waiting for requests to finish");
-    execute_wg.await();
+    System.err.println("Phase 3: waiting 1s for requests to finish");
+    try {
+      Thread.sleep(1000, 0);
+    } catch (InterruptedException e) {}
 
     System.err.println("Phase 4: collate");
+    complete.t = true;
     // Take responses from map, and sort by submit time
     ArrayList<Response> responses = new ArrayList<Response>(resp_map.size());
     for (Response r : resp_map.keySet()) {

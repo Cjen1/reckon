@@ -21,7 +21,7 @@ dependencies {
     // Use JUnit test framework.
     testImplementation 'junit:junit:4.13'
 
-    implementation group: 'org.apache.zookeeper', name: 'zookeeper', version: '3.8.0'
+    implementation group: 'org.apache.zookeeper', name: 'zookeeper', version: '3.5.10'
 
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.2.2'
 

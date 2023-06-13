@@ -1,5 +1,6 @@
 from enum import Enum
 from reckon.failures.leader import LeaderFailure
+from reckon.failures.leader_only import LeaderOnlyFailure
 from reckon.failures.none import NoFailure
 from reckon.failures.partialpartition import PPartitionFailure
 from reckon.failures.intermittent_partial import IntermittentPPartitionFailure
@@ -13,6 +14,7 @@ import reckon.reckon_types as t
 class FailureType(Enum):
     FNone = "none"
     FLeader = "leader"
+    FLeaderOnly = "leader-only"
     FPartialPartition = "partial-partition"
     FIntermittentPP = "intermittent-partial"
     FIntermittentFP = "intermittent-full"
@@ -38,6 +40,8 @@ def get_failure_provider(args) -> t.AbstractFailureGenerator:
         return NoFailure()
     elif args.failure_type is FailureType.FLeader:
         return LeaderFailure()
+    elif args.failure_type is FailureType.FLeaderOnly:
+        return LeaderOnlyFailure()
     elif args.failure_type is FailureType.FPartialPartition:
         return PPartitionFailure()
     elif args.failure_type is FailureType.FIntermittentPP:

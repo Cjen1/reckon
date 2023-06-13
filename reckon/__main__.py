@@ -8,6 +8,11 @@ from reckon.systems    import register_system_args,  get_system
 
 import logging
 
+logging.basicConfig(
+  format="%(asctime)s %(message)s", datefmt="%I:%M:%S %p", level=logging.DEBUG
+)
+
+
 if __name__ == "__main__":
     # ------- Parse arguments --------------------------
     parser = argparse.ArgumentParser(
@@ -45,40 +50,38 @@ if __name__ == "__main__":
         for stopper in stoppers.values():
             stopper()
     else:
-        system = get_system(args)
-        topo_provider = get_topology_provider(args)
-        failure_provider = get_failure_provider(args)
-        ops_provider = get_ops_provider(args)
+        stoppers = {}
+        try:
+          system = get_system(args)
+          topo_provider = get_topology_provider(args)
+          failure_provider = get_failure_provider(args)
+          ops_provider = get_ops_provider(args)
 
-        net, cluster, clients = get_topology_provider(args).setup()
+          net, cluster, clients = get_topology_provider(args).setup()
 
-        restarters, stoppers = system.start_nodes(cluster)
+          restarters, stoppers_prime = system.start_nodes(cluster)
+          stoppers = stoppers_prime
 
-        failures = failure_provider.get_failures(cluster, system, restarters, stoppers)
+          failures = failure_provider.get_failures(cluster, system, restarters, stoppers)
 
-        print("BENCHMARK: testing connectivity, and allowing network to settle")
-        net.pingAll()
-        from time import sleep
+          print("BENCHMARK: testing connectivity, and allowing network to settle")
+          net.pingAll()
+          from time import sleep
 
-        sleep(5)
+          sleep(5)
 
-        print("BENCHMARK: Starting Test")
+          print("BENCHMARK: Starting Test")
 
-        logging.basicConfig(
-            format="%(asctime)s %(message)s", datefmt="%I:%M:%S %p", level=logging.DEBUG
-        )
-
-        run_test(
-            args.result_location,
-            clients,
-            ops_provider,
-            args.duration,
-            system,
-            cluster,
-            failures,
-        )
-
-        for stopper in stoppers.values():
-            stopper()
-
-        logging.info("Finished Test")
+          run_test(
+              args.result_location,
+              clients,
+              ops_provider,
+              args.duration,
+              system,
+              cluster,
+              failures,
+          )
+        finally:
+          for stopper in stoppers.values():
+              stopper()
+          logging.info("Finished Test")

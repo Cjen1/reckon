@@ -1,12 +1,6 @@
 # Intended to be run from the top level directory
-
-# Clean log dir from previous runs
-sudo rm -rf logs/*
-
-# Clean state
 bash scripts/clean.sh
-
-sudo bash -c "$*" 2>&1 | tee /results/run.log
-
-# Clean state
+sysctl -w vm.max_map_count=256000 # Ensure we don't run out of mmaps
+ulimit -u 256000 # similarly
+sudo bash -lc "$*" 2>&1 | tee /results/run.log
 bash scripts/clean.sh

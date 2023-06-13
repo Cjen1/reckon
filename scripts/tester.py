@@ -1,14 +1,22 @@
-from subprocess import call, Popen
+from subprocess import call, Popen, run
 import shlex
 import itertools as it
+import uuid
+from datetime import datetime
+import json
+import os
 
-def call_tcp_dump(tag, cmd):
+from typing import Dict, Any, AnyStr
+
+import math
+
+def call_tcp_dump(tcpdump_path, cmd):
     tcp_dump_cmd = [
         "tcpdump",
         "-i",
         "any",
         "-w",
-        ("/results/pcap_" + tag + ".pcap"),
+        tcpdump_path,
         "net",
         "10.0.0.0/16",
         "-n",
@@ -18,170 +26,203 @@ def call_tcp_dump(tag, cmd):
     call(cmd)
     p.terminate()
 
+default_parameters = {
+        'system':'etcd',
+        'client':'go',
+        'topo':'simple',
+        'failure':'none',
+        'nn':3,
+        'nc':1,
+        'delay':20,
+        'loss':0,
+        'ncpr':'False',
+        'mtbf':1,
+        'kill_n':0,
+        'write_ratio':1,
+        'rate':1000,
+        'duration':60,
+        'tag':'tag',
+        'tcpdump':False,
+        'arrival_process':'uniform',
+        'repeat':-1,
+        'notes':{},
+        }
 
-def run_test(
-        system='etcd',
-        client='go',
-        topo='simple',
-        failure='none',
-        nn='3',
-        nc='1',
-        delay=0,
-        loss="0",
-        ncpr='False',
-        mtbf='1',
-        kill_n='0',
-        write_ratio='1',
-        rate='1000',
-        duration='60',
-        tag='tag',
-        tcpdump=False,
-        arrival_process='uniform',
-        ):
+def run_test(folder_path, config : Dict[str, Any]):
+    run('rm -rf /data/*', shell=True).check_returncode()
+    run('mn -c', shell=True).check_returncode()
 
-    tag = ".".join([
-        f"{system}.{topo}.{failure}.client_{client}",
-        f"nn_{nn}.nc_{nc}.delay_{delay}.loss_{loss}",
-        f"ncpr_{ncpr}.mtbf_{mtbf}",
-        f"wr_{write_ratio}",
-        f"rate_{rate}.duration_{duration}",
-        f"process_{arrival_process}",
-        f"{tag}",
-        ])
+    uid = uuid.uuid4()
+
+    # Set params
+    params = default_parameters.copy()
+    for k,v in config.items():
+        params[k] = v
+    del config
+
+    assert (params['repeat'] != -1)
+
+    result_folder = f"{folder_path}/{uid}/"
+    log_path    = result_folder + f"logs"
+    config_path = result_folder + f"config.json"
+    result_path = result_folder + f"res.json"
+    tcpdump_path= result_folder + f"tcpdump.pcap"
 
     cmd = " ".join([
-        f"python -m reckon {system} {topo} {failure}",
-        f"--number-nodes {nn} --number-clients {nc} --client {client} --link-latency {delay} --link-loss {loss}",
-        f"--new_client_per_request {ncpr}",
-        f"--mtbf {mtbf} --kill-n {kill_n}",
-        f"--write-ratio {write_ratio}",
-        f"--rate {rate} --duration {duration}",
-        f"--arrival-process {arrival_process}",
-        f"--system_logs /results/logs --result-location /results/res_{tag}.res --data-dir=/data",
+        f"python -m reckon {params['system']} {params['topo']} {params['failure']}",
+        f"--number-nodes {params['nn']} --number-clients {params['nc']} --client {params['client']} --link-latency {params['delay']} --link-loss {params['loss']}",
+        f"--new_client_per_request {params['ncpr']}",
+        f"--mtbf {params['mtbf']} --kill-n {params['kill_n']}",
+        f"--write-ratio {params['write_ratio']}",
+        f"--rate {params['rate']} --duration {params['duration']}",
+        f"--arrival-process {params['arrival_process']}",
+        f"--system_logs {log_path} --result-location {result_path} --data-dir=/data",
         ])
 
-    print(f"Running: {cmd}")
+    run(f'mkdir -p {result_folder}', shell=True).check_returncode()
+    run(f'mkdir -p {log_path}', shell=True).check_returncode()
+
+    with open(config_path, "w") as of:
+        json.dump(params, of)
+
+    print(f"RUNNING TEST")
+    print(cmd)
 
     cmd = shlex.split(cmd)
 
-    if tcpdump:
-        call_tcp_dump(tag,cmd)
+    if params['tcpdump']:
+        call_tcp_dump(tcpdump_path, cmd)
     else:
         call(cmd)
-
-    call(["bash", "scripts/clean.sh"])
 
 from numpy.random import default_rng
 rng = default_rng()
 
+run_time = datetime.now().strftime("%Y%m%d%H%M%S")
+folder_path = f"/results/{run_time}"
+
 actions = []
-# Leader fault
-# 20ms latency between nodes
-# Aim to get throughput and mttr
+
+systems = [('etcd', 'go'),('zookeeper', 'java')] +\
+               [('etcd-pre-vote', 'go'),('zookeeper-fle', 'java')]
+
+clean_room_systems = [('ocons-paxos', 'ocaml')] +\
+               [ ('ocons-raft', 'ocaml'), ('ocons-raft+sbn', 'ocaml'), ('ocons-raft-pre-vote', 'ocaml'), ('ocons-raft-pre-vote+sbn', 'ocaml')]
+
+
+# Leader election heat maps
 for sys, repeat in it.product(
-        [('etcd', 'go'), ('zookeeper', 'java')],
-        range(10)
+        systems+clean_room_systems,
+        range(4),
         ):
     system, client = sys
     actions.append(
-            lambda repeat=repeat, system=system, client=client: run_test(
-                failure="leader",
-                system=system,
-                client=client,
-                delay=20,
-                duration="30",
-                tag = f"leader-repeat-{repeat}",
-                tcpdump=True,
-                )
+            lambda params = {
+                'failure': 'leader-only',
+                'system':system,
+                'client':client,
+                'duration':30,
+                'repeat':repeat,
+                'rate':5000,
+                'delay':75,
+                'nn':str(3),
+                'tcpdump': True,
+                }:
+            run_test(folder_path, params)
             )
 
-# Steady state
-# Comparitive performance analysis of etcd and zookeeper
-for sys, nn, rate, repeat in it.product(
-        [('etcd', 'go'), ('zookeeper', 'java')],
-        [1,3,5,7],
-        [1000, 5000, 10000, 15000, 20000, 25000, 30000],
-        range(3)
+# Leader election bulk
+for sys, repeat in it.product(
+        systems+clean_room_systems,
+        range(100),
         ):
     system, client = sys
     actions.append(
-        lambda system=system, client=client, nn=nn, rate=rate, repeat=repeat: run_test(
-            system=system,
-            client=client,
-            nn=nn,
-            delay=20,
-            rate=rate,
-            tag = f"steady-repeat-{repeat}",
-            duration="30",
+            lambda params = {
+                'failure': 'leader-only',
+                'system':system,
+                'client':client,
+                'duration':30,
+                'repeat':repeat,
+                'rate':5000,
+                'delay':50,
+                'nn':5,
+                }:
+            run_test(folder_path, params)
             )
-        )
 
-# Lossy steady state
-# Comparative performance of etcd and zookeeper in a lossy environment
-for sys, nn, linkloss, kill_n, repeat in it.product(
-        [('etcd', 'go-tracer'), ('zookeeper', 'java')],
-        [3,5,7],
-        [0, 0.01, 0.1, 1, 10],
-        [True, False],
-        range(3)
+systems_steady = [('etcd', 'go'),('zookeeper', 'java')] #+ [('ocons-paxos', 'ocaml'), ('ocons-raft', 'ocaml')]
+
+# Steady latency (DC and WAN)
+for sys, repeat, nn in it.product(
+        systems_steady,
+        range(10),
+        [1,3,5,7]
         ):
     system, client = sys
     actions.append(
-        lambda system=system, client=client, nn=nn, linkloss=linkloss, repeat=repeat, kill_n=kill_n: run_test(
-            failure="kill-n",
-            kill_n=nn/2 if kill_n else 0,
-            topo='wan',
-            system=system,
-            client=client,
-            nn=nn,
-            delay=40,
-            loss=linkloss,
-            duration="30",
-            arrival_process="poisson",
-            tag = f"killed-{'max' if kill_n else 'none'}.lossy-steady-repeat-{repeat}",
+            lambda params = {
+                'failure': 'none',
+                'system':system,
+                'client':client,
+                'duration':30,
+                'rate':5000,
+                'delay':50,
+                'nn':nn,
+                'repeat':repeat,
+                'notes':'steady-latency',
+                }:
+            run_test(folder_path, params)
             )
-        )
+    actions.append(
+            lambda params = {
+                'failure': 'none',
+                'system':system,
+                'client':client,
+                'duration':30,
+                'rate':5000,
+                'delay':0,
+                'nn':nn,
+                'repeat':repeat,
+                'notes':'steady-latency',
+                }:
+           run_test(folder_path, params)
+            )
 
-# Lossy leader fault
-# Leader election in a lossy environment
-for sys, linkloss, repeat in it.product(
-        [('etcd', 'go'), ('zookeeper', 'java')],
-        [0.01, 0.1, 1],
-        range(10)
+# Steady rate-lat WAN
+for sys, rate, repeat in it.product(
+        systems_steady,
+        [1000,5000,10000,15000,20000,25000,30000,35000],
+        range(2),
         ):
     system, client = sys
     actions.append(
-        lambda system=system, client=client, linkloss=linkloss, repeat=repeat: run_test(
-            failure="leader",
-            topo='wan',
-            system=system,
-            client=client,
-            loss=linkloss,
-            delay=40,
-            duration="30",
-            tag = f"lossy-leader-repeat-{repeat}",
-            tcpdump=True
+            lambda params = {
+                'failure': 'none',
+                'system':system,
+                'client':client,
+                'duration':30,
+                'rate':rate,
+                'delay':50,
+                'nn':3,
+                'repeat':repeat,
+                'notes':'rate-lat',
+                }:
+            run_test(folder_path, params)
             )
-        )
-
-# wan performance
-# Hoping for a nice stepwise graph :)
-for sys in [('etcd', 'go'), ('zookeeper', 'java')]:
-    system, client = sys
-    actions.append(
-        lambda system=system, client=client: run_test(
-            topo='wan',
-            system=system,
-            client=client,
-            delay=40,
-            duration="30",
-            tag = f"wan",
-            )
-        )
-
 
 # Shuffle to isolate ordering effects
 rng.shuffle(actions)
 
-for act in actions:
+print(len(actions))
+
+bar = '##################################################'
+for i, act in enumerate(actions):
+    print(bar, flush=True)
+    print(f"TEST-{i}", flush=True)
+    print(bar, flush=True)
     act()
+
+print(bar, flush=True)
+print(f"TESTING DONE", flush=True)
+print(bar, flush=True)

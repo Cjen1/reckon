@@ -28,7 +28,8 @@ class ClientType(Enum):
 
 
 class Zookeeper(t.AbstractSystem):
-    bin_dir = "reckon/systems/zookeeper/bins/apache-zookeeper-3.8.0-bin"
+    bin_dir = "reckon/systems/zookeeper/bins/apache-zookeeper-3.5.10-bin"
+    electionAlg = 0
 
     def get_client(self, args):
         if args.client == str(ClientType.Java) or args.client is None:
@@ -40,8 +41,6 @@ class Zookeeper(t.AbstractSystem):
         restarters = {}
         stoppers = {}
 
-        heartbeat_time = 100
-
         for i, host in enumerate(cluster):
             i = i + 1
             tag = self.get_node_tag(host)
@@ -50,8 +49,8 @@ class Zookeeper(t.AbstractSystem):
             clientPort = 2379
             serverPort = 2380
             electionPort = 2381
-            tickTime = heartbeat_time  # milliseconds
-            initLimit = 1000  # How long should new followers be allowed to wait before being kicked
+            tickTime = 100  # milliseconds
+            initLimit = 10  # Ticks before a leader is considered dead
             syncLimit = 10  # How long before a follower is removed from the cluster and clients are forced to reconnect to another node
 
             dataDir = f"{self.data_dir}/{tag}"
@@ -64,39 +63,64 @@ class Zookeeper(t.AbstractSystem):
             config = "\n".join(
                 [
                     f"tickTime={tickTime}",
-                    f"dataDir={dataDir}",
+                    f"dataDir={dataDir}/data",
                     f"clientPort={clientPort}",
                     f"initLimit={int(initLimit)}",
                     f"syncLimit={int(syncLimit)}",
                     f"4lw.commands.whitelist=*",
-                    f"snap_count=1000000",
                     f"max_client_connections=5000",
                     f"globalOutstandingLimit=10000",
+                    f"electionAlg={self.electionAlg}",
                     cluster_config,
                 ]
             )
 
-            subprocess.run(f"mkdir -p {dataDir}", shell=True).check_returncode()
-            subprocess.run(f"echo {i} > {dataDir}/myid", shell=True).check_returncode()
+            logdir = f"/results/logs/{tag}.zklogdir"
+
+            log4j_config = "\n".join(
+                    [
+                        "zookeeper.root.logger=INFO, CONSOLE",
+                        "zookeeper.console.threshold=INFO",
+                        f"zookeeper.log.dir={logdir}/log4j",
+                        "zookeeper.log.file=zookeeper.log",
+                        "zookeeper.log.threshold=INFO",
+                        "zookeeper.log.maxfilesize=256MB",
+                        "zookeeper.log.maxbackupindex=20",
+                        "zookeeper.tracelog.dir=${zookeeper.log.dir}",
+                        "zookeeper.tracelog.file=zookeeper_trace.log",
+                        "log4j.rootLogger=${zookeeper.root.logger}",
+                        "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender",
+                        "log4j.appender.CONSOLE.Threshold=${zookeeper.console.threshold}",
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout",
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} [myid:%X{myid}] - %-5p [%t:%C{1}@%L] - %m%n"
+                        ])
+
+            subprocess.run(f"mkdir -p {dataDir}/data", shell=True).check_returncode()
+            subprocess.run(f"echo {i} > {dataDir}/data/myid", shell=True).check_returncode()
 
             print(config)
 
             # Write cfg
             cfg_dir = f"{dataDir}/config"
             subprocess.run(f"mkdir -p {cfg_dir}", shell=True).check_returncode()
-            # Copy logback config into config directory
-            subprocess.run(f"cp {self.bin_dir}/conf/logback.xml {cfg_dir}/logback.xml", shell=True) .check_returncode()
 
+            # Write zoo.cfg
             cfg_path = f"{cfg_dir}/zoo.cfg"
             with open(cfg_path, "w") as f:
                 f.write(config)
+                f.flush()
+
+            # Write log4j config file
+            log4j_path = f"{cfg_dir}/log4j.properties"
+            with open(log4j_path, "w") as f:
+                f.write(log4j_config)
                 f.flush()
 
             # --config is passed to zkEnv which then sets up the classpath to have cfg within that directory
             cmd = " ".join(
                 [
                     f"ZOO_LOG_FILE=/results/logs/{tag}.zklogfile",
-                    f"ZOO_LOG_DIR=/results/logs/{tag}.zklogdir",
+                    f"ZOO_LOG_DIR={logdir}",
                     f"JVMFLAGS=\"-Xms10G -Xmx10G \"",
                     f"{self.bin_dir}/bin/zkServer.sh",
                     f"--config {cfg_dir}",
@@ -141,16 +165,21 @@ class Zookeeper(t.AbstractSystem):
         return t.Client(sp.stdin, sp.stdout, client_id)
 
     def get_leader(self, cluster):
-        for host in cluster:
-           try:
-               cmd = "echo stat | nc localhost 2379 | grep Mode"
-               resp = host.cmd(cmd)
-               if "Mode: leader" in resp:
-                   return host
-           except:
-               pass
+        cmd = "echo stat | nc localhost 2379 | grep Mode"
+        resps = ([
+            (host, host.cmd(cmd))
+            for host in cluster
+            ])
+
+        for (host, resp) in resps:
+            if "Mode: leader" in resp:
+                return host
+        raise Exception(str(resps))
 
     def stat(self, host: t.MininetHost) -> str:
         ret = host.cmd("echo stat | nc 127.0.0.1 2379")
         assert(ret)
         return ret
+
+class ZookeeperFLE(Zookeeper):
+    electionAlg = 3 # Use FastLeaderElection

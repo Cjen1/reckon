@@ -1,4 +1,7 @@
 .git
+.git*
+**/.git
+**/.git*
 logs
 src/utils/sockets/*
 **/_build/**

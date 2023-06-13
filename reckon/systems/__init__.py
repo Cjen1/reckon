@@ -1,15 +1,24 @@
 from enum import Enum
 from distutils.util import strtobool
 
-from reckon.systems.etcd import Etcd, EtcdPreVote
-from reckon.systems.zookeeper import Zookeeper
+from reckon.systems.etcd import Etcd, EtcdSBN, EtcdPreVote, EtcdPreVoteSBN
+from reckon.systems.zookeeper import Zookeeper, ZookeeperFLE
+from reckon.systems.ocons import OconsPaxos, OconsRaft, OconsRaftSBN, OconsRaftPrevote, OconsRaftPrevoteSBN
 import reckon.reckon_types as t
 
 
 class SystemType(Enum):
     Etcd = "etcd"
     EtcdPreVote = "etcd-pre-vote"
+    EtcdSBN = "etcd+sbn"
+    EtcdPreVoteSBN = "etcd-pre-vote+sbn"
     Zookeeper = "zookeeper"
+    ZookeeperFLE = "zookeeper-fle"
+    OconsPaxos = "ocons-paxos"
+    OconsRaft = "ocons-raft"
+    OconsRaftPrevote = "ocons-raft-pre-vote"
+    OconsRaftSBN = "ocons-raft+sbn"
+    OconsRaftPrevoteSBN = "ocons-raft-pre-vote+sbn"
 
     def __str__(self):
         return self.value
@@ -50,8 +59,24 @@ def get_system(args) -> t.AbstractSystem:
         res = Etcd(args)
     elif args.system_type is SystemType.EtcdPreVote:
         res = EtcdPreVote(args)
+    elif args.system_type is SystemType.EtcdSBN:
+        res = EtcdSBN(args)
+    elif args.system_type is SystemType.EtcdPreVoteSBN:
+        res = EtcdPreVoteSBN(args)
     elif args.system_type is SystemType.Zookeeper:
         res = Zookeeper(args)
+    elif args.system_type is SystemType.ZookeeperFLE:
+        res = ZookeeperFLE(args)
+    elif args.system_type is SystemType.OconsPaxos:
+        res = OconsPaxos(args)
+    elif args.system_type is SystemType.OconsRaft:
+        res = OconsRaft(args)
+    elif args.system_type is SystemType.OconsRaftSBN:
+        res = OconsRaftSBN(args)
+    elif args.system_type is SystemType.OconsRaftPrevote:
+        res = OconsRaftPrevote(args)
+    elif args.system_type is SystemType.OconsRaftPrevoteSBN:
+        res = OconsRaftPrevoteSBN(args)
     else:
         raise Exception("Not supported system type: " + str(args.system_type))
     res.system_type = args.system_type

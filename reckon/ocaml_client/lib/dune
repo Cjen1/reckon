@@ -1,0 +1,5 @@
+(library
+  (name reckon_shim)
+  (public_name reckon-shim)
+  (libraries yojson cmdliner eio_main accessor core)
+  (preprocess (pps ppx_accessor ppx_jane)))

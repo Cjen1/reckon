@@ -95,40 +95,45 @@ def run_test(folder_path, config : Dict[str, Any]):
     else:
         call(cmd)
 
-#from numpy.random import default_rng
-#rng = default_rng()
+from numpy.random import default_rng
+rng = default_rng()
 
 run_time = datetime.now().strftime("%Y%m%d%H%M%S")
 folder_path = f"/results/{run_time}"
 
 actions = []
 
-## Leader election heat maps
-#for sys, repeat in it.product(
-#        [('etcd', 'go'), ('zookeeper', 'java'),
-#        ('etcd-pre-vote', 'go'), ('zookeeper-fle', 'java')],
-#        range(10),
-#        ):
-#    system, client = sys
-#    actions.append(
-#            lambda params = {
-#                'failure': 'leader-only',
-#                'system':system,
-#                'client':client,
-#                'duration':30,
-#                'repeat':repeat,
-#                'rate':5000,
-#                'delay':50,
-#                'nn':str(3),
-#                'tcpdump': True,
-#                }:
-#            run_test(folder_path, params)
-#            )
+systems = [('etcd', 'go'),('zookeeper', 'java')] +\
+               [('etcd-pre-vote', 'go'),('zookeeper-fle', 'java')]
+
+clean_room_systems = [('ocons-paxos', 'ocaml')] +\
+               [ ('ocons-raft', 'ocaml'), ('ocons-raft+sbn', 'ocaml'), ('ocons-raft-pre-vote', 'ocaml'), ('ocons-raft-pre-vote+sbn', 'ocaml')]
+
+
+# Leader election heat maps
+for sys, repeat in it.product(
+        systems+clean_room_systems,
+        range(4),
+        ):
+    system, client = sys
+    actions.append(
+            lambda params = {
+                'failure': 'leader-only',
+                'system':system,
+                'client':client,
+                'duration':30,
+                'repeat':repeat,
+                'rate':5000,
+                'delay':75,
+                'nn':str(3),
+                'tcpdump': True,
+                }:
+            run_test(folder_path, params)
+            )
 
 # Leader election bulk
 for sys, repeat in it.product(
-        [('etcd', 'go'), ('zookeeper', 'java'),
-        ('etcd-pre-vote', 'go'), ('zookeeper-fle', 'java')],
+        systems+clean_room_systems,
         range(100),
         ):
     system, client = sys
@@ -141,15 +146,18 @@ for sys, repeat in it.product(
                 'repeat':repeat,
                 'rate':5000,
                 'delay':50,
-                'nn':3,
+                'nn':5,
                 }:
             run_test(folder_path, params)
             )
 
+systems_steady = [('etcd', 'go'),('zookeeper', 'java')] #+ [('ocons-paxos', 'ocaml'), ('ocons-raft', 'ocaml')]
+
 # Steady latency (DC and WAN)
-for sys, repeat in it.product(
-        [('etcd', 'go'), ('zookeeper', 'java')],
-        range(10)
+for sys, repeat, nn in it.product(
+        systems_steady,
+        range(10),
+        [1,3,5,7]
         ):
     system, client = sys
     actions.append(
@@ -160,8 +168,9 @@ for sys, repeat in it.product(
                 'duration':30,
                 'rate':5000,
                 'delay':50,
-                'nn':3,
+                'nn':nn,
                 'repeat':repeat,
+                'notes':'steady-latency',
                 }:
             run_test(folder_path, params)
             )
@@ -173,17 +182,18 @@ for sys, repeat in it.product(
                 'duration':30,
                 'rate':5000,
                 'delay':0,
-                'nn':3,
+                'nn':nn,
                 'repeat':repeat,
+                'notes':'steady-latency',
                 }:
-            run_test(folder_path, params)
+           run_test(folder_path, params)
             )
 
-# Steady latency WAN
+# Steady rate-lat WAN
 for sys, rate, repeat in it.product(
-        [('etcd', 'go'), ('zookeeper', 'java')],
+        systems_steady,
         [1000,5000,10000,15000,20000,25000,30000,35000],
-        range(10),
+        range(2),
         ):
     system, client = sys
     actions.append(
@@ -200,17 +210,18 @@ for sys, rate, repeat in it.product(
                 }:
             run_test(folder_path, params)
             )
+
 # Shuffle to isolate ordering effects
-#rng.shuffle(actions)
+rng.shuffle(actions)
 
 print(len(actions))
 
 bar = '##################################################'
-#for i, act in enumerate(actions):
-#    print(bar, flush=True)
-#    print(f"TEST-{i}", flush=True)
-#    print(bar, flush=True)
-#    act()
+for i, act in enumerate(actions):
+    print(bar, flush=True)
+    print(f"TEST-{i}", flush=True)
+    print(bar, flush=True)
+    act()
 
 print(bar, flush=True)
 print(f"TESTING DONE", flush=True)

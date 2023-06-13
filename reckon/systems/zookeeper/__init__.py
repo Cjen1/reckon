@@ -41,8 +41,6 @@ class Zookeeper(t.AbstractSystem):
         restarters = {}
         stoppers = {}
 
-        heartbeat_time = 100
-
         for i, host in enumerate(cluster):
             i = i + 1
             tag = self.get_node_tag(host)
@@ -51,8 +49,8 @@ class Zookeeper(t.AbstractSystem):
             clientPort = 2379
             serverPort = 2380
             electionPort = 2381
-            tickTime = heartbeat_time  # milliseconds
-            initLimit = 1000  # How long should new followers be allowed to wait before being kicked
+            tickTime = 100  # milliseconds
+            initLimit = 10  # Ticks before a leader is considered dead
             syncLimit = 10  # How long before a follower is removed from the cluster and clients are forced to reconnect to another node
 
             dataDir = f"{self.data_dir}/{tag}"
@@ -65,12 +63,11 @@ class Zookeeper(t.AbstractSystem):
             config = "\n".join(
                 [
                     f"tickTime={tickTime}",
-                    f"dataDir={dataDir}",
+                    f"dataDir={dataDir}/data",
                     f"clientPort={clientPort}",
                     f"initLimit={int(initLimit)}",
                     f"syncLimit={int(syncLimit)}",
                     f"4lw.commands.whitelist=*",
-                    f"snap_count=1000000",
                     f"max_client_connections=5000",
                     f"globalOutstandingLimit=10000",
                     f"electionAlg={self.electionAlg}",
@@ -98,8 +95,8 @@ class Zookeeper(t.AbstractSystem):
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} [myid:%X{myid}] - %-5p [%t:%C{1}@%L] - %m%n"
                         ])
 
-            subprocess.run(f"mkdir -p {dataDir}", shell=True).check_returncode()
-            subprocess.run(f"echo {i} > {dataDir}/myid", shell=True).check_returncode()
+            subprocess.run(f"mkdir -p {dataDir}/data", shell=True).check_returncode()
+            subprocess.run(f"echo {i} > {dataDir}/data/myid", shell=True).check_returncode()
 
             print(config)
 
@@ -168,14 +165,16 @@ class Zookeeper(t.AbstractSystem):
         return t.Client(sp.stdin, sp.stdout, client_id)
 
     def get_leader(self, cluster):
-        for host in cluster:
-           try:
-               cmd = "echo stat | nc localhost 2379 | grep Mode"
-               resp = host.cmd(cmd)
-               if "Mode: leader" in resp:
-                   return host
-           except:
-               pass
+        cmd = "echo stat | nc localhost 2379 | grep Mode"
+        resps = ([
+            (host, host.cmd(cmd))
+            for host in cluster
+            ])
+
+        for (host, resp) in resps:
+            if "Mode: leader" in resp:
+                return host
+        raise Exception(str(resps))
 
     def stat(self, host: t.MininetHost) -> str:
         ret = host.cmd("echo stat | nc 127.0.0.1 2379")

@@ -69,7 +69,7 @@ class Etcd(t.AbstractSystem):
                     + "--initial-cluster-token {cluster_token} "
                     + "--initial-cluster-state {cluster_state} "
                     + "--heartbeat-interval=100 "
-                    + "--election-timeout=500"
+                    + "--election-timeout=1000"
                     + (
                         (" " + self.additional_flags)
                         if self.additional_flags != ""
@@ -146,6 +146,11 @@ class Etcd(t.AbstractSystem):
         assert(resp)
         return resp
 
+class EtcdSBN(Etcd):
+    binary_path = "reckon/systems/etcd/etcd/bin/etcd"
 
 class EtcdPreVote(Etcd):
     additional_flags = "--pre-vote=True"
+
+class EtcdPreVoteSBN(EtcdPreVote):
+    binary_path = "reckon/systems/etcd/etcd/bin/etcd"

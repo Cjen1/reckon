@@ -4,3 +4,6 @@
 [submodule "reckon/systems/ocons/ocons-src"]
 	path = reckon/systems/ocons/ocons-src
 	url = git@github.com:cjen1/ocons.git
+[submodule "reckon/systems/etcd/raft_sbn"]
+	path = reckon/systems/etcd/raft_sbn
+	url = https://github.com/Cjen1/raft.git

@@ -4,6 +4,9 @@ As seen at [HAOC21: Examining Raft's behaviour during partial network failures](
 
 ## Installation
 
+First openvswitch must be loaded as a kernel module.
+On ubuntu this is done by `apt install openvswitch-switch`, however other distributions will require an equivalent but different invocation.
+
 ### Recommended method with Docker
 
 Run `make docker` to build a docker container containing all dependencies required to run a test with any of the clients, and to subsequently start it up, putting you into a Bash shell.

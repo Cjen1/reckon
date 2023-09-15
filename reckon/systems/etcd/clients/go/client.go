@@ -43,15 +43,27 @@ func main() {
 	dialTimeout := 10 * time.Second
 
 	gen_cli := func() (rc_go.Client, error){
-		cli_v3, err := clientv3.New(clientv3.Config{
-			Endpoints:            endpoints,
-			DialTimeout:          dialTimeout,
-			DialKeepAliveTime:    dialTimeout / 2,
-			DialKeepAliveTimeout: dialTimeout * 2,
-			AutoSyncInterval:     dialTimeout / 2,
-		})
-		cli := rc_cli{Client:cli_v3}
-		return cli,err
+    if (true) {
+      cli_v3, err := clientv3.New(clientv3.Config{
+        Endpoints:            endpoints,
+        //			DialTimeout:          dialTimeout,
+        //			DialKeepAliveTime:    dialTimeout / 2,
+        //			DialKeepAliveTimeout: dialTimeout * 2,
+        //			AutoSyncInterval:     dialTimeout / 2,
+      })
+      cli := rc_cli{Client:cli_v3}
+      return cli,err
+    } else {
+      cli_v3, err := clientv3.New(clientv3.Config{
+        Endpoints:            endpoints,
+        DialTimeout:          dialTimeout,
+        DialKeepAliveTime:    dialTimeout / 2,
+        DialKeepAliveTimeout: dialTimeout * 2,
+        AutoSyncInterval:     dialTimeout / 2,
+      })
+      cli := rc_cli{Client:cli_v3}
+      return cli,err
+    }
 	}
 	rc_go.Run(gen_cli, *f_client_id, *f_new_client_per_request)
 }

@@ -44,12 +44,18 @@ def register_system_args(parser):
         help="Location of any data stores, should be empty at the start of each test.",
     )
 
-
     system_group.add_argument(
         "--new_client_per_request",
         default=False,
         help="Should a new client be created per request.",
         type=lambda x: bool(strtobool(x)),
+    )
+
+    system_group.add_argument(
+        "--failure_timeout",
+        default=1.0,
+        help="Timeout until failure detector triggers an election",
+        type = float,
     )
 
 

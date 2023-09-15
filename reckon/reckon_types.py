@@ -227,6 +227,7 @@ class AbstractSystem(ABC):
         self.client_class = self.get_client(args)
         self.client_type = args.client
         self.data_dir = args.data_dir
+        self.failure_timeout = args.failure_timeout
 
         super(AbstractSystem, self).__init__()
 

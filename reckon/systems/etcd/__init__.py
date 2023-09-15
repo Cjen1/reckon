@@ -57,33 +57,23 @@ class Etcd(t.AbstractSystem):
             tag = self.get_node_tag(host)
 
             def start_cmd(cluster_state, tag=tag, host=host):
-                etcd_cmd = (
-                    "{binary} "
-                    + "--data-dir={datadir}/{tag} "
-                    + "--name {tag} "
-                    + "--initial-advertise-peer-urls http://{ip}:2380 "
-                    + "--listen-peer-urls http://{ip}:2380 "
-                    + "--listen-client-urls http://0.0.0.0:2379 "
-                    + "--advertise-client-urls http://{ip}:2379 "
-                    + "--initial-cluster {cluster} "
-                    + "--initial-cluster-token {cluster_token} "
-                    + "--initial-cluster-state {cluster_state} "
-                    + "--heartbeat-interval=100 "
-                    + "--election-timeout=1000"
-                    + (
-                        (" " + self.additional_flags)
-                        if self.additional_flags != ""
-                        else ""
-                    )
-                ).format(
-                    binary=self.binary_path,
-                    datadir= self.data_dir,
-                    tag=tag,
-                    ip=host.IP(),
-                    cluster=cluster_str,
-                    cluster_state=cluster_state,
-                    cluster_token="urop_cluster",
-                )
+                election_timeout = self.failure_timeout * 1000
+                heartbeat_interval = election_timeout / 10
+
+                etcd_cmd = " ".join([
+                    self.binary_path,
+                    f"--data-dir={self.data_dir}/{tag}",
+                    f"--name {tag}",
+                    f"--initial-advertise-peer-urls http://{host.IP()}:2380",
+                    f"--listen-peer-urls http://{host.IP()}:2380",
+                    f"--listen-client-urls http://0.0.0.0:2379",
+                    f"--advertise-client-urls http://{host.IP()}:2379",
+                    f"--initial-cluster {cluster_str}",
+                    f"--initial-cluster-token reckon_cluster",
+                    f"--initial-cluster-state {cluster_state}",
+                    f"--heartbeat-interval={int(heartbeat_interval)}",
+                    f"--election-timeout={int(election_timeout)}",
+                    ])
                 cmd = self.add_stderr_logging(etcd_cmd, tag + ".log")
                 cmd = self.add_stdout_logging(cmd, tag + ".log")
                 return cmd

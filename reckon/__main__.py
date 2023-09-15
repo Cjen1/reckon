@@ -66,13 +66,12 @@ if __name__ == "__main__":
 
           print("BENCHMARK: testing connectivity, and allowing network to settle")
           net.pingAll()
-          from time import sleep
-
-          sleep(5)
 
           print("BENCHMARK: Starting Test")
 
-          run_test(
+          from multiprocessing import Process
+
+          p = Process(target = run_test, args=(
               args.result_location,
               clients,
               ops_provider,
@@ -80,7 +79,10 @@ if __name__ == "__main__":
               system,
               cluster,
               failures,
-          )
+          ))
+          p.start()
+          p.join(600)
+          p.terminate()
         finally:
           for stopper in stoppers.values():
               stopper()

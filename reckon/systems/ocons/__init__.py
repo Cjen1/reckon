@@ -27,11 +27,33 @@ class ClientType(Enum):
 class Ocons(t.AbstractSystem):
     system_kind = "paxos"
 
+    election_timeout = 10
+
     def get_client(self, args):
         if args.client == str(ClientType.Ocaml) or args.client is None:
             return Ocaml(args)
         else:
             raise Exception("Not supported client type: " + str(args.client))
+
+    def get_tick_rate(self):
+        return float(self.failure_timeout) / float(self.election_timeout)
+
+    def start_cmd(self, tag, nid, cluster):
+        cmd = " ".join([
+            "nix run ./reckon/systems/ocons/ocons-src --",
+            f"-p {server_port}",
+            f"-q {client_port}",
+            f"-t {self.get_tick_rate()}",
+            f"--election-timeout {self.election_timeout}",
+            f"--rand-start 1",
+            self.system_kind,
+            str(nid),
+            cluster,
+        ])
+        cmd = self.add_stderr_logging(cmd, tag)
+        cmd = self.add_stdout_logging(cmd, tag)
+        return cmd
+
 
     def start_nodes(self, cluster):
         cluster_dict = dict([
@@ -50,21 +72,7 @@ class Ocons(t.AbstractSystem):
         for hidx, host in cluster_dict.items():
             tag = self.get_node_tag(host)
 
-            def start_cmd(tag=tag):
-                cmd = " ".join([
-                    "nix run ./reckon/systems/ocons/ocons-src --",
-                    f"-p {server_port}",
-                    f"-q {client_port}",
-                    f"-t 0.1",
-                    f"--election-timeout 10",
-                    f"--rand-start 1",
-                    self.system_kind,
-                    str(hidx),
-                    cluster_str,
-                ])
-                cmd = self.add_stderr_logging(cmd, tag)
-                cmd = self.add_stdout_logging(cmd, tag)
-                return cmd
+            start_cmd = lambda tag=tag, hidx=hidx, cluster=cluster_str: self.start_cmd(tag, hidx, cluster)
 
             self.start_screen(host, start_cmd())
             logging.info("Start cmd: " + start_cmd())
@@ -132,3 +140,92 @@ class OconsRaftPrevote(Ocons):
     system_kind = "prevote-raft"
 class OconsRaftPrevoteSBN(Ocons):
     system_kind = "prevote-raft+sbn"
+
+class OConsConspireMP(Ocons):
+    system_kind = "conspire-mp"
+
+    def start_cmd(self, tag, nid, cluster):
+        cmd = " ".join([
+            "nix run ./reckon/systems/ocons/ocons-src --",
+            f"-p {server_port}",
+            f"-q {client_port}",
+            f"-t {self.get_tick_rate()}",
+            f"--election-timeout {self.election_timeout}",
+            f"--rand-start 1",
+            self.system_kind,
+            str(nid),
+            cluster,
+        ])
+        cmd = self.add_stderr_logging(cmd, tag)
+        cmd = self.add_stdout_logging(cmd, tag)
+        return cmd
+
+class OConsConspireDC(Ocons):
+    system_kind = "conspire-dc"
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.delay_interval = args.delay_interval
+
+    def start_cmd(self, tag, nid, cluster):
+        cmd = " ".join([
+            "nix run ./reckon/systems/ocons/ocons-src --",
+            f"-p {server_port}",
+            f"-q {client_port}",
+            f"-t {self.get_tick_rate()}",
+            f"--election-timeout {self.election_timeout}",
+            f"--rand-start 1",
+            f"--delay {self.delay_interval}",
+            self.system_kind,
+            str(nid),
+            cluster,
+        ])
+        cmd = self.add_stderr_logging(cmd, tag)
+        cmd = self.add_stdout_logging(cmd, tag)
+        return cmd
+
+    def get_latency(self, h1 : t.MininetHost, h2):
+        out = h1.cmd(f"ping {h2.IP()} -c 20 -q")
+        pat = "\d+\.\d*/(\d+\.\d*)/\d+\.\d*/\d+\.\d*"
+        match = re.search(pat, out)
+        if match is not None:
+            return float(match.group(1))
+        return None
+
+    def min_latency(self, client, cluster):
+        latencies = {
+                host.IP() : self.get_latency(client, host)
+                for host in cluster
+                }
+        print(latencies)
+        min_latency = latencies[cluster[0].IP()]
+        min_ip = cluster[0].IP()
+        for ip, latency in latencies.items():
+            if latency is None: continue
+            if min_latency is None:
+                min_ip = ip
+                min_latency = latency
+
+            if latency <= min_latency:
+                min_ip = ip
+                min_latency = latency
+        print(f"{min_ip} is closest with {min_latency} from {client.IP()}")
+        return min_ip
+
+    def start_client(self, client, client_id, cluster) -> t.Client:
+        logging.debug("starting microclient: " + str(client_id))
+        tag = self.get_client_tag(client)
+
+        cmd = self.client_class.cmd([self.min_latency(client, cluster)], client_id)
+        cmd = self.add_stderr_logging(cmd, tag)
+
+        logging.info("Starting client with: " + cmd)
+        sp = client.popen(
+            cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            shell=True,
+            bufsize=4096,
+        )
+        return t.Client(sp.stdin, sp.stdout, client_id)

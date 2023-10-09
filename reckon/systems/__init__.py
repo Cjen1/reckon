@@ -4,6 +4,7 @@ from distutils.util import strtobool
 from reckon.systems.etcd import Etcd, EtcdSBN, EtcdPreVote, EtcdPreVoteSBN
 from reckon.systems.zookeeper import Zookeeper, ZookeeperFLE
 from reckon.systems.ocons import OconsPaxos, OconsRaft, OconsRaftSBN, OconsRaftPrevote, OconsRaftPrevoteSBN
+from reckon.systems.ocons import OConsConspireMP, OConsConspireDC
 import reckon.reckon_types as t
 
 
@@ -19,6 +20,8 @@ class SystemType(Enum):
     OconsRaftPrevote = "ocons-raft-pre-vote"
     OconsRaftSBN = "ocons-raft+sbn"
     OconsRaftPrevoteSBN = "ocons-raft-pre-vote+sbn"
+    OConsConspireMP = "ocons-conspire-mp"
+    OConsConspireDC = "ocons-conspire-dc"
 
     def __str__(self):
         return self.value
@@ -58,6 +61,12 @@ def register_system_args(parser):
         type = float,
     )
 
+    system_group.add_argument(
+        "--delay_interval",
+        default=0.010,
+        help="Delay before command applied, should be > latency",
+        type = float,
+    )
 
 def get_system(args) -> t.AbstractSystem:
     res = None
@@ -83,6 +92,10 @@ def get_system(args) -> t.AbstractSystem:
         res = OconsRaftPrevote(args)
     elif args.system_type is SystemType.OconsRaftPrevoteSBN:
         res = OconsRaftPrevoteSBN(args)
+    elif args.system_type is SystemType.OConsConspireMP:
+        res = OConsConspireMP(args)
+    elif args.system_type is SystemType.OConsConspireDC:
+        res = OConsConspireDC(args)
     else:
         raise Exception("Not supported system type: " + str(args.system_type))
     res.system_type = args.system_type

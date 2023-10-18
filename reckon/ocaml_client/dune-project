@@ -11,7 +11,7 @@
   (name reckon-shim)
   (synopsis "Reckon")
   (depends 
-    (ocaml (= 5.0.0))
+    (ocaml (= 5.1.0))
     yojson
     cmdliner
     iter
@@ -24,7 +24,6 @@
     base
     core
     core_unix
-    owl
-    (eio (>= 0.8.1))
-    (eio_main (>= 0.8.1))
+    (eio (>= 0.12))
+    (eio_main (>= 0.12))
     ))

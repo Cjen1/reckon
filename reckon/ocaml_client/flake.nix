@@ -3,7 +3,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     nixpkgs.follows = "opam-nix/nixpkgs";
     opam-repository = {
-      url = "github:ocaml/opam-repository/562afb69b736d0b96a88588228dd55ae9cfefe60";
+      url = "github:ocaml/opam-repository";
       flake = false;
     };
     opam-nix = {
@@ -18,13 +18,17 @@
         on = opam-nix.lib.${system};
         devPackagesQuery = {
           ocaml-lsp-server = "*";
-          ocamlformat = "*";
+          ocamlformat = "0.25.1";
           utop = "*";
         };
+        repos = [
+          opam-repository
+        ];
         query = devPackagesQuery // {
-          ocaml-base-compiler = "5.0.0";
+          ocaml-base-compiler = "5.1.0";
+          ocamlfind = "1.9.5";
         };
-        scope = on.buildDuneProject { } "reckon-shim" ./. query;
+        scope = on.buildDuneProject { inherit repos; } "reckon-shim" ./. query;
         devPackages = builtins.attrValues
           (pkgs.lib.getAttrs (builtins.attrNames query) scope);
       in

@@ -1,6 +1,5 @@
 open Eio.Std
 open Types
-open StdLabels
 open Io
 module Types = Types
 
@@ -8,79 +7,75 @@ let dtraceln fmt =
   let ignore_format = Format.ikfprintf ignore Fmt.stderr in
   if false then Eio.traceln fmt else ignore_format fmt
 
-module Make (Cli : S) : sig
-  val run : url list -> rid -> unit
+let is_not_cancel = function Eio.Cancel.Cancelled _ -> false | _ -> true
 
-  val cmd : unit Cmdliner.Cmd.t
-end = struct
-  type req_state =
-    { op: op
-    ; aim_submit: float
-    ; mutable t_submitted: float
-    ; mutable result: res
-    ; mutable t_result: float
-    ; mutable result_flag: bool }
-  [@@deriving accessors ~submodule:ReqState]
+module Make (Cli : S) =
+(*: sig
+    val run : url list -> rid -> unit
+
+    val cmd : unit Cmdliner.Cmd.t
+  end *)
+struct
+  open Core
+
+  type operation_state = {op: op; t_submitted: float}
+
+  type result_state = {t_result: float; result: res}
 
   type t =
-    { recv: Eio.Condition.t
-    ; mutable recv_prereq_hwm: int
-    ; mutable req_state: req_state array
-    ; mutable should_record_result: bool
-    ; mutable version: string }
+    { op_id_gen: unit -> int
+    ; prereqs: (unit Promise.t * unit Promise.u) Hashtbl.M(Int).t
+    ; operations: operation_state Hashtbl.M(Int).t
+    ; results: result_state Hashtbl.M(Int).t }
 
-  let catcher_callback (clock : #Eio.Time.clock) t : recv_callback =
+  let catcher_callback clock t stop_reqs : recv_callback =
    fun (rid, res) ->
     dtraceln "Got result for %d" rid ;
     (* Set if not prereq *)
-    if
-      rid < Array.length t.req_state
-      && t.should_record_result
-      && not (Array.get t.req_state rid).result_flag
-    then (
-      let req_state = Array.get t.req_state rid in
-      req_state.t_result <- Eio.Time.now clock ;
-      req_state.result <- res ;
-      req_state.result_flag <- true ) ;
-    t.recv_prereq_hwm <- max t.recv_prereq_hwm rid ;
-    Eio.Condition.broadcast t.recv
+    match Hashtbl.find t.prereqs rid with
+    | _ when Eio.Promise.is_resolved stop_reqs ->
+        ()
+    | Some (p, r) when not (Promise.is_resolved p) ->
+        Promise.resolve r ()
+    | _ when Hashtbl.mem t.operations rid && not (Hashtbl.mem t.results rid) ->
+        Hashtbl.add_exn t.results ~key:rid
+          ~data:{result= res; t_result= Eio.Time.now clock}
+    | _ ->
+        ()
 
-  let retry_prereq t clock mgr rid op =
+  let retry_prereq t ((rid, op) as req : int * Types.op) clock mgr =
     dtraceln "Got prereq" ;
-    Cli.submit mgr (rid, op) ;
-    while rid > t.recv_prereq_hwm do
+    let p, r = Promise.create () in
+    Hashtbl.set t.prereqs ~key:rid ~data:(p, r) ;
+    Cli.submit mgr req ;
+    while not (Promise.is_resolved p) do
       (* Wait for response or timeout *)
       Eio.Fiber.first
-        (fun () -> Eio.Condition.await_no_mutex t.recv)
+        (fun () -> Promise.await p)
         (fun () ->
-          Eio.Time.sleep clock 0.1 ;
+          Eio.Time.sleep clock 1. ;
           Cli.submit mgr (rid, op) )
     done
 
-  let preload reqsQ stdin mgr t clock =
-    (* Giving Int30.max_int -> Int31.max_int*)
-    let trid = ref @@ (Int32.(to_int max_int) / 4) in
-    traceln "Phase 1: Preload" ;
-    (* At most one prereq outstanding at a time
-       => Can use a high water mark for trid to check for response
-    *)
+  let preload stdin clock t mgr =
+    let req_q = Queue.create () in
     let rec aux () =
       match I.recv_msg stdin with
       | Preload {prereq= true; op; _} ->
-          let lrid = !trid in
-          trid := !trid + 1 ;
-          retry_prereq t clock mgr lrid op ;
+          let req = (t.op_id_gen (), op) in
+          retry_prereq t req clock mgr ;
           aux ()
       | Preload s ->
-          dtraceln "Got op %d" (Queue.length reqsQ) ;
-          Queue.add (s.op, s.aim_submit) reqsQ ;
+          dtraceln "Got op" ;
+          Queue.enqueue req_q (s.op, s.aim_submit) ;
           aux ()
       | Finalise ->
           dtraceln "Got finalise" ; ()
       | m ->
-          Fmt.failwith "Unexpected msg: %a" pp_msg m
+          traceln "Unexpected msg: %a" pp_msg m ;
+          exit 0
     in
-    aux ()
+    aux () ; Queue.to_array req_q
 
   let readying stdout stdin =
     traceln "Phase 2: Readying" ;
@@ -91,96 +86,85 @@ end = struct
     | m ->
         Fmt.failwith "Unexpected msg: %a" pp_msg m
 
-  let is_not_cancel = function Eio.Cancel.Cancelled _ -> false | _ -> true
-
-  let execute state mgr clock start_time =
+  let execute t mgr clock start_time (reqs : (op * float) Array.t) =
     traceln "Phase 3: Execute" ;
-    let if_before t f = if Eio.Time.now clock < t then f () in
-    Array.iteri state.req_state ~f:(fun rid {op; aim_submit; _} ->
+    let if_before t f =
+      let open Float in
+      if Eio.Time.now clock < t then f ()
+    in
+    Array.sort reqs ~compare:(fun (_, a) (_, b) -> Float.compare a b) ;
+    Array.iter reqs ~f:(fun (op, target) ->
+        let rid = t.op_id_gen () in
         try
-          let aim_submit = start_time +. aim_submit in
-          (* If going fast then will auto-flush, otherwise should *)
+          let aim_submit = start_time +. target in
           if_before aim_submit (fun () -> Cli.flush mgr) ;
           if_before aim_submit (fun () -> Eio.Time.sleep_until clock aim_submit) ;
-          (Array.get state.req_state rid).t_submitted <- Eio.Time.now clock ;
+          Hashtbl.add_exn t.operations ~key:rid
+            ~data:{op; t_submitted= Eio.Time.now clock} ;
           Cli.submit mgr (rid, op)
         with e when is_not_cancel e ->
           Eio.traceln "Raised error while submitting %d %a" rid
             Fmt.exn_backtrace
-            (e, Printexc.get_raw_backtrace ()) ) ;
+            (e, Stdlib.Printexc.get_raw_backtrace ()) ) ;
     Eio.traceln "DONE EXECUTE"
 
-  let collate state cid stdout =
-    traceln "Phase 4: Collate" ;
-    let flusher =
-      let x = ref 10 in
-      fun () ->
-        decr x ;
-        if !x <= 0 then Eio.Buf_write.flush stdout
-    in
-    (* Iterate through results and return them to the coordinator *)
-    state.should_record_result <- false ;
-    Array.iter state.req_state ~f:(function
-      | {result_flag= false; _} ->
-          ()
-      | {op; t_submitted; t_result; result; result_flag= true; _} ->
-          O.send stdout (Result {op; t_submitted; t_result; result; cid}) ;
-          flusher () )
+  let collate t cid stdout =
+    traceln "Phase 5: Collate" ;
+    t.results |> Hashtbl.keys
+    |> List.sort ~compare:Int.compare
+    |> List.iter ~f:(fun rid ->
+           match
+             (Hashtbl.find t.results rid, Hashtbl.find t.operations rid)
+           with
+           | Some {t_result; result}, Some {op; t_submitted} ->
+               O.send stdout (Result {op; t_submitted; t_result; result; cid})
+           | _ ->
+               () ) ;
+    Eio.Buf_write.flush stdout
 
   let finalise stdout =
     traceln "Phase 5: finalise" ;
     O.send stdout Finished
 
   let run urls cid =
-    Eio_main.run
-    @@ fun env ->
-    Switch.run
-    @@ fun sw ->
-    (* Set up state *)
-    let null_time = -1. in
-    let state =
-      { req_state= Array.init 0 ~f:(fun _ -> assert false)
-      ; should_record_result= true
-      ; recv= Eio.Condition.create ()
-      ; recv_prereq_hwm= 0
-      ; version= "Init" }
+    traceln "Starting cid=%d attached to %a" cid
+      (Fmt.list Eio.Net.Sockaddr.pp)
+      urls ;
+    let ( let* ) k f = k f in
+    let* env = Eio_main.run in
+    let* sw = Switch.run in
+    let clock = Eio.Stdenv.clock env in
+    let op_id_gen =
+      let open Int in
+      let x = ref 1 in
+      fun () ->
+        let x' = !x in
+        Int.incr x;
+        Int.shift_left x' 6 + cid
     in
+    let state =
+      { op_id_gen= op_id_gen
+      ; prereqs= Hashtbl.create (module Int)
+      ; operations= Hashtbl.create (module Int)
+      ; results= Hashtbl.create (module Int) }
+    in
+    let stop_barrier_p, stop_barrier_u = Promise.create () in
     let mgr =
       Cli.create ~sw ~env
-        ~f:(catcher_callback (Eio.Stdenv.clock env) state)
+        ~f:(catcher_callback clock state stop_barrier_p)
         ~urls ~id:cid
     in
-    (* Get stdin/stdout *)
     let stdin = Eio.Stdenv.stdin env |> Eio.Buf_read.of_flow ~max_size:4096 in
     Eio.Buf_write.with_flow (Eio.Stdenv.stdout env) (fun stdout ->
-        let reqs = Queue.create () in
-        (* fill reqs and apply initial requests synchronously *)
-        preload reqs stdin mgr state env#clock ;
-        let req_state =
-          reqs |> Queue.to_seq
-          |> Seq.map (fun (op, aim_submit) ->
-                 { op
-                 ; aim_submit
-                 ; t_submitted= null_time
-                 ; result= Failure (`Msg "Not yet recv'd response")
-                 ; t_result= null_time
-                 ; result_flag= false } )
-          |> Array.of_seq
-        in
-        state.req_state <- req_state ;
-        Array.sort
-          ~cmp:(fun a b -> Float.compare a.aim_submit b.aim_submit)
-          state.req_state ;
-        state.version <- "execute" ;
-        (* Notify ready*)
+        let reqs = preload stdin clock state mgr in
         readying stdout stdin ;
-        (* Submit requests *)
-        execute state mgr (Eio.Stdenv.clock env) (Eio.Time.now env#clock) ;
-        (* Collate *)
-        Eio.Time.sleep (Eio.Stdenv.clock env) 1. ;
+        execute state mgr clock (Eio.Time.now clock) reqs ;
+        Eio.Time.sleep clock 5. ;
+        Promise.resolve stop_barrier_u () ;
         collate state cid stdout ;
         finalise stdout ;
         Eio.Buf_write.flush stdout ;
+        Stdlib.Out_channel.flush_all ();
         traceln "Phase 6: exit" ) ;
     exit 0
 

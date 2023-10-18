@@ -1,7 +1,7 @@
-
+open Core
 type rid = int
 
-type op = Write of string * string | Read of string
+type op = Write of string * string | Read of string [@@deriving compare]
 type res = Success | Failure of [`Msg of string | `Error of exn]
 
 type recv_callback = rid * res -> unit
@@ -15,7 +15,7 @@ module type S = sig
 
   val submit : mgr -> rid * op -> unit
 
-  val create : sw:Eio.Switch.t -> env:Eio.Stdenv.t -> f:recv_callback -> urls:url list -> id:int -> mgr
+  val create : sw:Eio.Switch.t -> env: Eio_unix.Stdenv.base -> f:recv_callback -> urls:url list -> id:int -> mgr
 
   val flush : mgr -> unit
 end

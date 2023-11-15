@@ -2,6 +2,11 @@
 
 As seen at [HAOC21: Examining Raft's behaviour during partial network failures](https://dl.acm.org/doi/10.1145/3447851.3458739).
 
+Allowing us to dissect failures:
+
+![failure-layout](https://github.com/Cjen1/reckon/assets/11444677/b95f0966-088a-4c8d-a9b1-76f7928883e6)
+
+
 ## Installation
 
 First openvswitch must be loaded as a kernel module on the host.

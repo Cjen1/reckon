@@ -117,10 +117,10 @@ struct
              (Hashtbl.find t.results rid, Hashtbl.find t.operations rid)
            with
            | Some {t_result; result}, Some {op; t_submitted} ->
-               O.send stdout (Result {op; t_submitted; t_result; result; cid})
+               O.send stdout (Result {op; t_submitted; t_result; result; cid}) ;
+               Eio.Buf_write.flush stdout
            | _ ->
-               () ) ;
-    Eio.Buf_write.flush stdout
+               () )
 
   let finalise stdout =
     traceln "Phase 5: finalise" ;
@@ -139,11 +139,11 @@ struct
       let x = ref 1 in
       fun () ->
         let x' = !x in
-        Int.incr x;
+        Int.incr x ;
         Int.shift_left x' 6 + cid
     in
     let state =
-      { op_id_gen= op_id_gen
+      { op_id_gen
       ; prereqs= Hashtbl.create (module Int)
       ; operations= Hashtbl.create (module Int)
       ; results= Hashtbl.create (module Int) }
@@ -164,7 +164,7 @@ struct
         collate state cid stdout ;
         finalise stdout ;
         Eio.Buf_write.flush stdout ;
-        Stdlib.Out_channel.flush_all ();
+        Stdlib.Out_channel.flush_all () ;
         traceln "Phase 6: exit" ) ;
     exit 0
 

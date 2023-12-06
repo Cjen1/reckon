@@ -6,7 +6,7 @@ homepage: "https://github.com/cjen1/OcamlPaxos"
 bug-reports: "https://github.com/cjen1/OcamlPaxos/issues"
 depends: [
   "dune" {>= "2.7"}
-  "ocaml" {= "5.0.0"}
+  "ocaml" {= "5.1.0"}
   "cmdliner"
   "ocons"
   "reckon-shim"

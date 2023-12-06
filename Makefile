@@ -7,6 +7,13 @@ run: reckon
 	--network host --name reckon \
 	 cjen1/reckon:latest bash
 
+.PHONY: tester
+tester: reckon
+	docker run -it --privileged -e DISPLAY \
+	--tmpfs /data \
+	--network host --name reckon \
+	 cjen1/reckon:latest bash /root/scripts/run.sh python /root/scripts/tester.py
+
 .PHONY:reckon
 reckon: reckon-mininet etcd-image zk-image
 	docker build -t cjen1/reckon:latest .

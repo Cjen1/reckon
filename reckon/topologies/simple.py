@@ -11,7 +11,7 @@ setLogLevel("info")
 
 
 class SimpleTopologyProvider(t.AbstractTopologyGenerator):
-    def __init__(self, number_nodes, number_clients, link_latency=None, link_loss=None):
+    def __init__(self, number_nodes, number_clients, link_latency=None, link_loss=None, link_jitter=None):
         self.number_nodes = number_nodes
         self.number_clients = number_clients
 
@@ -19,6 +19,11 @@ class SimpleTopologyProvider(t.AbstractTopologyGenerator):
         self.per_link_latency = (
                 None if not link_latency else f"{link_latency / 2}ms"
         )
+
+        
+        self.per_link_jitter = (
+                None if not link_jitter else f"{math.sqrt(((link_jitter * link_latency) ** 2) / 2)}ms"
+        ) if (link_jitter is not None and link_jitter > 0) else None
 
         # since we have 2 links, when we want the abstraction of one direct link
         # we use link_loss = 1 - sqrt(1 - L)
@@ -56,7 +61,7 @@ class SimpleTopologyProvider(t.AbstractTopologyGenerator):
         clients = [self.add_client() for _ in range(self.number_clients)]
 
         for host in hosts + clients:
-            self.net.addLink(host, sw, delay=self.per_link_latency, loss=self.per_link_loss)
+            self.net.addLink(host, sw, delay=self.per_link_latency, loss=self.per_link_loss, jitter=self.per_link_jitter)
 
         self.net.start()
 

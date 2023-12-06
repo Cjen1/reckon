@@ -119,6 +119,14 @@ struct
            | Some {t_result; result}, Some {op; t_submitted} ->
                O.send stdout (Result {op; t_submitted; t_result; result; cid}) ;
                Eio.Buf_write.flush stdout
+           | None, Some {op; t_submitted} ->
+               O.send stdout
+                 (Result
+                    { op
+                    ; t_submitted
+                    ; cid
+                    ; t_result= -1.
+                    ; result= Failure (`Msg "No result found") } )
            | _ ->
                () )
 

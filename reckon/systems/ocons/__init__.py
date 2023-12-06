@@ -35,17 +35,20 @@ class Ocons(t.AbstractSystem):
         else:
             raise Exception("Not supported client type: " + str(args.client))
 
-    def get_tick_rate(self):
-        return float(self.failure_timeout) / float(self.election_timeout)
+    tick_period = 0.01
+
+    def get_election_timeout(self):
+        return int(float(self.failure_timeout) / self.tick_period)
 
     def start_cmd(self, tag, nid, cluster):
         cmd = " ".join([
             "nix run ./reckon/systems/ocons/ocons-src --",
             f"-p {server_port}",
             f"-q {client_port}",
-            f"-t {self.get_tick_rate()}",
-            f"--election-timeout {self.election_timeout}",
+            f"-t {self.tick_period}",
+            f"--election-timeout {self.get_election_timeout()}",
             f"--rand-start 1",
+            #f"--stat=1",
             self.system_kind,
             str(nid),
             cluster,
@@ -106,12 +109,11 @@ class Ocons(t.AbstractSystem):
 
     def get_leader_term(self, host):
         logpath =f"{self.log_location}/{self.creation_time}_{self.get_node_tag(host)}.err"
-        f = open(logpath, "r")
-        log = f.read().splitlines()
-        f.close()
+        cmd = f"grep -i 'leader for term' {logpath}"
+        log = host.cmd(cmd)
 
         mterm = -1
-        for line in log:
+        for line in log.splitlines():
             match = re.search('leader for term (\\d+)', line, re.IGNORECASE)
             if match:
                 mterm = max(int(match.group(1)), mterm)
@@ -149,9 +151,10 @@ class OConsConspireMP(Ocons):
             "nix run ./reckon/systems/ocons/ocons-src --",
             f"-p {server_port}",
             f"-q {client_port}",
-            f"-t {self.get_tick_rate()}",
-            f"--election-timeout {self.election_timeout}",
+            f"-t {self.tick_period}",
+            f"--election-timeout {self.get_election_timeout()}",
             f"--rand-start 1",
+            #f"--stat=1",
             self.system_kind,
             str(nid),
             cluster,
@@ -159,6 +162,15 @@ class OConsConspireMP(Ocons):
         cmd = self.add_stderr_logging(cmd, tag)
         cmd = self.add_stdout_logging(cmd, tag)
         return cmd
+
+    def get_leader(self, cluster):
+        cluster_dict = dict([
+            (i, host)
+            for i, host in enumerate(cluster)
+        ])
+
+        return cluster_dict[min(cluster_dict.keys())]
+
 
 class OConsConspireDC(Ocons):
     system_kind = "conspire-dc"
@@ -172,9 +184,9 @@ class OConsConspireDC(Ocons):
             "nix run ./reckon/systems/ocons/ocons-src --",
             f"-p {server_port}",
             f"-q {client_port}",
-            f"-t {self.get_tick_rate()}",
-            f"--election-timeout {self.election_timeout}",
+            f"-t {0.001}",
             f"--rand-start 1",
+            #f"--stat=1",
             f"--delay {self.delay_interval}",
             self.system_kind,
             str(nid),
@@ -184,18 +196,34 @@ class OConsConspireDC(Ocons):
         cmd = self.add_stdout_logging(cmd, tag)
         return cmd
 
-    def get_latency(self, h1 : t.MininetHost, h2):
-        out = h1.cmd(f"ping {h2.IP()} -c 20 -q")
-        pat = "\d+\.\d*/(\d+\.\d*)/\d+\.\d*/\d+\.\d*"
-        match = re.search(pat, out)
-        if match is not None:
-            return float(match.group(1))
-        return None
 
     def min_latency(self, client, cluster):
+
+        def dispatch_latency(h1 : t.MininetHost, h2):
+            return h1.popen(
+                    f"ping {h2.IP()} -c 5 -i 0.2 -q",
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    shell=True,
+                    bufsize=4096
+                    )
+        
+        def await_latency(proc):
+            proc.wait()
+            out = proc.stdout.read()
+            pat = "\d+\.\d*/(\d+\.\d*)/\d+\.\d*/\d+\.\d*"
+            match = re.search(pat, out.decode())
+            if match is not None:
+                return float(match.group(1))
+            return None
+
         latencies = {
-                host.IP() : self.get_latency(client, host)
+                host.IP() : dispatch_latency(client, host)
                 for host in cluster
+                }
+        latencies = {
+                k : await_latency(v)
+                for k,v in latencies.items()
                 }
         print(latencies)
         min_latency = latencies[cluster[0].IP()]
@@ -229,3 +257,6 @@ class OConsConspireDC(Ocons):
             bufsize=4096,
         )
         return t.Client(sp.stdin, sp.stdout, client_id)
+
+    def get_leader(self, cluster):
+        return cluster[0]

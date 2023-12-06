@@ -35,6 +35,7 @@ default_parameters = {
         'nc':1,
         'delay':20,
         'loss':0,
+        'jitter':0,
         'ncpr':'False',
         'mtbf':1,
         'kill_n':0,
@@ -46,6 +47,7 @@ default_parameters = {
         'arrival_process':'uniform',
         'repeat':-1,
         'failure_timeout':1,
+        'delay_interval':100,
         'notes':{},
         }
 
@@ -72,14 +74,16 @@ def run_test(folder_path, config : Dict[str, Any]):
 
     cmd = " ".join([
         f"python -m reckon {params['system']} {params['topo']} {params['failure']}",
-        f"--number-nodes {params['nn']} --number-clients {params['nc']} --client {params['client']} --link-latency {params['delay']} --link-loss {params['loss']}",
+        f"--number-nodes {params['nn']} --number-clients {params['nc']} --client {params['client']}",
+        f"--link-latency {params['delay']} --link-loss {params['loss']} --link-jitter {params['jitter']}",
         f"--new_client_per_request {params['ncpr']}",
         f"--mtbf {params['mtbf']} --kill-n {params['kill_n']}",
         f"--write-ratio {params['write_ratio']}",
         f"--rate {params['rate']} --duration {params['duration']}",
         f"--arrival-process {params['arrival_process']}",
         f"--system_logs {log_path} --result-location {result_path} --data-dir=/data",
-        f"--failure_timeout {params['failure_timeout']}"
+        f"--failure_timeout {params['failure_timeout']}",
+        f"--delay_interval {params['delay_interval']}",
         ])
 
     run(f'mkdir -p {result_folder}', shell=True).check_returncode()
@@ -106,139 +110,151 @@ folder_path = f"/results/{run_time}"
 
 actions = []
 
-paxos = ('ocons-paxos', 'ocaml')
-raft = ('ocons-raft', 'ocaml')
+low_repeat = 3
+high_repeat = 50
 
-systems = [('etcd', 'go'),('zookeeper', 'java')] +\
-               [('etcd-pre-vote', 'go'),('zookeeper-fle', 'java')]
+nn_map = {
+        'ocons-conspire-dc': 4,
+        'ocons-conspire-mp': 4,
+        'ocons-paxos': 3,
+        'ocons-raft': 3,
+        'etcd': 3
+        }
+timeout_map = {
+        'ocons-conspire-dc': 0.1,
+        'ocons-conspire-mp': 0.5,
+        'ocons-paxos': 0.5,
+        }
 
-clean_room_systems = [('ocons-paxos', 'ocaml')] +\
-               [ ('ocons-raft', 'ocaml'), ('ocons-raft+sbn', 'ocaml'), ('ocons-raft-pre-vote', 'ocaml'), ('ocons-raft-pre-vote+sbn', 'ocaml')]
+## rate-lat systems
+#for system, rate, repeat in it.product(
+#        [('ocons-conspire-dc', 'ocaml'), ('ocons-conspire-mp', 'ocaml'), ('ocons-paxos', 'ocaml')],
+#        [10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000],
+#        range(low_repeat)
+#        ):
+#    system, client = system
+#    nn = nn_map[system]
+#    timeout = timeout_map[system]
+#
+#    actions.append(
+#            lambda params = {
+#                'topo':'wan',
+#                'nn':nn,
+#                'delay':50,
+#                'system':system,
+#                'client':client,
+#                'rate':rate,
+#                'repeat':repeat,
+#                'failure_timeout': timeout,
+#                'delay_interval': timeout,
+#                'duration':10,
+#                'tag':'ss-rate-lat',
+#                }:
+#            run_test(folder_path, params))
 
-for sys, loss, failure_timeout, repeat in it.product(
-        [('etcd', 'go')],
-        [0, 0.01, 0.1, 1],
-        [0.1, 0.2, 0.4, 0.8, 1.6],
-        range(4)
+## latency results steady state
+#for system, repeat in it.product(
+#        [('ocons-conspire-dc', 0.04), ('ocons-conspire-dc', 0.05), ('ocons-conspire-dc', 0.06),
+#         ('ocons-conspire-mp', 0.5),
+#         ('ocons-paxos', 0.5),
+#         ],
+#        range(low_repeat),
+#        ):
+#    system, timeout = system
+#    nn = nn_map[system]
+#
+#    actions.append(
+#            lambda params = {
+#                'topo':'wan',
+#                'nn':nn,
+#                'delay':50,
+#                'system':system,
+#                'client':'ocaml',
+#                'rate':10000,
+#                'repeat':repeat,
+#                'failure_timeout': timeout,
+#                'delay_interval': timeout,
+#                'duration':10,
+#                'tag':'ss-latency',
+#                }:
+#            run_test(folder_path, params))
+
+## leader failure heatmap
+#for system, repeat in it.product(
+#        ['ocons-conspire-dc', 'ocons-conspire-mp', 'ocons-paxos'],
+#        range(low_repeat),
+#        ):
+#    nn = nn_map[system]
+#    timeout = timeout_map[system]
+#    actions.append(
+#            lambda params = {
+#                'topo':'wan',
+#                'nn':nn,
+#                'delay':50,
+#                'system':system,
+#                'client':'ocaml',
+#                'rate':5000,
+#                'repeat':repeat,
+#                'failure_timeout': timeout,
+#                'delay_interval': timeout,
+#                'duration':10,
+#                'failure':'leader',
+#                'tcpdump':True,
+#                'tag':'heatmap',
+#                }:
+#            run_test(folder_path, params))
+
+# conspire-dc jitter latency
+for jitter, timeout, repeat in it.product(
+        [0, 0.25, 0.5],
+        [0.06, 0.11, 0.16, 0.21, 0.26, 0.31],
+        range(low_repeat),
         ):
-    system, client = sys
+    nn = 4
     actions.append(
             lambda params = {
-                'failure': 'none',
-                'system':system,
-                'client':client,
-                'duration':30,
-                'rate':5000,
+                'topo':'wan',
+                'nn':nn,
                 'delay':50,
-                'nn':3,
+                'jitter':jitter,
+                'system':'ocons-conspire-dc',
+                'client':'ocaml',
+                'rate':10000,
                 'repeat':repeat,
-                'loss':loss,
-                'failure_timeout':failure_timeout,
+                'failure_timeout': timeout,
+                'delay_interval': timeout,
+                'duration':30,
+                'failure':'none',
+                'tag':'latency-dc-jitter',
                 }:
-            run_test(folder_path, params)
-            )
+            run_test(folder_path, params))
 
 
-## Leader election heat maps
-#for sys, repeat in it.product(
-#        systems+clean_room_systems,
-#        range(4),
-#        ):
-#    system, client = sys
-#    actions.append(
-#            lambda params = {
-#                'failure': 'leader-only',
-#                'system':system,
-#                'client':client,
-#                'duration':30,
-#                'repeat':repeat,
-#                'rate':5000,
-#                'delay':75,
-#                'nn':str(3),
-#                'tcpdump': True,
-#                }:
-#            run_test(folder_path, params)
-#            )
-
-## Leader election bulk
-#for sys, repeat in it.product(
-#        systems+clean_room_systems,
-#        range(100),
-#        ):
-#    system, client = sys
-#    actions.append(
-#            lambda params = {
-#                'failure': 'leader-only',
-#                'system':system,
-#                'client':client,
-#                'duration':30,
-#                'repeat':repeat,
-#                'rate':5000,
-#                'delay':50,
-#                'nn':5,
-#                }:
-#            run_test(folder_path, params)
-#            )
-
-systems_steady = [('etcd', 'go'),('zookeeper', 'java')] #+ [('ocons-paxos', 'ocaml'), ('ocons-raft', 'ocaml')]
-
-## Steady latency (DC and WAN)
-#for sys, repeat, nn in it.product(
-#        systems_steady,
-#        range(10),
-#        [1,3,5,7]
-#        ):
-#    system, client = sys
-#    actions.append(
-#            lambda params = {
-#                'failure': 'none',
-#                'system':system,
-#                'client':client,
-#                'duration':30,
-#                'rate':5000,
-#                'delay':50,
-#                'nn':nn,
-#                'repeat':repeat,
-#                'notes':'steady-latency',
-#                }:
-#            run_test(folder_path, params)
-#            )
-#    actions.append(
-#            lambda params = {
-#                'failure': 'none',
-#                'system':system,
-#                'client':client,
-#                'duration':30,
-#                'rate':5000,
-#                'delay':0,
-#                'nn':nn,
-#                'repeat':repeat,
-#                'notes':'steady-latency',
-#                }:
-#           run_test(folder_path, params)
-#            )
-#
-## Steady rate-lat WAN
-#for sys, rate, repeat in it.product(
-#        systems_steady,
-#        [1000,5000,10000,15000,20000,25000,30000,35000],
-#        range(2),
-#        ):
-#    system, client = sys
-#    actions.append(
-#            lambda params = {
-#                'failure': 'none',
-#                'system':system,
-#                'client':client,
-#                'duration':30,
-#                'rate':rate,
-#                'delay':50,
-#                'nn':3,
-#                'repeat':repeat,
-#                'notes':'rate-lat',
-#                }:
-#            run_test(folder_path, params)
-#            )
+# jitter failure aggregate
+for system, timeout, jitter, repeat in it.product(
+        ['ocons-conspire-mp', 'ocons-paxos'],
+        [0.06, 0.11, 0.16, 0.21, 0.26, 0.31, 0.36, 0.41],
+        [0, 0.25, 0.5],
+        range(high_repeat),
+        ):
+    nn = nn_map[system]
+    actions.append(
+            lambda params = {
+                'topo':'wan',
+                'nn':nn,
+                'delay':50,
+                'jitter':jitter,
+                'system':system,
+                'client':'ocaml',
+                'rate':5000,
+                'repeat':repeat,
+                'failure_timeout': timeout,
+                'delay_interval': timeout,
+                'duration':10,
+                'failure':'leader',
+                'tag':'jitter-aggregate-failure',
+                }:
+            run_test(folder_path, params))
 
 # Shuffle to isolate ordering effects
 rng.shuffle(actions)

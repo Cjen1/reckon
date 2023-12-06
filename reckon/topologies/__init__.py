@@ -36,6 +36,13 @@ def register_topo_args(parser):
         default=0,
     )
 
+    topo_group.add_argument(
+        "--link-jitter",
+        type=float,
+        default=0,
+    )
+
+
     topo_group.add_argument("--link-latency", type=float, default=20)
 
 
@@ -45,13 +52,15 @@ def get_topology_provider(args) -> t.AbstractTopologyGenerator:
             args.number_nodes,
             args.number_clients,
             args.link_latency,
-            args.link_loss
+            args.link_loss,
+            args.link_jitter,
         )
     elif args.topo_type is TopologyType.Wan:
         return WanTopologyProvider(
             args.number_nodes,
             args.link_latency,
             args.link_loss,
+            args.link_jitter,
         )
     else:
         raise Exception("Not supported distribution type: " + str(args.topo_type))

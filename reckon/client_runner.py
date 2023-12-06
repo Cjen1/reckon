@@ -16,8 +16,6 @@ from tqdm import tqdm
 def preload(ops_provider: t.AbstractWorkload, duration: float) -> int:
     logging.debug("PRELOAD: begin")
 
-    
-
     for op, client in zip(ops_provider.prerequisites, it.cycle(ops_provider.clients)):
         client.send(t.preload(prereq=True, operation=op))
 

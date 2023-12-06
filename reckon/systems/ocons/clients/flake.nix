@@ -15,12 +15,12 @@
         on = opam-nix.lib.${system};
         devPackagesQuery = {
           ocaml-lsp-server = "*";
-          ocamlformat = "*";
+          ocamlformat = "0.25.1";
           utop = "*";
         };
         reckon-shim-src = ./../../../ocaml_client;
         query = devPackagesQuery // {
-          ocaml-base-compiler = "5.0.0";
+          ocaml-base-compiler = "5.1.0";
           ocamlfind = "1.9.5";
         };
         repos = [

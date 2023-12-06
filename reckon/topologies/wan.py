@@ -11,13 +11,19 @@ setLogLevel("info")
 
 
 class WanTopologyProvider(t.AbstractTopologyGenerator):
-    def __init__(self, number_nodes, link_latency=None, link_loss=None):
+    def __init__(self, number_nodes, link_latency=None, link_loss=None, link_jitter=None):
         self.number_nodes = number_nodes
 
         # Since we have a star topology we use link_latency = link_latency / 2
         self.per_link_latency = (
                 None if not link_latency else f"{link_latency / 2}ms"
         )
+
+        self.per_link_jitter = (
+                None if not link_jitter else f"{math.sqrt(((link_jitter * link_latency) ** 2) / 2)}ms"
+        ) if (link_jitter is not None and link_jitter > 0) else None
+
+        print(f"Per link jitter = {self.per_link_jitter}")
 
         # since we have 2 links, when we want the abstraction of one direct link
         # we use link_loss = 1 - sqrt(1 - L)
@@ -64,7 +70,7 @@ class WanTopologyProvider(t.AbstractTopologyGenerator):
         clusters = [create_cluster() for _ in range(self.number_nodes)]
 
         for _, _, swc in clusters:
-            self.net.addLink(sw, swc, delay=self.per_link_latency, loss=self.per_link_loss)
+            self.net.addLink(sw, swc, delay=self.per_link_latency, loss=self.per_link_loss, jitter=self.per_link_jitter)
 
         hosts = [host for host, _, _ in clusters]
         clients = [client for _, client, _ in clusters]

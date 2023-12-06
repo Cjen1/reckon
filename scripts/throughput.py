@@ -20,11 +20,14 @@ for filepath in sys.argv[1:]:
 
     successful = df[df['result'] == 'Success']
     length = successful["t_result"].max() - successful["t_result"].min()
+    length95 = (successful["t_result"] - successful["t_result"].min()).describe(percentiles=[0.01, 0.99], include="all")
     throughput = len(successful["t_result"]) / length
     errors = df["result"].unique()
     print("--------------------------------------------------")
     print(f"{filepath}")
     print("--------------------------------------------------")
+    print(f"Timeline: {length}")
+    print(length95)
     print(f"Errors: {errors}")
     print(f"Throughput: {throughput}")
     print("Latency:")

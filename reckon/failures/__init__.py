@@ -13,8 +13,8 @@ import reckon.reckon_types as t
 
 class FailureType(Enum):
     FNone = "none"
-    FLeader = "leader"
-    FLeaderOnly = "leader-only"
+    FLeaderOnly = "leader"
+    FLeaderRecovery = "leader-recovery"
     FPartialPartition = "partial-partition"
     FIntermittentPP = "intermittent-partial"
     FIntermittentFP = "intermittent-full"
@@ -38,7 +38,7 @@ def register_failure_args(parser):
 def get_failure_provider(args) -> t.AbstractFailureGenerator:
     if args.failure_type is FailureType.FNone:
         return NoFailure()
-    elif args.failure_type is FailureType.FLeader:
+    elif args.failure_type is FailureType.FLeaderRecovery:
         return LeaderFailure()
     elif args.failure_type is FailureType.FLeaderOnly:
         return LeaderOnlyFailure()

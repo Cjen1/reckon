@@ -4,7 +4,7 @@ from distutils.util import strtobool
 from reckon.systems.etcd import Etcd, EtcdSBN, EtcdPreVote, EtcdPreVoteSBN
 from reckon.systems.zookeeper import Zookeeper, ZookeeperFLE
 from reckon.systems.ocons import OconsPaxos, OconsRaft, OconsRaftSBN, OconsRaftPrevote, OconsRaftPrevoteSBN
-from reckon.systems.ocons import OConsConspireMP, OConsConspireDC
+from reckon.systems.ocons import OConsConspireLeader, OConsConspireDC, OConsConspireLeaderDC
 import reckon.reckon_types as t
 
 
@@ -20,8 +20,9 @@ class SystemType(Enum):
     OconsRaftPrevote = "ocons-raft-pre-vote"
     OconsRaftSBN = "ocons-raft+sbn"
     OconsRaftPrevoteSBN = "ocons-raft-pre-vote+sbn"
-    OConsConspireMP = "ocons-conspire-mp"
+    OConsConspireLeader = "ocons-conspire-leader"
     OConsConspireDC = "ocons-conspire-dc"
+    OConsConspireLeaderDC = "ocons-conspire-leader-dc"
 
     def __str__(self):
         return self.value
@@ -92,10 +93,12 @@ def get_system(args) -> t.AbstractSystem:
         res = OconsRaftPrevote(args)
     elif args.system_type is SystemType.OconsRaftPrevoteSBN:
         res = OconsRaftPrevoteSBN(args)
-    elif args.system_type is SystemType.OConsConspireMP:
-        res = OConsConspireMP(args)
+    elif args.system_type is SystemType.OConsConspireLeader:
+        res = OConsConspireLeader(args)
     elif args.system_type is SystemType.OConsConspireDC:
         res = OConsConspireDC(args)
+    elif args.system_type is SystemType.OConsConspireLeaderDC:
+        res = OConsConspireLeaderDC(args)
     else:
         raise Exception("Not supported system type: " + str(args.system_type))
     res.system_type = args.system_type

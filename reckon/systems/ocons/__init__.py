@@ -143,8 +143,8 @@ class OconsRaftPrevote(Ocons):
 class OconsRaftPrevoteSBN(Ocons):
     system_kind = "prevote-raft+sbn"
 
-class OConsConspireMP(Ocons):
-    system_kind = "conspire-mp"
+class OConsConspireLeader(Ocons):
+    system_kind = "conspire-leader"
 
     def start_cmd(self, tag, nid, cluster):
         cmd = " ".join([
@@ -174,10 +174,6 @@ class OConsConspireMP(Ocons):
 
 class OConsConspireDC(Ocons):
     system_kind = "conspire-dc"
-
-    def __init__(self, args):
-        super().__init__(args)
-        self.delay_interval = args.delay_interval
 
     def start_cmd(self, tag, nid, cluster):
         cmd = " ".join([
@@ -260,3 +256,33 @@ class OConsConspireDC(Ocons):
 
     def get_leader(self, cluster):
         return cluster[0]
+
+class OConsConspireLeaderDC(OConsConspireLeader):
+    system_kind = "conspire-leader-dc"
+
+    tick_period = 0.001
+
+    def start_cmd(self, tag, nid, cluster):
+        cmd = " ".join([
+            "nix run ./reckon/systems/ocons/ocons-src --",
+            f"-p {server_port}",
+            f"-q {client_port}",
+            f"-t {self.tick_period}",
+            f"--election-timeout {self.get_election_timeout()}",
+            f"--delay {self.delay_interval}",
+            f"--rand-start 1",
+            self.system_kind,
+            str(nid),
+            cluster,
+        ])
+        cmd = self.add_stderr_logging(cmd, tag)
+        cmd = self.add_stdout_logging(cmd, tag)
+        return cmd
+
+    def get_leader(self, cluster):
+        cluster_dict = dict([
+            (i, host)
+            for i, host in enumerate(cluster)
+        ])
+
+        return cluster_dict[min(cluster_dict.keys())]

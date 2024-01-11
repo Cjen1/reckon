@@ -228,6 +228,7 @@ class AbstractSystem(ABC):
         self.client_type = args.client
         self.data_dir = args.data_dir
         self.failure_timeout = args.failure_timeout
+        self.delay_interval = args.delay_interval
 
         super(AbstractSystem, self).__init__()
 

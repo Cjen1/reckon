@@ -81,7 +81,7 @@ if __name__ == "__main__":
               failures,
           ))
           p.start()
-          p.join(max(args.duration * 10, 300))
+          p.join(max(args.duration * 10, 150))
           p.terminate()
         finally:
           for stopper in stoppers.values():

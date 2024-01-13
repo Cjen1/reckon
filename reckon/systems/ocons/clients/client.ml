@@ -23,7 +23,7 @@ module Ocons_cli_shim : Types.S = struct
     in
     try
       let cmd =
-        O.Types.Command.{op; id= rid; trace_start= Eio.Time.now t.clock}
+        O.Types.Command.{op; id= rid; submitted = Eio.Time.now t.clock; trace_start= Eio.Time.now t.clock}
       in
       dtraceln "Submitting request %d" rid ;
       O.Client.submit_request t.cmgr cmd

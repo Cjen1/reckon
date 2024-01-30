@@ -27,7 +27,7 @@ def preload(ops_provider: t.AbstractWorkload, duration: float) -> int:
                 break
 
             total_reqs += 1
-            client.send(t.preload(prereq=False, operation=op))
+            client.send(t.preload(prereq=False, operation=op), flush=False)
 
             pbar.update(op.time - sim_t)
             sim_t = op.time

@@ -86,7 +86,6 @@ class Client(object):
     def _send_packet(self, payload: str):
         size = pack("<l", len(payload))  # Little endian signed long (4 bytes)
         self.stdin.write(size + bytes(payload, "ascii"))
-        self.stdin.flush()
 
     def _recv_packet(self) -> str:
         size = self.stdout.read(4)
@@ -98,9 +97,14 @@ class Client(object):
             logging.error(f"Tried to recv from |{self.id}|, received nothing")
             raise EOFError
 
-    def send(self, msg: Message):
+    def flush(self):
+        self.stdin.flush()
+
+    def send(self, msg: Message, flush=True):
         payload = msg.json()
         self._send_packet(payload)
+        if flush:
+            self.flush()
 
     def recv(self) -> Message:
         pkt = self._recv_packet()

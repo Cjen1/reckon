@@ -1,5 +1,5 @@
 import logging
-from threading import Thread
+import threading
 import time
 import sys
 import selectors
@@ -133,10 +133,10 @@ def test_steps(
     assert(len(failures) >= 2)
 
     workload.clients = clients
-    total_reqs = preload(workload, duration)
+    total_reqs = terminate_if_stalled(lambda stall_check: preload(stall_check, workload, duration))
     ready(clients)
 
-    t_execute = Thread(
+    t_execute = threading.Thread(
         target=execute,
         args=[clients, failures, duration],
     )

@@ -12,8 +12,67 @@ import reckon.reckon_types as t
 
 from tqdm import tqdm
 
+class MBox:
+    def __init__(self, value=None):
+        self.value = value
+        self.mtx = threading.Lock()
 
-def preload(ops_provider: t.AbstractWorkload, duration: float) -> int:
+    def __get__(self, instance, owner):
+        with self.mtx:
+            return self.value
+
+    def __set__(self, instance, value):
+        with self.mtx:
+            self.value = value
+
+class StallCheck:
+    def __init__(self, init):
+        self._value = init
+        self.prev_read = self._value
+
+        self.mtx = threading.Lock()
+
+    def incr(self, delta = 1):
+        with self.mtx:
+            self._value += delta
+
+    def check_if_stalled(self) -> bool:
+        with self.mtx:
+            current_val = self._value
+            prev_val = self.prev_read
+
+            self.prev_read = current_val
+
+            return current_val == prev_val
+
+class StalledException(Exception):
+    pass
+
+def terminate_if_stalled(task, timeout=30):
+    stall_check = StallCheck(0)
+    result = MBox()
+    def wrapped_task(sc=stall_check, result=result):
+        result.value = task(sc)
+
+    thread = threading.Thread(target=wrapped_task, daemon=True)
+    thread.start()
+
+    ticker = 0
+
+    while thread.is_alive():
+        time.sleep(1.)
+        if not stall_check.check_if_stalled():
+            ticker = 0
+            continue
+        
+        ticker += 1
+        if ticker > timeout:
+            raise StalledException
+
+    thread.join(10)
+    return result.value
+
+def preload(stall_checker: StallCheck, ops_provider: t.AbstractWorkload, duration: float) -> int:
     logging.debug("PRELOAD: begin")
 
     for op, client in zip(ops_provider.prerequisites, it.cycle(ops_provider.clients)):
@@ -23,16 +82,18 @@ def preload(ops_provider: t.AbstractWorkload, duration: float) -> int:
     total_reqs = 0
     with tqdm(total=duration) as pbar:
         for client, op in ops_provider.workload:
+            stall_checker.incr()
             if op.time >= duration:
                 break
 
             total_reqs += 1
-            client.send(t.preload(prereq=False, operation=op), flush=False)
+            client.send(t.preload(prereq=False, operation=op))
 
             pbar.update(op.time - sim_t)
             sim_t = op.time
 
     for client in ops_provider.clients:
+        stall_checker.incr()
         client.send(t.finalise())
 
     logging.debug("PRELOAD: end")

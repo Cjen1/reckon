@@ -23,7 +23,8 @@ bar = '##################################################'
 total = len(actions)
 for i, act in enumerate(actions):
     print(bar, flush=True)
-    print(f"TEST-{i} out of {total}, {total - i} remaining", flush=True)
+    date = datetime.now().strftime("%m%d%H%M%S")
+    print(f"{date}: TEST-{i} out of {total}, {total - i} remaining", flush=True)
     print(bar, flush=True)
     act()
 

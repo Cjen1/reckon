@@ -97,14 +97,10 @@ class Client(object):
             logging.error(f"Tried to recv from |{self.id}|, received nothing")
             raise EOFError
 
-    def flush(self):
-        self.stdin.flush()
-
-    def send(self, msg: Message, flush=True):
+    def send(self, msg: Message):
         payload = msg.json()
         self._send_packet(payload)
-        if flush:
-            self.flush()
+        self.stdin.flush()
 
     def recv(self) -> Message:
         pkt = self._recv_packet()

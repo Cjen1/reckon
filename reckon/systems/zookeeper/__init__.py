@@ -28,7 +28,7 @@ class ClientType(Enum):
 
 
 class Zookeeper(t.AbstractSystem):
-    bin_dir = "reckon/systems/zookeeper/bins/apache-zookeeper-3.5.10-bin"
+    bin_dir = "reckon/systems/zookeeper/bins/apache-zookeeper-3.5.9-bin"
     electionAlg = 0
 
     def get_client(self, args):

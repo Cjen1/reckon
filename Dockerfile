@@ -16,10 +16,8 @@ RUN apt-get update && apt-get install --no-install-recommends -yy -qq \
     unzip \
     python-is-python3
 
-## Add stretch backports
-#RUN echo 'deb http://ftp.debian.org/debian stretch-backports main' | sudo tee /etc/apt/sources.list.d/stretch-backports.list
-#RUN apt-get update && apt-get install -yy -qq \
-#    openjdk-11-jdk
+RUN apt-get update && apt-get install -yy -qq \
+    openjdk-11-jdk
 
 # Runtime dependencies
 RUN python -m pip install --upgrade wheel setuptools

@@ -351,4 +351,5 @@ func Run(client_gen func() (Client, error), clientid string, new_client_per_requ
 	<-results_complete
 	send(map[string]interface{}{"kind":"finished"})
 	log.Print("Results sent, exiting")
+  os.Exit(0)
 }

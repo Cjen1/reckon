@@ -30,18 +30,26 @@ class ZKClient implements Client {
 
   @Override
   public void Create(String k) throws ClientException {
-    try {
-      client.create(
-          key_to_path(k), 
-          "NULL".getBytes(), 
-          ZooDefs.Ids.OPEN_ACL_UNSAFE,
-          CreateMode.PERSISTENT,
-          null
-          );
-    } catch (KeeperException ex) {
-      throw new ClientException("Cause: " + ex.toString());
-    } catch (InterruptedException ex) {
-      throw new ClientException("Cause: " + ex.toString());
+    while(true) {
+      try {
+        client.create(
+            key_to_path(k), 
+            "NULL".getBytes(), 
+            ZooDefs.Ids.OPEN_ACL_UNSAFE,
+            CreateMode.PERSISTENT,
+            null
+            );
+        System.err.println("Successful create");
+        break;
+      } catch (KeeperException.NodeExistsException ex) {
+        break;
+      } catch (Exception ex) {
+        System.err.println(String.format("Failed to create key: %s", ex.toString()));
+        // sleep to prevent thundering herd
+        try {
+          Thread.sleep(1000, 0);
+        } catch (InterruptedException e) {}
+      }
     }
   }
 

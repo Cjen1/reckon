@@ -260,7 +260,7 @@ class OConsConspireDC(Ocons):
 class OConsConspireLeaderDC(OConsConspireLeader):
     system_kind = "conspire-leader-dc"
 
-    tick_period = 0.001
+    tick_period = 0.01
 
     def start_cmd(self, tag, nid, cluster):
         cmd = " ".join([

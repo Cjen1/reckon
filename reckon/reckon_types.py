@@ -86,7 +86,6 @@ class Client(object):
     def _send_packet(self, payload: str):
         size = pack("<l", len(payload))  # Little endian signed long (4 bytes)
         self.stdin.write(size + bytes(payload, "ascii"))
-        self.stdin.flush()
 
     def _recv_packet(self) -> str:
         size = self.stdout.read(4)
@@ -101,6 +100,7 @@ class Client(object):
     def send(self, msg: Message):
         payload = msg.json()
         self._send_packet(payload)
+        self.stdin.flush()
 
     def recv(self) -> Message:
         pkt = self._recv_packet()
@@ -120,6 +120,15 @@ class Client(object):
             return s.unregister(self.stdin)
         raise KeyError()
 
+class RedirectClient(Client):
+    def __init__(self, file, p_in: IO[bytes], p_out: IO[bytes], id: str):
+        self.file = open(file, "bw")
+        super().__init__(p_in, p_out, id)
+
+    def _send_packet(self, payload: str):
+        size = pack("<l", len(payload))  # Little endian signed long (4 bytes)
+        self.stdin.write(size + bytes(payload, "ascii"))
+        self.file.write(size + bytes(payload, "ascii"))
 
 WorkloadOperation = Tuple[Client, Operation]
 
@@ -213,7 +222,6 @@ class AbstractClient(ABC):
     def cmd(self, ips: List[str], client_id: str) -> str:
         pass
 
-
 class AbstractSystem(ABC):
     def __init__(self, args):
         ctime = time.localtime()
@@ -264,6 +272,16 @@ class AbstractSystem(ABC):
         time = self.creation_time
         log = self.log_location
         return f"{cmd} > {log}/{time}_{tag}.out"
+
+    def add_tee_stdout_logging(self, cmd: str, tag: str):
+        time = self.creation_time
+        log = self.log_location
+        return f"{cmd} | tee {log}/{time}_{tag}.out"
+
+    def add_tee_stdin_logging(self, cmd: str, tag: str):
+        time = self.creation_time
+        log = self.log_location
+        return f"tee {log}/{time}_{tag}.in | {cmd}"
 
     @abstractmethod
     def stat(self, host: MininetHost) -> str:

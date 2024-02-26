@@ -69,9 +69,7 @@ if __name__ == "__main__":
 
           print("BENCHMARK: Starting Test")
 
-          from multiprocessing import Process
-
-          p = Process(target = run_test, args=(
+          run_test(
               args.result_location,
               clients,
               ops_provider,
@@ -79,10 +77,7 @@ if __name__ == "__main__":
               system,
               cluster,
               failures,
-          ))
-          p.start()
-          p.join(max(args.duration * 10, 150))
-          p.terminate()
+          )
         finally:
           for stopper in stoppers.values():
               stopper()
